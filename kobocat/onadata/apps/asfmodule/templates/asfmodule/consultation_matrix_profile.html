@@ -1,0 +1,432 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
+    <link  href="/static/css/viewer.css" type="text/css" rel="stylesheet">
+    <style>
+    #module {
+            width: auto;
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+        }
+
+        #module a.collapsed:after {
+            content: '+ Show More';
+        }
+
+        #module a:not(.collapsed):after {
+            content: '- Show Less';
+        }
+
+        .hr_in
+        {
+            border-color: red;
+        }
+
+    .btn-outline {
+            width: 50%;
+        border-color: #32c5d2;
+        margin-bottom: 10px;
+    }
+
+    .btn-outline:hover {
+        background-color: #32c5d2;
+    }
+    .modal-body {
+background-color: #fbfbfb ;
+    text-align: center;
+}
+
+    .modal-title
+    {
+        font-weight: bold !important;
+        color:#543521;
+    background-color: cadetblue;
+    }
+    .modal-header
+    {
+            border-radius: 0px !important;
+    background-color: cadetblue;
+    }
+    .forms_data_panel_heading
+    {
+{#        #F6D55C#}
+        background-color: #b97800 !important;
+    border-radius: 0px !important;
+    }
+    .forms_data_panel_title
+    {
+        font-weight: 600 !important;
+        color: #ffffff;
+        text-align: left;
+    }
+
+    .btn-success
+    {
+        background-color: #00b96c !important;
+    }
+
+    .modal-dialog {
+    width: 800px;
+  }
+iframe
+{
+    border-width: 0px !important;
+}
+
+    </style>
+{% endblock %}
+
+
+
+{% block content %}
+
+
+    <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption"> Assignment Title : {{ assignment_title }}</div>
+        </div>
+        <div class="portlet-body">
+            <div class="row">
+            <div class="col-md-12 table-responsive">
+                {% for data in profile %}
+                <table class="table  table-striped table-hover">
+                    <tbody>
+                    <!--contract_number,assigment_title,consultant_name,amount_grant,currency,date(date_commissioned) date_commissioned-->
+                    <tr>
+                        <th>Title</th>
+                        <td>{{ data.assigment_title | safe }}</td>
+                        <th>Contract number</th>
+                        <td>{{ data.contract_number | safe }}</td>
+                    </tr>
+                    <tr>
+                        <th>Consultant name</th>
+                        <td>{{ data.consultant_name | safe }}</td>
+                        <th>Amount</th>
+                        <td>{{ data.amount_grant }}</td>
+                    </tr>
+                    <tr>
+                        <th>Currency</th>
+                        <td>{{ data.currency | safe }}</td>
+                        <th>Commissioned Date</th>
+                        <td>{{ data.date_commissioned }}</td>
+                    </tr>
+                    <tr>
+                        <th>Lead Consultant</th>
+                        <td>{{ data.lead_consultant_name | safe }}</td>
+                        <th>Posting Reference Number</th>
+                        <td>{{ data.posting_reference_number }}</td>
+                    </tr>
+                    <tr>
+                        <th>Commissioner</th>
+                        <td>{{ data.commissioner | safe }}</td>
+
+                        <th></th>
+                        <td></td>
+                    </tr>
+
+                    </tbody>
+                </table>
+                {% endfor %}
+            </div>
+
+
+
+
+
+        </div>
+
+        </div>
+
+    </div>
+    <div id = "deliverable_data_id">
+
+    </div>
+
+
+
+ <div class="modal fade" id="update_date" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 style="color:#fff;" class="modal-title" id="myModalLabel"> </h4>
+            </div>
+
+            <div class="modal-body">
+            <div class=" col-md-12" >
+                <form name="dynamic_form" id="dynamic_form" method="post"
+                  action="/asf/update_deliverable/">
+                {% csrf_token %}
+                <input type="hidden" value="" id="data_id" name="data_id">
+                <input type="hidden" value="" id="serial_no" name="serial_no">
+
+                <div class="row">
+
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Policy Team Approval</label><br>
+                        <select id="policy_team_approval" name="policy_team_approval" class="form-control " >
+                            <option value="">Select Any</option>
+                            <option value="Complete">Complete</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Reintegration Team Approval</label><br>
+                        <select id="reintegration_team_approval" name="reintegration_team_approval" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Complete">Complete</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">M&E Team Approval</label><br>
+                        <select id="m_e_team_approval" name="m_e_team_approval" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Complete">Complete</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">PM Approval</label><br>
+                        <select id="pm_approval" name="pm_approval" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Complete">Complete</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Return to Consultant</label><br>
+                        <input type="date" id="returned_to_consultant" name="returned_to_consultant" class="form-control"
+                               >
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Revised Report Received </label><br>
+                        <select id="revised_report_received" name="revised_report_received" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Checkd By Commissioner</label><br>
+                        <input type="date" id = "checked_by_commissioner" name = "checked_by_commissioner" class="form-control" >
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Signed Off by PM</label><br>
+                        <select id="signed_off_by_pm" name="signed_off_by_pm" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label"> Stakeholder Approval </label><br>
+                        <select id="stakeholder_approval" name="stakeholder_approval" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Final Document Submitted</label><br>
+                        <input type="date" id = "final_document_submitted" name = "final_document_submitted" class="form-control" >
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label"> Release Final Payment </label><br>
+                        <select id="release_final_payment" name="release_final_payment" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Performance Rating</label><br>
+
+                        <select id="performance_rating" name="performance_rating" class="form-control "
+                                >
+                            <option value="">Select Any</option>
+                            <option value="Below Expectation">Below Expectation</option>
+                            <option value="Fully Satisfactory">Fully Satisfactory</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                        </select>
+                    </div>
+
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+
+
+                </div>
+
+            </form>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger btn-ok" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block additional-javascript %}
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.flash.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
+    <script type="text/javascript" src="/static/js/viewer.js"></script>
+
+    <script>
+
+    var deliverable_data = '{{ deliverable_data | safe }}'
+    d_data = JSON.parse(deliverable_data);
+    for (var idx in d_data) {
+                                console.log(d_data[idx].serial_no)
+        d = "<div class=\"row\"><div class=\"col-lg-12\"> <div class=\"panel-group\" role=\"tablist\" aria-multiselectable=\"true\"><div class=\"panel panel-default\" style=\"margin-bottom: 10px;\"><div style=\"height: 48px;\" class=\"panel-heading\" role=\"tab\" id=\"heading1\"><h4 class=\"panel-title\"><a style=\"font-weight: bold;\"   role=\"button\" data-toggle=\"collapse\"  aria-expanded=\"false\" aria-controls=\"collapse1\">Delivery "+d_data[idx].serial_no+" :  "+d_data[idx].deliverable+" </a><a onclick=\"load_forms_list("+d_data[idx].id+","+d_data[idx].serial_no+",'"+d_data[idx].deliverable+"')\" class=\"btn btn-success btn-sm pull-right\" id=\"form1\" data-toggle=\"modal\" data-target=\"#update_date\" data-original-title=\"\" title=\"\"><i class=\"fa fa-4x fa fa-plus\"></i></a> </h4></div><div id=\"collapse1\" class=\"panel-collapse collapse\" role=\"tabpanel\" aria-labelledby=\"heading1\"><div class=\"panel-body\"><div class=\"panel-group\" id=\"internal_accordian1\" role=\"tablist\" aria-multiselectable=\"true\"></div></div></div></div></div></div></div>"
+        $('#deliverable_data_id').append(d)
+                            }
+
+{#                        var images = document.getElementById("images");#}
+{##}
+{#                    const gallery = new Viewer(images);#}
+{#    var data_view_pic = document.getElementById('data_view_pic');#}
+{#    data_view_pic.onclick = function () {#}
+{#                    gallery.view(0);#}
+{#                    };#}
+
+
+    // To reset  form data after  modal window has been closed
+    $.clearInput = function () {
+        $('form').find('input[type=text],select, textarea').val('');
+    };
+    
+    function load_forms_list(data_id,serial_no,assignment_title) {
+        $.ajax({
+            url: '/asf/get_deliverable/',
+            type: 'POST',
+            dataType: 'json',
+            data: {'data_id': data_id, 'serial_no': serial_no},
+            beforeSend: function () {
+            },
+            success: function (result) {
+                $.clearInput();
+
+                result = JSON.parse(result)[0];
+                console.log(result)
+
+                $('#myModalLabel').html(assignment_title);
+                $('#data_id').val(data_id);
+                $('#serial_no').val(serial_no);
+                $('#policy_team_approval').val(result.policy_team_approval);
+
+                $('#reintegration_team_approval').val(result.reintegration_team_approval);
+                $('#m_e_team_approval').val(result.m_e_team_approval);
+                $('#pm_approval').val(result.pm_approval);
+
+                if (result.returned_to_consultant !== null){
+                    $('#returned_to_consultant').val(result.returned_to_consultant.substring(0, 10));
+                }
+
+                $('#revised_report_received').val(result.revised_report_received);
+                $('#checked_by_commissioner').val(result.checked_by_commissioner);
+                $('#signed_off_by_pm').val(result.signed_off_by_pm);
+                $('#stakeholder_approval').val(result.stakeholder_approval);
+                $('#final_document_submitted').val(result.final_document_submitted);
+                $('#release_final_payment').val(result.release_final_payment);
+                $('#performance_rating').val(result.performance_rating);
+
+
+            }
+        });
+    }
+var imgs = $(".img-responsive");
+                    {#        console.log(imgs[0].outerHTML);#}
+                    for (each in imgs) {
+
+                        obj = imgs[each].outerHTML
+                        $('#images').append(obj);
+                    }
+                    var images = document.getElementById("images");
+                    console.log(images);
+                    const gallery = new Viewer(images);
+                    $(".img-responsive").on('click', function (event) {
+                        gallery.view($(".img-responsive").index(this));
+                    });
+
+
+    function load_forms_data(logger_id, div_id) {
+        console.log(logger_id);
+
+        if (opened.indexOf(logger_id) > -1)
+            return
+        else
+            opened.push(logger_id);
+
+        victim_id = 2;
+
+        jQuery.ajax({
+            url: '/asf/get_data_view/',
+            type: 'POST',
+            dataType: 'json',
+            data: {'logger_id': logger_id},
+            beforeSend: function () {
+
+                jQuery('#' + div_id).html('<div class="alert alert-success">Please Wait...loading....</div>');
+            },
+            success: function (result) {
+                {#                console.log(result);#}
+                setTimeout(function () {
+                    $('#' + div_id).html(result);
+                    $('#images').html("");
+                    var imgs = $(".img-responsive");
+                    for (each in imgs) {
+
+                        obj = imgs[each].outerHTML
+                        $('#images').append(obj);
+                    }
+
+                    gallery.update()
+
+                    $(".img-responsive").on('click', function (event) {
+                        gallery.view($(".img-responsive").index(this));
+                    });
+
+
+
+                }, 500);
+
+
+
+            }
+        });
+    }
+
+
+
+
+
+
+    </script>
+{% endblock %}

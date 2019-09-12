@@ -1,0 +1,24 @@
+<table id="stockin_history_table" class="table table-bordered table-striped table-condensed flip-content">
+    <thead class="flip-content">
+        <tr>
+            <th>SL</th>
+            <th>Date</th>
+            <th>RSC Name</th>
+            <th>Item Name</th>
+            <th>Quanity In</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in dataset %}
+        <tr>
+            <td>{{data.serial_no |default_if_none:"--"}}</td>
+            <td>{{data.in_date |escape}}</td>
+            <td>{{data.rsc_name |default_if_none:"--"}}</td>
+            <td>{{data.item |default_if_none:"--"}}</td>
+            <td>{{data.qty |default_if_none:"--"}}</td>
+
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

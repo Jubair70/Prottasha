@@ -1,0 +1,248 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+    <head>
+        <title>IOM Reports</title>
+    </head>
+
+    <link rel="stylesheet" href="/static/css/project_dashboard_style.css" type="text/css">
+    <style type="text/css">
+        .single-data-block {
+            background: url("http://www.highcharts.com/samples/graphics/sand.png");
+            position: relative;
+            overflow: hidden;
+            width: 270px;
+            height: 300px;
+            text-align: left;
+            line-height: normal;
+            z-index: 0;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            font-family: Oswald;
+        }
+
+        .data-label {
+            font-family: Oswald;
+            font-size: 15px;
+            position: relative;
+            white-space: normal;
+            color: rgb(0, 0, 0);
+            text-align: center;
+            padding: 5px;
+            margin-left: 0px;
+            margin-top: 0px;
+            left: 12.5px;
+            top: 7.25px;
+            visibility: inherit;
+        }
+
+        .data-value {
+            left: 100px;
+            top: 127px;
+            position: relative;
+            font-size: 25px;
+            color: black;
+        }
+
+        @media print {
+            @page {
+                size: A4 Portrait;
+            }
+
+            .span4{
+                width: 330px;
+            }
+
+            .span6{
+                width: 500px;
+            }
+
+            .span8{
+                width: 665px;
+            }
+
+            .span9{
+                width: 750px;
+            }
+
+            .span10{
+                width: 830px;
+            }
+
+            .span12{
+                width: 998px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs1_inner"> <a href="/">Home</a> > Findings > <a href="{{ request.path }}">{{ page_title }}</a>
+{% endblock %}
+
+{% block content %}
+
+    <h1 style="text-align: center;margin-bottom: 20px;">{{ page_title }} </br><span
+            class="sub-heading">( {{ page_heading|safe }} )</span></h1>
+    <div class="noprint">
+        <form id="geo_location" action="" method="POST">
+            <div class="row">
+                <div class="span3">
+                    <div class="form-group">
+                        <select class="form-control" id="division_id" name="dv" onchange="getDistricts(this);">
+                            <option value="%">Select Division</option>
+                            {% for item in div_list %}
+                                <option value="{{ item.dv }}">{{ item.div_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="span3">
+                    <div class="form-group">
+                        <select class="form-control" id="district_id" name="zl">
+                            <option value="%">Select District</option>
+                            {% for item in zl_list %}
+                                <option value="{{ item.zl }}">{{ item.zila_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn" style="display:none;" data-validate="contact-form">Hidden Button
+                </button>
+                <div class="span3" style="margin-top: -10px;">
+                    <a style="cursor: pointer;" onclick="$('#submitBtn').click();" class="button2">Generate</a>
+                </div>
+                <div class="span12">
+                    <div class="follow1_wrapper clearfix">
+                        <div class="follow1_inner clearfix">
+                            <div class="block2"></div>
+                            <div class="block3">
+                                <div class="social_wrapper">
+                                    <ul class="social clearfix">
+                                        <li><a href="javascript:window.print()" title="Print" href="#"><img
+                                                src="{{ STATIC_URL }}reportmodule/images/print.jpg"></a></li>
+                                        <!--<li><a onclick="pdf_findings();" title="Export PDF"><img
+                                                src="{{ STATIC_URL }}reportmodule/images/pdf.jpg"></a></li>-->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <a style="display: none;" id="download" download="" href="">download</a>
+    <div class="chart_body">
+
+    </div>
+{% endblock %}
+
+{% block additional-javascript %}
+    <script type="application/javascript">
+        Array.prototype.sum = function (prop) {
+            var total = 0
+            for (var i = 0, _len = this.length; i < _len; i++) {
+                total += this[i][prop]
+            }
+            return total
+        }
+        var dv = '{{ dv }}';
+        if (dv) {
+            $('#division_id').val(dv);
+        }
+
+        var zl = '{{ zl }}';
+        if (zl) {
+            $('#district_id').val(zl);
+        }
+        var story_length = 0;
+        var rowkey = 0;
+        var chart_data = {{ chart_data|safe }};
+
+
+        $('.chart_body').append('<div id="row_' + rowkey + '" class="row" style="margin-top: 25px;"></div>');
+        for (var key in chart_data) {
+            if (chart_data[key][1] == 'gauge') {
+                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="span4" style="margin-top: 25px;"></div>');
+                generateSolidGauge('g_data_' + key, chart_data[key][2], [chart_data[key][0]], '%');
+                story_length = story_length + 3;
+                $('#row_' + rowkey).append('<div class="page-break"></div>');
+            } else if (chart_data[key][1] == 'column' || chart_data[key][1] == 'bar') {
+                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="span' + chart_data[key][4] + '" style="margin-top: 25px;"></div>');
+
+                if (chart_data[key][3] == 'multiple') {
+                    var datasum = chart_data[key][0].datasum;
+                } else {
+                    var sd = chart_data[key][0].series[0].data;
+                    var datasum = sd.sum('y');
+                }
+                generateBarChart('g_data_' + key, chart_data[key][1], chart_data[key][2], '', chart_data[key][0].categories, chart_data[key][0].series, '', '', true, false, null, 0, true, datasum, false, false, chart_data[key][5]);
+                story_length = story_length + 6;
+                $('#row_' + rowkey).append('<div class="page-break"></div>');
+            } else if (chart_data[key][1] == 'single') {
+                if (chart_data[key][3] == '1.5.3') {
+                    var range = 300;
+                } else if (chart_data[key][3] == '1.4.8') {
+                    var range = 10;
+                }
+                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="span4" style="margin-top: 25px;"></div>');
+                generateSingleSolidGauge('g_data_' + key, chart_data[key][2], [chart_data[key][0]], '', range);
+                story_length = story_length + 3;
+                $('#row_' + rowkey).append('<div class="page-break"></div>');
+            } else if (chart_data[key][1] == 'pie') {
+                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="span4" style="margin-top: 25px;"></div>');
+                generatePieChart('g_data_' + key, chart_data[key][2], '', 'Response', chart_data[key][0]);
+                $('#row_' + rowkey).append('<div class="page-break"></div>');
+            } else if (chart_data[key][1] == 'stacked bar') {
+                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="span' + chart_data[key][4] + '" style="margin-top: 25px;"></div>');
+                generateStackedBarChart('g_data_' + key, chart_data[key][1], chart_data[key][2], '', chart_data[key][0].categories, chart_data[key][0].series, '', '', false, true, 'percent', 0, true, null, false, false, chart_data[key][5])
+                $('#row_' + rowkey).append('<div class="page-break"></div>');
+            }
+            else if (chart_data[key][1] == 'card') {
+                console.log("here in card");
+                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="col-md-' + chart_data[key][3] + '" style="margin-top: 25px;"></div>');
+                generateCard('g_data_' + key,chart_data[key][4],chart_data[key][0] )
+                $('#row_' + rowkey).append('<div class="page-break"></div>');
+            }
+        }
+
+
+        function pdf_findings() {
+            var dv = $('#division_id').val();
+            var zl = $('#district_id').val();
+            $.ajax({
+                url: '/reportmodule/pdf_findings/',
+                type: 'POST',
+                dataType: 'json',
+                data: {'dv': dv, 'zl': zl},
+                success: function (result, textStatus, jqxhr) {
+                    $("a#download").attr({
+                        "download": jqxhr.filename,
+                        "href": result
+                    }).get(0).click();
+                },
+                error: function (request, status, error) {
+
+                    var val = request.responseText;
+                    console.log("error" + val);
+                }
+            })
+        }
+
+
+
+        function generateCard(element, chart_object,data) {
+        color = chart_object;
+            var json_dataset = JSON.parse(data);
+            console.log(json_dataset);
+        var body_html = '<div id="'+element+'_child" class = "dashboard-stat red" style="min-height: 120px; background-color:'+color+';">'
+
+         var details_html = ' <div class="details"><div class="number"><span class="count"><b>' + json_dataset.number + '</b></span></div><div class="desc"><b>' + json_dataset.details + '</b></div></div>'
+        body_html+=details_html+'</div>';
+
+            $("#" + element).html(body_html);
+        }
+
+
+    </script>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
+{% endblock %}
+
+
+
+{% block content %}
+
+    <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption"><i class="fa fa-adn"></i>Assignment</div>
+        </div>
+        <div class="portlet-body">
+           <!-- <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>From Date: </label>
+                        <input type="text" class="datepicker form-control" name="from_date" id="from_date" readonly>
+
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>To Date: </label>
+                        <input type="text" class="datepicker form-control" name="to_date" id="to_date" readonly>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-info pull-left" id="generate_report" style="margin-right: 10px" id="generate_report"
+                            title=""><i class="fa fa-2x fa fa-search-plus"></i>Search
+                    </button>
+                    <a href="/asf/event_form/" class="pull-right">
+
+                        <button type="submit" class="btn btn-info pull-left" id="add_new" data-original-title=""
+                                title=""><i class="fa fa-2x fa-plus"></i>New Form
+                        </button>
+                    </a>
+                </div>
+            </div>-->
+            <div class="col-md-12">
+
+                    <a href="/asf/consultancy_matrix_form/" class="pull-right">
+
+                        <button type="submit" class="btn btn-info pull-left" id="add_new" data-original-title=""
+                                title=""><i class="fa fa-2x fa-plus"></i>Create new assignment
+                        </button>
+                    </a>
+                </div>
+            <br><br><br>
+        <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
+            <table id="all_info_table" class="table table-bordered table-striped table-condensed flip-content nowrap">
+                <thead class="flip-content">
+                <tr>
+
+                            <th>Contract number</th>
+                            <th>Assigment title </th>
+                            <th>Consultant name</th>
+                            <th>Amount</th>
+                        <th>Currency</th>
+                            <th>Final delivery date</th>
+                           <th>Status</th>
+                    <th>Action</th>
+
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+    <div class="modal fade" id="update_status" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel"> Update Status</h4>
+            </div>
+
+            <div class="modal-body">
+
+            <form name="dynamic_form" id="dynamic_form" method="post"
+                  action="">
+                {% csrf_token %}
+                <input type="hidden" value="" id="data_id" name="data_id">
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        <label class="control-label"> Status </label><br>
+
+                        <select id = "status" name="status" class="form-control ">
+
+                        {% for data in status_list %}
+                            <option value="{{ data.status }}">{{ data.status }}</option>
+                        {% endfor %}
+                    </select>
+
+                    </div>
+
+
+
+                    <div class="col-md-2">
+                         <label class="control-label">  </label><br>
+                        <button style="margin-top:8px;" type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+
+
+                </div>
+
+
+            </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger btn-ok" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+{% block additional-javascript %}
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.flash.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
+
+
+    <script>
+console.log("***************************************************")
+
+
+
+            var table = $('#all_info_table').DataTable({
+                "scrollX": true, "ordering": false,
+                deferRender: true,
+                {#            dom: 'Bfrtip'#}
+                {#            ,#}
+                {#            buttons: [#}
+                {#                {#}
+                {#                    filename: "Fo",#}
+                {#                    title: "",#}
+                {#                    text: "<strong>Export</strong>",#}
+                {#                    extend: 'excel'#}
+                {#                }#}
+                {#            ]#}
+
+            });
+
+
+
+
+
+
+
+        $('.delete-item').on('click', function (e) {
+            var criteria_id = $(this).attr("data-href");
+            $('.btn-ok').attr("href", criteria_id);
+        });
+
+        if ($('.alert-block').is(':visible')) {
+            window.setTimeout(function () {
+                $(".alert-success").fadeTo(1500, 0).slideUp(500, function () {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+
+
+       // $('#generate_report').on('click', function (e) {
+                console.log("***************************************************")
+                table.destroy();
+
+
+                $.ajax({
+                    url: '/asf/get_consultancy_matrix/',
+                    type: 'POST',
+                    dataType: 'json',
+
+                    beforeSend: function () {
+                        $('#container').show();
+
+                    },
+                    success: function (list) {
+                        console.log(list)
+
+                        $('#container').hide();
+                            var tbody = '';
+                            var detail = ''
+                        for (var idx in list) {
+                                sts_update = "<button style=\"margin-right: 8px;\" class=\"btn btn-primary green\" data-placement=\"top\" onclick=\"update_status('"+list[idx].id+"','"+list[idx].status+"')\">Update Status</button>"
+                            detail = "<a class=\"btn red\" href=\"/asf/get_consultation_matrix_profile/"+list[idx].id+ "\" role=\"button\">Details</a>"
+                            tbody += '<tr><td>' + list[idx].contract_number + '</td> <td>' + list[idx].assigment_title + '</td> <td>' + list[idx].consultant_name + '</td> <td>' + list[idx].amount_grant +'</td> <td>' + list[idx].currency +'</td> <td>' + list[idx].date_commissioned+ '</td> <td>' + list[idx].status+ '</td> <td>'+ detail+sts_update+'<a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Edit" href="/asf/consultancy_matrix_form/?instance_id=' + list[idx].id + '"><i class="fa fa-2x fa-pencil"></i>Edit</a></td> </tr>';
+                        }
+                        $("#all_info_table").find('tbody').html(tbody);
+                        table = datatable_reinitialize();
+
+
+                    }
+                });
+
+         function update_status(id,cur_status){
+            $('#update_status').modal('show');
+            $('#data_id').val(id);
+            $('#status').val(cur_status);
+
+            }
+           // });
+        //$('#generate_report').trigger('click');
+        function datatable_reinitialize() {
+            return $('#all_info_table').DataTable({
+                "scrollX": true, "ordering": false,"iDisplayLength": 50,
+                deferRender: true,
+{#                dom: 'Bfrtip'#}
+{#                ,#}
+{#                buttons: [#}
+{#                    {#}
+{#                        filename: "CSA Report",#}
+{#                        title: "",#}
+{#                        text: "<strong>Export</strong>",#}
+{#                        extend: 'excelHtml5'#}
+{#                    }#}
+{#                ]#}
+
+            });
+        }
+
+
+    </script>
+{% endblock %}

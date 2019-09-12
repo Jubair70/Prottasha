@@ -1,0 +1,498 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+   <link href="/static/css/bootstrap-datepicker.css" rel="stylesheet" type="text/css"/>
+   <link rel="stylesheet" href="/static/assets/plugins/data-tables/DT_bootstrap.css"/>
+{% endblock %}
+
+{% block content %}
+    <button style="margin-bottom: 10px;" type="button" id="upload_btn" class="btn btn-labeled btn-primary red pull-right" onclick="get_add_product()"> <span class="btn-label"><i class="fa fa-plus"></i> </span>Add New product</button>
+
+     <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption">
+                <i class="fa fa-reorder"></i> Filter
+            </div>
+        </div>
+
+        <div class="portlet-body ">
+
+           <div class="row">
+        <div class="col-md-3"><label class="control-label">Start date</label><br>
+            <input class = "form-control"  type="date" name="reservation" id="start_date" />
+        </div>
+           <div class="col-md-3"><label class="control-label">End date</label><br>
+            <input class = "form-control"  type="date" name="reservation" id="end_date" />
+        </div>
+
+        <div class="col-md-2"><label class="control-label">Select RSC </label><br>
+            <select class="form-control" id = "rsc_name">
+            <option value="%">select</option>
+                {% for data in dataset %}
+                    <option value="{{ data.rsc_name }}">{{ data.rsc_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="control-label"> </label><br>
+            <button id="filter_product_list" style="margin-top:8px;" class="btn red-custom btn-md"  data-original-title="" title="">Search</button>
+        </div>
+
+    </div>
+        </div>
+    </div>
+
+    <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption">
+                <i class="fa fa-reorder"></i> Product list
+            </div>
+        </div>
+
+        <div class="portlet-body ">
+
+            <div id="product_table_block"></div>
+        </div>
+    </div>
+
+
+
+    <!-- The Modal  Add product -->
+<div class="modal" id="myModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal_title">Add Product</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <form class="horizontal-form"  method="post" id = "add_product_form" action="/inventory/add_product/"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Product Name: </label>
+                                <input type="text" class="form-control" name="product_name" id="product_name" required>
+                                <!--<input type="hidden" id="product_id" name="product_id">-->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-danger pull-right" id="submit" name="submit" type="submit"
+                                    data-original-title=""
+                                    title="">Submit</button>
+                            <!--<button onclick="history.go(-1);" style="margin-left:10px;" type="button"
+                                    class="btn btn-info pull-left" data-original-title="" title="">Cancel
+                            </button>-->
+                        </div>
+                    </div>
+
+                </div>
+
+            </form>
+      </div>
+
+      <!-- Modal footer
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+      </div> -->
+
+    </div>
+  </div>
+</div>
+
+    <!-- The Modal  Stock in product -->
+<div class="modal" id="stockin_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal_title">Stock In</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <form class="horizontal-form"  method="post" id = "" action="/inventory/stockin_product/"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Product : </label>
+                                <div class="form-control" id="p_name" ><strong></strong></div>
+                                <input type="hidden" id="p_id" name="p_id" value="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Date : </label>
+
+                                <input type="date" id="p_date" class="form-control" name="p_date" required>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Quantity : </label>
+
+                                <input type="number" id="p_qty" class="form-control" required name="p_qty">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-danger pull-right" id="submit" name="submit" type="submit"
+                                    data-original-title=""
+                                    title="">Submit</button>
+                            <!--<button onclick="history.go(-1);" style="margin-left:10px;" type="button"
+                                    class="btn btn-info pull-left" data-original-title="" title="">Cancel
+                            </button>-->
+                        </div>
+                    </div>
+
+                </div>
+
+            </form>
+      </div>
+
+      <!-- Modal footer
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+      </div> -->
+
+    </div>
+  </div>
+</div>
+
+    <!-- The Modal  Stock out product -->
+<div class="modal" id="stockout_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal_title">Stock Out</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <form class="horizontal-form"  method="post" id = "" action="/inventory/stockout_product/"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Product : </label>
+                                <div class="form-control" id="pout_name" ><strong></strong></div>
+                                <input type="hidden" id="pout_id" name="pout_id" value="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Date : </label>
+
+                                <input type="date" id="pout_date" class="form-control" name="pout_date" required>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Quantity : </label>
+                                <input onblur="check_stockout_qty(this.value)" type="number" id="pout_qty" class="form-control" required name="pout_qty">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Requested By : </label>
+                                <input type="text" id="pout_req_by" class="form-control" required name="pout_req_by">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Name of Officer : </label>
+                                <input type="text" id="pout_offi_name" class="form-control" required name="pout_offi_name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Purpose : </label>
+                                <input type="text" id="pout_purpose" class="form-control" required name="pout_purpose">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label >Receipient : </label>
+                                <input type="text" id="pout_receipient" class="form-control"  name="pout_receipient" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-danger pull-right" id="submit" name="submit" type="submit"
+                                    data-original-title=""
+                                    title="">Submit</button>
+                            <!--<button onclick="history.go(-1);" style="margin-left:10px;" type="button"
+                                    class="btn btn-info pull-left" data-original-title="" title="">Cancel
+                            </button>-->
+                        </div>
+                    </div>
+
+                </div>
+
+            </form>
+      </div>
+
+      <!-- Modal footer
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+      </div> -->
+
+    </div>
+  </div>
+</div>
+
+
+
+
+{% endblock %}
+
+{% block additional-javascript %}
+
+    <script type="text/javascript" src="/static/js/bootstrap-datepicker.js"></script>
+    <script type="text/javascript" src="/static/assets/plugins/data-tables/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="/static/assets/plugins/data-tables/DT_bootstrap.js"></script>
+    <script>
+        var rsc_name = '%';
+        var start_date = '';
+        var end_date = '';
+
+        $(document).ready(function(){
+            get_product_table()
+            if ($('.alert-block').is(':visible')) {
+                window.setTimeout(function () {
+                        $(".alert-success").fadeTo(1500, 0).slideUp(500, function () {
+                            $(this).remove();
+                        });
+                    }, 5000);
+                }
+
+        });
+        function getfilterCriteria(){
+            rsc_name = $('#rsc_name').val();
+            start_date = $('#start_date').val();
+            end_date = $('#end_date').val();
+        }
+
+        function check_stockout_qty(qty) {
+            console.log($('#pout_id').val())
+            $.ajax({
+                type: 'POST',
+                url: '/inventory/check_stockout_qty/',
+                data: {'out_qty' : qty,'pout_id' : $('#pout_id').val()},
+                success: function (data) {
+                    console.log(data)
+                    if (data=='0'){
+                        $("#pout_qty").val('');
+                        alert("Stock quantity is less than requested quantity.")
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error")
+                }
+            }); //ajax endblock
+
+        }
+
+
+
+        $(document).on("submit", "#add_stockout_form", function (event) {
+            event.preventDefault();
+            form_url = $(this).attr('action');
+            console.log(form_url)
+            ajaxcall()
+            $.ajax({
+                type: 'POST',
+                url: form_url,
+                data: $(this).serialize(),
+                success: function (data) {
+                    console.log("successful")
+                    $('#myModal').hide();
+                    $('.modal-backdrop').hide();
+                    window.location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error")
+                }
+            }); //ajax endblock
+            return false;
+        });
+
+
+        function ajaxcall() {
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    function getCookie(name) {
+                        var cookieValue = null;
+                        if (document.cookie && document.cookie != '') {
+                            var cookies = document.cookie.split(';');
+                            for (var i = 0; i < cookies.length; i++) {
+                                var cookie = jQuery.trim(cookies[i]);
+                                // Does this cookie string begin with the name we want?
+                                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+
+                    if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+        }
+
+        function get_add_product() {
+            $('#myModal').appendTo("body").modal('show');
+            $('#modal_title').html("Add product");
+        }
+
+        function stockin_product(product_id,product_name) {
+            $('#stockin_modal').appendTo("body").modal('show');
+            $('#p_name').html('<strong>'+product_name+'</strong>');
+            $('#p_id').val(product_id);
+
+        }
+
+        function stockout_product(product_id,product_name,quantity) {
+            $('#stockout_modal').appendTo("body").modal('show');
+            $('#pout_name').html('<strong>'+product_name+'</strong>');
+            $('#pout_id').val(product_id);
+
+        }
+
+        function get_edit_product(obj) {
+            ajaxcall()
+            $.ajax({
+                type: 'POST',
+                url: '/inventory/get_product_data/',
+                data: {'product_id' : obj},
+                success: function (data) {
+                    console.log("successful")
+                    console.log(data)
+                    dataset = JSON.parse(data);
+                    if (dataset){
+                        console.log("Dataset*****************************");
+                        for (var idx in dataset){
+                            product_name = (dataset[idx].product_name)
+                            product_type = (dataset[idx].product_type)
+                            brand = (dataset[idx].brand)
+                            qty = (dataset[idx].quantity)
+
+                        }
+                        $('#myModal').appendTo("body").modal('show');
+                        $('#modal_title').html("Edit product");
+                        $('#product_id').val(obj);
+                        $('#product_name').val(product_name);
+                        $('#product_type').val(product_type);
+                        $('#brand').val(brand);
+                        $('#qty').val(qty);
+
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error")
+                }
+            }); //ajax endblock
+
+        }
+
+        function delete_product(id) {
+            $('#delete_confirmation').appendTo("body").modal('show');
+            $('#del_product_id').val(id);
+        }
+
+        function deleteproduct() {
+            id = $('#del_product_id').val();
+            ajaxcall()
+            $.ajax({
+                type: 'POST',
+                url: '/inventory/delete_product/',
+                data: {'product_id' : id},
+                success: function (data) {
+                    console.log("successful")
+                    $('#delete_confirmation').hide();
+                    $('.modal-backdrop').hide();
+                    window.location.reload();
+
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error")
+                }
+            }); //ajax endblock
+
+        }
+        function get_product_table(){
+            getfilterCriteria()
+            $.ajax({
+                url: '/inventory/get_product_table/',
+                type: 'POST',
+                data:{'rsc_name':rsc_name,'start_date' : start_date,'end_date' : end_date },
+                success: function (data) {
+                    $("#product_table_block").html(data);
+                    $('#product_table').dataTable({
+                                "retrieve": true,
+                                "bFilter": true,
+                                "paging": true,
+                                "scrollCollapse": true,
+                                select: true,
+                                // dom: 'Bfrtip',
+                                dom: 'Blfrtip',
+                                //buttons: [{extend: 'excel', text: "Export to excel", title: 'Direct Beneficiary list'}],
+                                ordering: true,
+                                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                                "scrollX": true
+
+                            });
+
+                }
+            });
+        //}
+        }
+        $(document).on("click", "#filter_product_list", function () {
+         get_product_table()
+     });
+    </script>
+
+{% endblock %}

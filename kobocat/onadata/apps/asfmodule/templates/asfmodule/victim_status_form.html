@@ -1,0 +1,88 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+
+    <style>
+
+    #loop
+    {
+        background-color: #EEE;
+    padding: 10px;
+    margin-bottom: 11px;
+    }
+
+    </style>
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption">
+                <i class="fa fa-reorder"></i> Case Initiation
+            </div>
+        </div>
+
+        <div class="portlet-body">
+            <form class="horizontal-form" id="" method="post" action="/asf/victim_status/{{ victim_tbl_id }}/" id="form"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-body">
+                <div class="row">
+                        <div class="col-md-6">
+                           <div class="form-group">
+                                <label >Assaign to: </label>
+                               <select class="form-control" name="assaign_to" id="assaign_to" required>
+                                   <option value="">Select One</option>
+                                      {% for id,field_name in users %}
+                                <option value="{{ id }}">{{ field_name }}</option>
+                                    {% endfor %}
+                               </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-danger pull-left" id="submit" name="submit" type="submit"
+                                    data-original-title=""
+                                    title="">Submit
+                            </button>
+                            <button onclick="history.go(-1);" style="margin-left:10px;" type="button"
+                                    class="btn btn-info pull-left" data-original-title="" title="">Cancel
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block additional-javascript %}
+
+
+    <script>
+
+    $('#not_adopt').hide();
+
+    function show_not_adopt(obj) {
+        if(obj.value == 'Not Adopted')
+        {
+            $('#not_adopt').show();
+            $('#reason_of_not_adoption').attr('required',true);
+        }
+        else
+        {
+            $('#not_adopt').hide();
+            $('#reason_of_not_adoption').attr('required',false);
+        }
+
+
+    }
+
+    </script>
+
+{% endblock %}
