@@ -42,7 +42,8 @@
     form_builder_server = '{{ form_builder_server | safe }}'
     victim_id = '{{victim_id | safe}}'
     iom_reference = '{{iom_reference | safe}}'
-    url = "{{ form_builder_server }}/?id="+form_id+"&url="+server_address+"&username="+username+"&beneficiary_id="+victim_id
+        victim_tbl_id = '{{ victim_tbl_id | safe }}'
+    url = "{{ form_builder_server }}/?id="+form_id+"&url="+server_address+"&username="+username+"&beneficiary_id="+victim_id+"&victim_tbl_id="+victim_tbl_id
     console.log(url);
     $('.portlet-body').html('<iframe src="'+url+'" style="width:100%;height:500px;"></iframe>');
     window.addEventListener('message',handleIframeTask);

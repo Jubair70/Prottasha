@@ -731,7 +731,7 @@ def victim_status(request,victim_tbl_id):
     return render(request, 'asfmodule/victim_status_form.html',{'victim_tbl_id':victim_tbl_id,'users':users})
 
 @login_required
-def refer_victim(request, victim_id):
+def refer_victim(request, victim_id,victim_tbl_id):
     username = request.user
     # if in local environment, you should use your ip instead of localhost
     # server_address = request.META.get('ip')+':'+request.META.get('HTTP_HOST').split(':', 1)[1]
@@ -741,7 +741,7 @@ def refer_victim(request, victim_id):
     form_id = __db_fetch_single_value("select id from logger_xform where id_string='referral'")
     form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
     return render(request, 'asfmodule/victim_refer_form.html',
-                  {'victim_id':victim_id,'username': username, 'server_address': server_address, 'form_id': form_id,'form_builder_server':form_builder_server})
+                  {'victim_id':victim_id,'victim_tbl_id':victim_tbl_id,'username': username, 'server_address': server_address, 'form_id': form_id,'form_builder_server':form_builder_server})
 
 @login_required
 def victim_profile(request,victim_tbl_id):
