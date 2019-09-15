@@ -802,6 +802,16 @@ def victim_profile(request,victim_tbl_id):
     print(server_address)
     form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
     print(form_builder_server)
+
+    # For loading default quarter,year
+    qr = '%'
+    yr = '%'
+    q = "select BTRIM(to_char((date(quarter||'-'||yr)),'Month'),' ') mon,yr from public.vw_reintegration_sustainability where beneficiary_id='"+victim_id+"' order by id desc limit 1"
+
+    dta = __db_fetch_values_dict(q)
+    for tmp in dta:
+        qr = tmp['mon']
+        yr = tmp['yr']
     data = {
         'main_str': main_str,
         'username':username,
@@ -845,7 +855,7 @@ def victim_profile(request,victim_tbl_id):
         'injury_details':'',
         'notified_within_24h':'',
         'verification_within_24h':'',
-        'server_address':server_address,'form_builder_server' : form_builder_server
+        'server_address':server_address,'form_builder_server' : form_builder_server,'qr' : qr, 'yr' : yr
     }
     return render(request, "asfmodule/victim_profile.html",data)
 
@@ -2439,8 +2449,6 @@ def get_progress_report_data(request):
 
 @csrf_exempt
 def get_reintegration_sustainibility_data(request):
-    # For loading default quarter,year
-    q ="select BTRIM(to_char((date(quarter||'-'||yr)),'Month'),' ') mon,yr from public.vw_reintegration_sustainability where beneficiary_id='Dha-Bad-2019-0005' order by id desc limit 1"
     ben_tbl_id = request.POST.get('ben_tbl_id')
     quarter = request.POST.get('qr')
     year = request.POST.get('yr')

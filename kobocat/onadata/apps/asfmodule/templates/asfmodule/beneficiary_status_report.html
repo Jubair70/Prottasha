@@ -130,11 +130,11 @@
     <script src="{{ STATIC_URL }}js/main.js"></script>
     <script src="{{ STATIC_URL }}js/BootSideMenu.js" type="text/javascript"></script>
     <script>
-    var ben_tble_id = {{ id }}; var quarter = '{{ quarter }}'; var year = '{{ year }}';
+    var victim_tbl_id = {{ id }}; var quarter = '{{ quarter }}'; var year = '{{ year }}';
     $('#qr').val('{{ quarter }}'); $('#yr').val('{{ year }}');
 
-    //get_reintegration_sustainibility_report(ben_tble_id)
-    get_progress_report_data(ben_tble_id)
+    //get_reintegration_sustainibility_report(victim_tbl_id)
+    get_progress_report_data(victim_tbl_id)
 
 
 
@@ -262,7 +262,7 @@
 
 
         $(document).on("click", "#filter_reint_chart", function () {
-         get_reintegration_sustainibility_report(ben_tble_id)
+         get_reintegration_sustainibility_report(victim_tbl_id)
         });
         $('#filter_reint_chart').trigger('click');
 
