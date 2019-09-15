@@ -144,6 +144,10 @@ urlpatterns = patterns('',
     url(r'^catchment_tree/(?P<rsc_id>\d+)/$', views.catchment_tree_test, name='catchment_tree'),
     url(r'^catchment_data_insert/$', views.catchment_data_insert, name='catchment_data_insert'),
     url(r'^add_rsc_form/$', views.add_rsc_form, name='add_rsc_form'),
+    url(r'^beneficiary_progress_report/(?P<id>\d+)/$', views.beneficiary_progress_report,name='beneficiary_progress_report'),
+    url(r'^get_progress_report_data/$', views.get_progress_report_data,name='get_progress_report_data'),
+    url(r'^get_reintegration_sustainibility_data/$', views.get_reintegration_sustainibility_data,name='get_reintegration_sustainibility_data')
+
 
 
     )

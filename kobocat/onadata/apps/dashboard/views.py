@@ -26,8 +26,6 @@ from django.http import HttpResponse
 import pandas as pd
 import xlwt
 import os
-import AdvancedHTMLParser
-from AdvancedHTMLParser.Tags import AdvancedTag
 
 
 

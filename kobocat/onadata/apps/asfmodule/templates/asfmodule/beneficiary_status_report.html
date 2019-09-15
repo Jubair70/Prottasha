@@ -1,0 +1,271 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% load app_filters %}
+{% block additional-headers %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/project_dashboard_style.css" type="text/css"/>
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/vendor/animate/animate.css">
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/vendor/select2/select2.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/vendor/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/util.css">
+{#    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main.css">#}
+    <link href="{{ STATIC_URL }}css/BootSideMenu.css" rel="stylesheet">
+
+    <head>
+        <title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
+    </head>
+    <style>
+        .portlet.box.red > .portlet-title {
+    background-color: #0F084B;
+}
+
+        .control-label {
+            display: block;
+        }
+
+        .legend {
+            background-color: #fff;
+            border-radius: 3px;
+            bottom: 20px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            padding: 10px;
+            position: absolute;
+            right: 25px;
+            z-index: 1;
+        }
+
+        .legend h4 {
+            margin: 0 0 10px;
+        }
+
+        .legend div span {
+            border-radius: 50%;
+            display: inline-block;
+            height: 10px;
+            margin-right: 5px;
+            width: 10px;
+        }
+
+        .highcharts-series-group {
+
+        }
+
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption"><i class="fa fa-gavel"></i>Post arrival immediate assistance report</div>
+        </div>
+        <div class="portlet-body">
+
+
+
+            <div class="row"  >
+                <div id="individual_income_report"></div>
+
+            </div>
+            <div>
+                <div class="row" style="margin-bottom: 10px;">
+
+                    <div class="col-md-2"><label class="control-label">Quarter </label><br>
+                        <select class="form-control" id = "qr">
+                            <option value="%">select</option>
+                            <option value="March">Q-1: (January -March)</option>
+                            <option value="June">Q-2: (April - June)</option>
+                            <option value="September">Q-3: (July - September)</option>
+                            <option value="December">Q-4: (October - December)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2"><label class="control-label">Year </label><br>
+                        <select class="form-control" id = "yr">
+                            <option value="%">select</option>
+                            <option value="2019">2019</option>
+                            <option value="2020">2020</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="control-label"> </label><br>
+                        <button id="filter_reint_chart" style="margin-top:8px;" class="btn red-custom btn-md"  data-original-title="" title="">Search</button>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="row"  >
+                <div id="reintegration_score"></div>
+
+            </div>
+
+
+        </div>
+    </div>
+
+
+
+{% endblock %}
+
+
+
+{% block additional-javascript %}
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.flash.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
+    <script src="{{ STATIC_URL }}css/vendor/bootstrap/js/popper.js"></script>
+    <script src="{{ STATIC_URL }}css/vendor/select2/select2.min.js"></script>
+    <script src="{{ STATIC_URL }}js/main.js"></script>
+    <script src="{{ STATIC_URL }}js/BootSideMenu.js" type="text/javascript"></script>
+    <script>
+    var ben_tble_id = {{ id }}; var quarter = '{{ quarter }}'; var year = '{{ year }}';
+    $('#qr').val('{{ quarter }}'); $('#yr').val('{{ year }}');
+
+    //get_reintegration_sustainibility_report(ben_tble_id)
+    get_progress_report_data(ben_tble_id)
+
+
+
+
+        function get_chart(chartType,container,title,yAxisTitle,cat,data){
+            Highcharts.chart(container, {
+            chart: {
+                type: chartType
+            },
+            title: {
+                text: title
+            },
+            subtitle: {
+                text: ''
+            },
+            xAxis: {
+                categories: cat
+            },
+                legend: {
+                     enabled: false
+                 }, credits: {
+                    enabled: false
+                },
+            yAxis: {
+                title: {
+                    text: yAxisTitle
+                },
+                labels: {
+                    formatter: function () {
+                        return this.value ;
+                    }
+                }
+            },
+            tooltip: {
+                crosshairs: true,
+                shared: true
+            },
+            plotOptions: {
+                spline: {
+                    marker: {
+                        radius: 4,
+                        lineColor: '#666666',
+                        lineWidth: 1
+                    }
+                }
+            },
+            series: data
+        });
+        }
+
+
+        function ajaxcall() {
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    function getCookie(name) {
+                        var cookieValue = null;
+                        if (document.cookie && document.cookie != '') {
+                            var cookies = document.cookie.split(';');
+                            for (var i = 0; i < cookies.length; i++) {
+                                var cookie = jQuery.trim(cookies[i]);
+                                // Does this cookie string begin with the name we want?
+                                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+
+                    if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+        }
+
+
+        function getfilterCriteria(){
+            qr = $('#qr').val();
+            yr = $('#yr').val();
+        }
+
+        function get_progress_report_data(ben_tbl_id) {
+
+            $.ajax({
+                url: '/asf/get_progress_report_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'ben_tbl_id': ben_tbl_id
+
+                },
+                beforeSend: function () {
+
+                },
+                success: function (result) {
+                    get_chart('spline','individual_income_report','Individual Income data','Monthly average income(tk)',result.income_cat_list,result.income_data_list)
+
+                }
+            });
+        }
+
+        function get_reintegration_sustainibility_report(ben_tbl_id) {
+            getfilterCriteria()
+            $.ajax({
+                url: '/asf/get_reintegration_sustainibility_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'ben_tbl_id': ben_tbl_id,'qr' : qr,'yr' : yr
+
+                },
+                beforeSend: function () {
+
+                },
+                success: function (result) {
+                    get_chart('column','reintegration_score','Individual Reintegration Score trend','',result.cat_list,result.data_list)
+
+                }
+            });
+        }
+
+
+
+        $(document).on("click", "#filter_reint_chart", function () {
+         get_reintegration_sustainibility_report(ben_tble_id)
+        });
+        $('#filter_reint_chart').trigger('click');
+
+
+    </script>
+{% endblock %}
