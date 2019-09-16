@@ -51,8 +51,16 @@
             width: 10px;
         }
 
+        th.dt-center, td.dt-center {
+            text-align: center;
+        }
+
         .highcharts-series-group {
 
+        }
+
+        .mp_submit {
+            padding-left: 10px;
         }
 
 
@@ -213,6 +221,13 @@
 
         });
 
+        function get_excel(filename) {
+            console.log(" data " + "/dashboard/getExcel?" + filename);
+            // location.href = "/dashboard/getExcel?path="+filename;
+            window.open('/media/iom_admin/exported_file/' + filename);
+
+
+        }
 
         function get_elements() {
             console.log(event);
@@ -246,8 +261,9 @@
                                 story_length = story_length + 3;
                                 $('#row_' + rowkey).append('<div class="page-break"></div>');
                             } else if (chart_data[key][1] == 'column' || chart_data[key][1] == 'bar') {
+                                var filename = chart_data[key][7];
                                 $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="col-md-' + chart_data[key][4] + '" style="margin-top: 25px;"></div>');
-                                var percentage,height, filtering, divId, chartType, stackLabelEnabled, plotColumnDatalabelEnabled, stackLabelEnabled, chart_title, colorByPoint, colors, stacking, new_yAxis, legend_enabled, dataLabel, tooltip_text;
+                                var percentage, height, filtering, divId, chartType, stackLabelEnabled, plotColumnDatalabelEnabled, stackLabelEnabled, chart_title, colorByPoint, colors, stacking, new_yAxis, legend_enabled, dataLabel, tooltip_text;
 
                                 chart_object = JSON.parse(chart_data[key][6]);
                                 if ('colorByPoint' in chart_object)
@@ -272,8 +288,8 @@
                                     legend_enabled = false;
                                 console.log(chart_object);
                                 if ('yAxis1_title' in chart_object)
-        yAxis1_title = chart_object['yAxis1_title'];
-    else yAxis1_title = "";
+                                    yAxis1_title = chart_object['yAxis1_title'];
+                                else yAxis1_title = "";
 
 
 
@@ -283,7 +299,25 @@
                                     var sd = chart_data[key][0].series[0].data;
                                     var datasum = sd.sum('y');
                                 }
-                                generateBarChart('g_data_' + key, chart_data[key][1], chart_data[key][2], '', chart_data[key][0].categories, chart_data[key][0].series, yAxis1_title, '', colorByPoint, legend_enabled, null, 0, percentage, datasum, false, false, chart_data[key][5],colors);
+                                //column fd_type value is equal 'color'
+                                if (chart_data[key][3] == 'color') {
+                                    var dataset = {};
+                                    dataset['categories'] = chart_data[key][0].categories;
+                                    dataset['seriesdata'] = chart_data[key][0].series;
+                                    var obj = {}
+                                    chart_object['dataset'] = dataset
+                                    chart_object['chartType'] = chart_data[key][1];
+                                    chart_object['element'] = 'g_data_' + key;
+                                    {#                                    chart_object['title'] = chart_data[key][0].series[0].name#}
+
+                                    if (percentage)
+                                        chart_object['filtering'] = [{'name': 'cal_type', 'value': 'percentage'}];
+                                    mPowerChartGeneration(chart_object);
+                                    console.log(chart_object);
+                                }
+                                else {
+                                    generateBarChart('g_data_' + key, chart_data[key][1], chart_data[key][2], '', chart_data[key][0].categories, chart_data[key][0].series, yAxis1_title, '', colorByPoint, legend_enabled, null, 0, percentage, datasum, false, true, chart_data[key][5], colors,filename,chart_data[key][3]);
+                                }
                                 story_length = story_length + 6;
                                 $('#row_' + rowkey).append('<div class="page-break"></div>');
                             } else if (chart_data[key][1] == 'single') {
@@ -297,7 +331,7 @@
                                 story_length = story_length + 3;
                                 $('#row_' + rowkey).append('<div class="page-break"></div>');
                             } else if (chart_data[key][1] == 'pie') {
-                                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="col-md-4" style="margin-top: 25px;"></div>');
+                                $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="col-md-5" style="margin-top: 25px;"></div>');
                                 generatePieChart('g_data_' + key, chart_data[key][2], '', 'Response', chart_data[key][0]);
                                 $('#row_' + rowkey).append('<div class="page-break"></div>');
                             } else if (chart_data[key][1] == 'stacked bar') {
@@ -308,17 +342,17 @@
                             else if (chart_data[key][1] == 'card') {
                                 console.log("here in card");
                                 $('#row_' + rowkey).append('<div id="g_data_' + key + '" class="col-md-' + chart_data[key][3] + '" style="margin-top: 25px;"></div>');
-                                generateCard('g_data_' + key, chart_data[key][4], chart_data[key][0])
+                                generateCard('g_data_' + key, chart_data[key][4], chart_data[key][0],chart_data[key][5])
                                 $('#row_' + rowkey).append('<div class="page-break"></div>');
                             }
                             else if (chart_data[key][1] == 'table') {
                                 console.log("here in table");
 
-                                $('#row_' + rowkey).append('<div id="g_data_' + key + '_parent" class="col-md-' + chart_data[key][3] + '" style="margin-top: 25px;"></div>');
+                                $('#row_' + rowkey).append('<div id="' + key + '_g_data_parent" class="col-md-' + chart_data[key][3] + '" style="margin-top: 25px;"></div>');
                                 var tableData = JSON.parse(chart_data[key][0]);
                                 console.log(typeof(tableData));
                                 var chart_object = JSON.parse(chart_data[key][4]);
-                                initDataTable('g_data_' + key + '', tableData.data, tableData.col_name, chart_object)
+                                initDataTable('' + key + '_g_data', tableData.data, tableData.col_name, chart_object)
                                 $('#row_' + rowkey).append('<div class="page-break"></div>');
                             }
                         }
@@ -467,13 +501,14 @@
         });
 
 
-        function generateCard(element, chart_object, data) {
+        function generateCard(element, chart_object, data,icon_class) {
             color = chart_object;
             var json_dataset = JSON.parse(data);
+            var visual = '<div class="visual"><i class="'+icon_class+'"></i> </div>';
             console.log(json_dataset);
-            var body_html = '<div id="' + element + '_child" class = "dashboard-stat red" style="min-height: 120px; background-color:' + color + ';">'
-            var details_html = ' <div class="details"><div class="number"><span class="count">' + json_dataset.number + '</span></div><div class="desc">' + json_dataset.details + '</div></div>'
-            body_html += details_html + '</div>';
+            var body_html = '<div id="' + element + '_child" class = "dashboard-stat tile-red" style="min-height: 120px; background-color:' + color + ';">'
+            var details_html = ' <div class="details"><div class="number"><span class="count"><b>' + json_dataset.number + '</b></span></div><div class="desc"><b>' + json_dataset.details + '</b></div></div>'
+            body_html += visual + details_html + '</div>';
             $("#" + element).html(body_html);
         }
 
@@ -545,10 +580,10 @@
                     data: dataSet,
                     // scrollY: 400,
                     //responsive: true,
-                    /*"columnDefs": [{
-                     className: "dt-body-center",
-                     "targets": "_all"
-                     }],*/
+                    "columnDefs": [{
+                        className: "dt-center",
+                        "targets": "_all"
+                    }],
                     scrollY: true,
                     "autoWidth": true,
                     scrollX: true,
@@ -560,7 +595,7 @@
                     dom: 'Bfrtip',
                     buttons: export_buttons
 
-                }).fnAdjustColumnSizing(false);
+                }).fnAdjustColumnSizing(false);;
                 $('.dataTables_scrollHeadInner').css('width', 'auto');
                 $('#' + tableID).columns.adjust().draw();
                 ;
