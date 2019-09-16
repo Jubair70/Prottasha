@@ -27,7 +27,7 @@ urlpatterns = patterns(
     url(r'^dashboard/', include('onadata.apps.dashboard.urls', namespace="dashboard")),
     url(r'^dashboard_tool/', include('onadata.apps.dashboard_tool.urls', namespace="dashboard_tool")),
     url(r'^approve-status/', include('onadata.apps.approval.urls', namespace="approval-status")),
-    url(r'^care-reports/', include('onadata.apps.care_reports.urls', namespace="care-reports")),
+    # url(r'^care-reports/', include('onadata.apps.care_reports.urls', namespace="care-reports")),
     url(r'^unicef/', include('onadata.apps.unicef.urls', namespace="unicef")),
     url(r'^audit/', include('onadata.apps.audit_log.urls', namespace="audit_log",app_name="audit_log")),
     url(r'^reports/', include('onadata.apps.reports.urls', namespace="reports",app_name="reports")),
