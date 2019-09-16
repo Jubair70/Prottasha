@@ -734,7 +734,23 @@ def dashboard(request):
     mgi_file_url = '/media/shared_file/' +__db_fetch_single_value("select shared_file from file_shared where document_type = 'MGI INDICATOR' order by created_date::date desc limit 1")
     sdg_file_url = '/media/shared_file/' +__db_fetch_single_value("select shared_file from file_shared where document_type = 'SDG INDICATOR' order by created_date::date desc limit 1")
     print(mgi_file_url)
-    return render_to_response('usermodule/dashboard.html', {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url}, context)
+
+    curr_month = __db_fetch_single_value("select to_char(current_date, 'Month')")
+    d_eco_reintegration_support = __db_fetch_values_dict("select * from public.get_receive_eco_reintegration_support()")
+    d_psycosocial_support = __db_fetch_values_dict("select * from public.get_receive_psycosocial_support()")
+    d_social_reintegration_support = __db_fetch_values_dict("select * from public.get_social_reintegration_support()")
+    d_number_participants_dashboard = __db_fetch_values_dict("select * from public.get_number_participants_dashboard()")
+    d_sidedata_dashboard = __db_fetch_values_dict("select * from public.get_sidedata_dashboard()")
+
+    data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,
+            'd_eco_reintegration_support' : d_eco_reintegration_support,
+            'd_psycosocial_support': d_psycosocial_support,
+            'd_social_reintegration_support': d_social_reintegration_support,
+            'd_number_participants_dashboard': d_number_participants_dashboard,
+            'd_sidedata_dashboard': d_sidedata_dashboard,
+            'curr_month' : curr_month
+            }
+    return render_to_response('usermodule/dashboard.html',data, context)
 
 def user_login(request):
     # Like before, obtain the context for the user's request.
