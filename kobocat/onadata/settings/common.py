@@ -522,24 +522,6 @@ SUPPORTED_MEDIA_UPLOAD_TYPES = [
 ]
 
 
-DATABASES = {
-    'tup': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'tup_live',
-        'USER': 'kobo',
-        'PASSWORD': 'DB@mPower@786',
-        'HOST': '192.168.19.128',
-        'PORT': '5432',
-    },
-    'default' : {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'iom',
-        'USER': 'kobo',
-        'PASSWORD': 'DB@mPower@786',
-        'HOST': '192.168.19.89',
-        'PORT': '5432',
-    }
-}
 
 # legacy setting for old sites who still use a local_settings.py file and have
 # not updated to presets/
