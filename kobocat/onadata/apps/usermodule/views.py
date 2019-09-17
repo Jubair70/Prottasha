@@ -742,13 +742,24 @@ def dashboard(request):
     d_number_participants_dashboard = __db_fetch_values_dict("select * from public.get_number_participants_dashboard()")
     d_sidedata_dashboard = __db_fetch_values_dict("select * from public.get_sidedata_dashboard()")
 
+    map_q = "with t1 as( select id,(select field_name from geo_data where geocode =( SELECT asf_case.district FROM asf_case WHERE asf_case.id::text = asf_victim.case_id LIMIT 1)) district FROM asf_victim), t2 as( select count(*) cnt,district zila_name from t1 where district is not null group by district) select zila_name,cnt from t2 order by cnt DESC"
+    region_data = {}
+    region_table = []
+    district_data = __db_fetch_values(map_q)
+    for dd in district_data:
+        region_data[dd[0]] = dd[1]
+        region_table.append([dd[0], dd[1]])
+
+
     data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,
             'd_eco_reintegration_support' : d_eco_reintegration_support,
             'd_psycosocial_support': d_psycosocial_support,
             'd_social_reintegration_support': d_social_reintegration_support,
             'd_number_participants_dashboard': d_number_participants_dashboard,
             'd_sidedata_dashboard': d_sidedata_dashboard,
-            'curr_month' : curr_month
+            'curr_month' : curr_month,
+            'region_data': json.dumps(region_data),
+            'region_table': json.dumps(region_table)
             }
     return render_to_response('usermodule/dashboard.html',data, context)
 
