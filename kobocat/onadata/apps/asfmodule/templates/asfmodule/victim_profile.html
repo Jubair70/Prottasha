@@ -224,6 +224,75 @@ iframe
     </div>
 
  <div id="container"></div>
+
+
+<div>
+    <div class="panel-group" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default" style="margin-bottom: 10px;">
+            <div style="height: 48px;" class="panel-heading" role="tab" id="heading100">
+                <h4 class="panel-title">
+                    <a style="font-weight: bold;" class="collapsed" onclick="" role="button" data-toggle="collapse" href="#collapse100" aria-expanded="false" aria-controls="collapse50"> Progress Status
+                    </a>
+                </h4>
+            </div>
+            <div id="collapse100"
+ class="panel-collapse collapse" role="tabpanel"
+
+ aria-labelledby="heading100">
+                <div class="panel-body">
+                    <div class="panel-group" id="internal_accordian100" role="tablist"
+ aria-multiselectable="true">
+
+                        <div class="row"  >
+                <div id="individual_income_report"></div>
+
+            </div>
+            <div>
+                <div class="row" style="margin-bottom: 10px;">
+
+                    <div class="col-md-2"><label class="control-label">Quarter </label><br>
+                        <select class="form-control" id = "qr">
+                            <option value="%">select</option>
+                            <option value="March">Q-1: (January -March)</option>
+                            <option value="June">Q-2: (April - June)</option>
+                            <option value="September">Q-3: (July - September)</option>
+                            <option value="December">Q-4: (October - December)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2"><label class="control-label">Year </label><br>
+                        <select class="form-control" id = "yr">
+                            <option value="%">select</option>
+                            <option value="2019">2019</option>
+                            <option value="2020">2020</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="control-label"> </label><br>
+                        <button id="filter_reint_chart" style="margin-top:8px;" class="btn red-custom btn-md"  data-original-title="" title="">Search</button>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="row"  >
+                <div id="reintegration_score"></div>
+
+            </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
     <div class="modal fade" id="myModal" data-backdrop="static" role="dialog" aria-labelledby="myModalLabel">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -261,6 +330,9 @@ iframe
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
     <script type="text/javascript" src="/static/js/viewer.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
 
     <script>
 {#$('#myModal').modal({backdrop: 'static', keyboard: false})#}
@@ -273,10 +345,15 @@ iframe
 {#    data_view_pic.onclick = function () {#}
 {#                    gallery.view(0);#}
 {#                    };#}
+
+
 var form_builder_server = '{{ form_builder_server | safe}}';
 var iom_reference = '{{ iom_reference | safe }}'
 var victim_tbl_id = '{{ victim_tbl_id | safe }}'
 
+
+var quarter = '{{ qr }}'; var year = '{{ yr }}';$('#qr').val('{{ qr }}'); $('#yr').val('{{ yr }}');
+get_progress_report_data(victim_tbl_id)
 
     var opened = [];
 
@@ -450,6 +527,106 @@ function load_forms_html(form_id) {
                $('#myModal').modal('hide')
             }
         };
+
+
+function get_chart(chartType,container,title,yAxisTitle,cat,data){
+            Highcharts.chart(container, {
+            chart: {
+                type: chartType
+            },
+            title: {
+                text: title
+            },
+            subtitle: {
+                text: ''
+            },
+            xAxis: {
+                categories: cat
+            },
+                legend: {
+                     enabled: false
+                 }, credits: {
+                    enabled: false
+                },
+            yAxis: {
+                title: {
+                    text: yAxisTitle
+                },
+                labels: {
+                    formatter: function () {
+                        return this.value ;
+                    }
+                }
+            },
+            tooltip: {
+                crosshairs: true,
+                shared: true
+            },
+            plotOptions: {
+                spline: {
+                    marker: {
+                        radius: 4,
+                        lineColor: '#666666',
+                        lineWidth: 1
+                    }
+                }
+            },
+            series: data
+        });
+}
+
+
+function getfilterCriteria(){
+            qr = $('#qr').val();
+            yr = $('#yr').val();
+        }
+
+function get_progress_report_data(ben_tbl_id) {
+
+    $.ajax({
+        url: '/asf/get_progress_report_data/',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            'ben_tbl_id': ben_tbl_id
+
+        },
+        beforeSend: function () {
+
+        },
+        success: function (result) {
+            get_chart('spline','individual_income_report','Individual Income data','Monthly average income(tk)',result.income_cat_list,result.income_data_list)
+
+        }
+    });
+}
+
+function get_reintegration_sustainibility_report(ben_tbl_id) {
+    getfilterCriteria()
+    $.ajax({
+        url: '/asf/get_reintegration_sustainibility_data/',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            'ben_tbl_id': ben_tbl_id,'qr' : qr,'yr' : yr
+
+        },
+        beforeSend: function () {
+
+        },
+        success: function (result) {
+            get_chart('column','reintegration_score','Individual Reintegration Score trend','',result.cat_list,result.data_list)
+
+        }
+    });
+}
+
+
+
+$(document).on("click", "#filter_reint_chart", function () {
+ get_reintegration_sustainibility_report(victim_tbl_id)
+});
+$('#filter_reint_chart').trigger('click');
 
     </script>
 {% endblock %}

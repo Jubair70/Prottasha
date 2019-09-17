@@ -802,6 +802,16 @@ def victim_profile(request,victim_tbl_id):
     print(server_address)
     form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
     print(form_builder_server)
+
+    # For loading default quarter,year
+    qr = '%'
+    yr = '%'
+    q = "select BTRIM(to_char((date(quarter||'-'||yr)),'Month'),' ') mon,yr from public.vw_reintegration_sustainability where beneficiary_id='"+victim_id+"' order by id desc limit 1"
+
+    dta = __db_fetch_values_dict(q)
+    for tmp in dta:
+        qr = tmp['mon']
+        yr = tmp['yr']
     data = {
         'main_str': main_str,
         'username':username,
@@ -845,7 +855,7 @@ def victim_profile(request,victim_tbl_id):
         'injury_details':'',
         'notified_within_24h':'',
         'verification_within_24h':'',
-        'server_address':server_address,'form_builder_server' : form_builder_server
+        'server_address':server_address,'form_builder_server' : form_builder_server,'qr' : qr, 'yr' : yr
     }
     return render(request, "asfmodule/victim_profile.html",data)
 
@@ -2412,3 +2422,62 @@ def add_rsc_form(request):
         __db_commit_query(query)
         return HttpResponseRedirect('/asf/rsc_list/')
     return render(request, 'asfmodule/add_rsc_form.html')
+
+
+def beneficiary_progress_report(request,id):
+
+    return render(request, 'asfmodule/beneficiary_status_report.html',{ 'id': id,'year':'2019','quarter' : 'June'})
+
+
+@csrf_exempt
+def get_progress_report_data(request):
+    ben_tbl_id = request.POST.get('ben_tbl_id')
+    income_q = "select * from vw_income_tracking_matrix where beneficiary_id=(select victim_id from asf_victim where id="+str(ben_tbl_id)+")"
+    df_income = pandas.DataFrame()
+    df_income = pandas.read_sql(income_q, connection)
+    income_cat_list=[]
+    income_data_list=[]
+    for index, row in df_income.iterrows():
+        print(str(row['_submission_time']), row['income_last_month'])
+        income_cat_list.append(str(row['_submission_time']))
+        income_data_list.append(row['income_last_month'])
+    data = json.dumps({
+        'income_cat_list': income_cat_list,
+        'income_data_list': [{'name' : '','data' : income_data_list}]
+    }, default=decimal_date_default)
+    return HttpResponse(data)
+
+@csrf_exempt
+def get_reintegration_sustainibility_data(request):
+    ben_tbl_id = request.POST.get('ben_tbl_id')
+    quarter = request.POST.get('qr')
+    year = request.POST.get('yr')
+
+    reintegration_q = "with t1 as(SELECT beneficiary_id, coalesce(round(economic_reintegration_score::numeric,2),0)economic_reintegration_score , coalesce(round(social_reintegration_score::numeric,2),0) social_reintegration_score, coalesce(round(psychosocial_score::numeric,2),0) psychosocial_score, coalesce(round(composite_score::numeric,2),0) composite_score, _submission_time, quarter, BTRIM (to_char((date(quarter||'-'||yr)),'Month'),' ') mon, yr FROM public.vw_reintegration_sustainability where beneficiary_id=(select victim_id from asf_victim where id="+str(ben_tbl_id)+")) select *,(case when mon='March' then yr||'-'||'Q1' when mon='June' then yr||'-'||'Q2' when mon='September' then yr||'-'||'Q3' when mon='December' then yr||'-'||'Q4' else '' end) q_name from t1 where mon like '"+str(quarter)+"' and yr like '"+str(year)+"' ";
+    df = pandas.DataFrame()
+    df = pandas.read_sql(reintegration_q, connection)
+    cat_list = []
+    data_list = []
+    d={}
+    for index, row in df.iterrows():
+        data_list.append(row['economic_reintegration_score'])
+        cat_list.append('Economic')
+
+        data_list.append(row['social_reintegration_score'])
+        cat_list.append('Social')
+
+        data_list.append(row['psychosocial_score'])
+        cat_list.append('Psychosocial')
+
+        data_list.append(row['composite_score'])
+        cat_list.append('Composite')
+
+        d = {
+            'cat_list': cat_list,
+            'data_list': [{'name': row['q_name'], 'data': data_list}]
+        }
+
+    data = json.dumps(d, default=decimal_date_default)
+
+    return HttpResponse(data)
+
