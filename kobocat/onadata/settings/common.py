@@ -540,11 +540,11 @@ if isinstance(TEMPLATE_OVERRIDE_ROOT_DIR, basestring):
         os.path.join(PROJECT_ROOT, TEMPLATE_OVERRIDE_ROOT_DIR, 'static'),
     )
 
-EMAIL_HOST = 'smtp.office365.com'
+EMAIL_HOST = 'smtp.gmail.com'
 
-EMAIL_HOST_USER = 'ratna@mpower-social.com'
+EMAIL_HOST_USER = 'mpowersocialent@gmail.com'
 
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_PASSWORD = 'mPower@786'
 
 EMAIL_PORT = 587
 
