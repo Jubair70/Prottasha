@@ -3,7 +3,8 @@ from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import (
-    HttpResponseRedirect, HttpResponse)
+    HttpResponseForbidden, HttpResponseRedirect, HttpResponseNotFound,
+    HttpResponseBadRequest, HttpResponse)
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext, loader
 from django.contrib.auth.models import User
@@ -55,6 +56,21 @@ import os
 from onadata.apps.usermodule.views import error_page
 import decimal
 from pyfcm import FCMNotification
+
+#FOR Export
+from onadata.libs.utils.user_auth import has_permission, get_xform_and_perms,\
+    helper_auth_helper, has_edit_permission
+
+from onadata.libs.utils.export_tools import (
+    generate_export,
+    should_create_new_export,
+    kml_export_data,
+    newset_export_for)
+from onadata.apps.viewer.models.export import Export
+from onadata.libs.utils.logger_tools import response_with_mimetype_and_name,\
+    disposition_ext_and_date
+from onadata.libs.exceptions import NoRecordsFoundError
+
 push_service = FCMNotification(api_key="AIzaSyAel9fbkTbt1Ms6-eka5QFuMotyw_0bKeE")
 
 def __db_fetch_values(query):
@@ -2481,3 +2497,77 @@ def get_reintegration_sustainibility_data(request):
 
     return HttpResponse(data)
 
+
+
+@csrf_exempt
+def get_export(request):
+    id_string = request.POST.get('id_string')
+    xform = get_object_or_404(XForm, id_string__exact=id_string)
+    username = xform.user.username
+    owner = get_object_or_404(User, username__iexact=username)
+    '''
+    if not has_permission(xform, owner, request):
+        return HttpResponseForbidden(u'Not shared.')
+    '''
+    query = request.POST.get('query')
+    #query = '{"$and" : [ {"_submission_time":{"$gte":"2019-09-24T00:00:00","$lte":"2019-09-24T23:59:59"}},{"_submitted_by":"fo1234"} ] }'
+
+    export = Export.objects.create(xform=xform, export_type='xls')
+
+    force_xlsx = True
+    ext = 'xls' if not force_xlsx else 'xlsx'
+    arguments = get_export_arguments('xls')
+
+    flag = 0
+    filepath = ''
+    try:
+        result = generate_export('xls',ext,username,id_string,export.id,query,arguments.get('group_delimiter'),arguments.get('split_select_multiples'),arguments.get('binary_select_multiples'),arguments.get('show_label'))
+    except (Exception, NoRecordsFoundError) as e:
+        export.internal_status = Export.FAILED
+        export.save()
+        flag = 2
+        raise
+
+    if not result.filename:
+        flag = 0
+    else:
+        flag = 1
+        filepath = '/media/' + str(result.filepath)
+
+    data = {
+        'flag' : flag,
+        'path' : filepath
+    }
+    return HttpResponse(json.dumps(data),content_type='application/json')
+
+
+def get_export_arguments(export_type):
+    options = {
+        'group_delimiter': '/',
+        'split_select_multiples': True,
+        'binary_select_multiples': False,
+        'meta': None,
+        'exp_data_typ':'lbl'
+    }
+    arguments = {
+    }
+
+    if export_type in [Export.XLS_EXPORT, Export.GDOC_EXPORT,
+                       Export.CSV_EXPORT, Export.CSV_ZIP_EXPORT,
+                       Export.SAV_ZIP_EXPORT]:
+        if options and "group_delimiter" in options:
+            arguments["group_delimiter"] = options["group_delimiter"]
+        if options and "split_select_multiples" in options:
+            arguments["split_select_multiples"] = \
+                options["split_select_multiples"]
+        if options and "binary_select_multiples" in options:
+            arguments["binary_select_multiples"] = \
+                options["binary_select_multiples"]
+        if options and "exp_data_typ" in options:
+            dt_type = options["exp_data_typ"]
+            if dt_type == 'lbl':
+                arguments["show_label"] = True
+            else:
+                arguments["show_label"] = False
+
+    return arguments

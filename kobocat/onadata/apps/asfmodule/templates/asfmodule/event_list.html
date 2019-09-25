@@ -51,9 +51,12 @@
                         <button type="submit" class="btn btn-info pull-left" id="add_new" data-original-title=""
                                 title=""><i class="fa fa-2x fa-plus"></i>Create new event
                         </button>
-                    </a>
+                    </a><br><br><br>
                 </div>
-            <br><br><br>
+
+            <button type="submit" class="btn btn-info pull-left" id="" onclick="get_export()"
+                                title=""><i class="fa fa-2x fa-download"></i> Export
+                        </button><br><br><br>
         <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
             <table id="all_info_table" class="table table-bordered table-striped table-condensed flip-content nowrap">
                 <thead class="flip-content">
@@ -112,8 +115,6 @@
 
 
     <script>
-console.log("***************************************************")
-
 
 
             var table = $('#all_info_table').DataTable({
@@ -156,7 +157,6 @@ console.log("***************************************************")
                 console.log("***************************************************")
                 table.destroy();
 
-
                 $.ajax({
                     url: '/asf/get_event_list/',
                     type: 'POST',
@@ -187,20 +187,36 @@ console.log("***************************************************")
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": false,"iDisplayLength": 50,
                 deferRender: true,
-{#                dom: 'Bfrtip'#}
-{#                ,#}
-{#                buttons: [#}
-{#                    {#}
-{#                        filename: "CSA Report",#}
-{#                        title: "",#}
-{#                        text: "<strong>Export</strong>",#}
-{#                        extend: 'excelHtml5'#}
-{#                    }#}
-{#                ]#}
 
             });
         }
 
+        function get_export(){
+            $.ajax({
+                url: '/asf/get_export/',
+                type: 'POST',
+                data :{'id_string' : 'event_workshop','query' : ''},
+                beforeSend: function () {
+                    $('#container').show();
+
+                },
+                success: function (data) {
+                    $('#container').hide();
+                    d = data
+                    if (d.flag =='1'){
+                        window.location = d.path
+                    }
+                    if (d.flag =='0'){
+                        alert("File does not exist.")
+                    }
+                    if (d.flag =='2'){
+                        alert("Export Failed.")
+                    }
+
+                }
+            });
+
+        }
 
     </script>
 {% endblock %}
