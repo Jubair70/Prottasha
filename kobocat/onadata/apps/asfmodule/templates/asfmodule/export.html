@@ -1,0 +1,215 @@
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+
+    <link rel="stylesheet" type="text/css" href="/static/assets/plugins/bootstrap-multiselect/bootstrap-multiselect.css">
+
+{% endblock %}
+
+
+
+{% block content %}
+
+    <div class="portlet box red">
+        <div class="portlet-title">
+            <div class="caption"><i class="fa fa-adn"></i>Form Export</div>
+        </div>
+        <div class="portlet-body">
+           <div class="row">
+                <div class="col-md-2">
+                   <div class="form-group">
+                      <label class="control-label">Form list</label>
+                      <select id ="" class="form-control " >
+                         {% for usermodule_user in user_list %}
+                         <option value="{{usermodule_user}}">{{usermodule_user}}</option>
+                         {% endfor%}
+                      </select>
+                   </div>
+                </div>
+                <div class="col-md-3">
+                   <div class="form-group">
+                      <label class="control-label">Start Date</label>
+                      <input type="text" class="datepicker form-control" placeholder="From" name="start_date" id="start_date">
+                   </div>
+                </div>
+                <div class="col-md-3">
+                   <div class="form-group">
+                      <label class="control-label">End Date</label>
+                      <input type="text" class="datepicker form-control" placeholder="To" name="end_date" id="end_date">
+                   </div>
+                </div>
+                <div class="col-md-2">
+                   <div class="form-group">
+                      <label class="control-label">Submitted By</label>
+                      <select id ="userlist" class="form-control userlist"  multiple = "true">
+                         {% for usermodule_user in user_list %}
+                         <option value="{{usermodule_user}}">{{usermodule_user}}</option>
+                         {% endfor%}
+                      </select>
+                   </div>
+                </div>
+
+                <div class="col-md-2">
+                   <div class="form-group">
+                      <label class="control-label">RSC</label>
+                      <select id ="rsc" class="form-control" multiple = "true">
+                         {% for rsc in rsc_list %}
+                            <option value="{{ rsc.id }}">{{ rsc.rsc_name }}</option>
+                         {% endfor%}
+                      </select>
+                   </div>
+                </div>
+           </div>
+
+            <button type="submit" class="btn btn-info pull-left" id="" onclick="get_export()"
+                                title=""><i class="fa fa-2x fa-download"></i> Export
+                        </button><br><br><br>
+        <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
+
+        </div>
+    </div>
+
+
+
+
+{% endblock %}
+{% block additional-javascript %}
+
+    <script type="text/javascript"
+            src="/static/assets/plugins/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+
+
+    <script>
+    $(document).ready(function () {
+        $("#rsc").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+        });
+        $("#userlist").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+        });
+
+        $('#start_date').datepicker({
+           endDate:'0d',
+           format: 'yyyy-mm-dd',
+           todayHighlight:true
+       });
+       $('#end_date').datepicker({
+           endDate:'0d',
+           format: 'yyyy-mm-dd',
+           todayHighlight:true
+       });
+    });
+
+    if ($('.alert-block').is(':visible')) {
+        window.setTimeout(function () {
+            $(".alert-success").fadeTo(1500, 0).slideUp(500, function () {
+                $(this).remove();
+            });
+        }, 5000);
+    }
+
+    function get_daterange() {
+        var partial_query = "";
+        var from = document.getElementById("start_date").value  ;
+        var to  = document.getElementById("end_date").value ;
+
+        if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {
+            console.log("date entered")
+            from += "T00:00:00";
+            to += "T23:59:59" ;
+            temp_query = '{"_submission_time":{"$gte":"'+from+'","$lte":"'+to+'"}}';
+            console.log(partial_query)
+            partial_query += temp_query + ',' ;
+
+        }
+
+        return partial_query
+
+    }
+    function get_query(from,to,userlist,rsc) {
+        var query = ' {"$and" : [ ';
+        var partial_query = "";
+        var from = document.getElementById("start_date").value  ;
+        var to  = document.getElementById("end_date").value ;
+
+        if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {
+            console.log("date entered")
+            from += "T00:00:00";
+            to += "T23:59:59" ;
+            partial_query = '{"_submission_time":{"$gte":"'+from+'","$lte":"'+to+'"}}';
+            query += partial_query + ',' ;
+            console.log(partial_query)
+
+        }
+        var formatted_list = "[" ;
+        console.log(typeof(userlist+ ""))
+        for(loop = 0 ; loop < userlist.length; loop++,userlist = loop){
+            formatted_list += '"' + userlist[loop] + '",'
+        }
+        //console.log(formatted_list)
+        formatted_list = formatted_list.substring(0, (formatted_list.length -1 )) + ']';
+        if ( userlist !== 'null') {
+            query += '{"_submitted_by": { "$in" : ' + formatted_list + ' }'  + ' },' ;
+        }else{
+            if( allowed_users > 0 ){
+                query += '{"_submitted_by": { "$in" : ' + formatted_list + ' }'  + ' },' ;
+            }
+        }
+
+        query += "] }" ;
+
+        return query;
+}
+
+    function get_export(){
+        var from_date = $("#start_date").val();
+        var to_date = $("#end_date").val();
+        var userlist = $("#userlist").val();
+        var rsc = $("#rsc").val();
+        //get_query(from_date,to_date,userlist,rsc)
+        daterange  = get_daterange()
+        //console.log(userlist)
+        //console.log(rsc)
+        //console.log(from_date)
+        //console.log(to_date)
+
+        $.ajax({
+            url: '/asf/get_export/',
+            type: 'POST',
+            data :{'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc},
+            beforeSend: function () {
+                $('#container').show();
+
+            },
+            success: function (data) {
+                $('#container').hide();
+                d = data
+                if (d.flag =='1'){
+                    window.location = d.path
+                }
+                if (d.flag =='0'){
+                    alert("File does not exist.")
+                }
+                if (d.flag =='2'){
+                    alert("Export Failed.")
+                }
+
+            }
+        });
+
+    }
+
+    </script>
+{% endblock %}

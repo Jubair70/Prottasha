@@ -70,6 +70,7 @@ from onadata.apps.viewer.models.export import Export
 from onadata.libs.utils.logger_tools import response_with_mimetype_and_name,\
     disposition_ext_and_date
 from onadata.libs.exceptions import NoRecordsFoundError
+from onadata.apps.usermodule.views_project import get_own_and_partner_orgs_usermodule_users, get_permissions
 
 push_service = FCMNotification(api_key="AIzaSyAel9fbkTbt1Ms6-eka5QFuMotyw_0bKeE")
 
@@ -2497,7 +2498,18 @@ def get_reintegration_sustainibility_data(request):
 
     return HttpResponse(data)
 
+'''
+    EXPORT MODULE
 
+'''
+@login_required
+def export(request):
+    rsc_list = __db_fetch_values_dict("select id,rsc_name from usermodule_rsc")
+    user_list = get_own_and_partner_orgs_usermodule_users(request)
+    username_list = [str(custom_user.user.username) for custom_user in user_list]
+    #username_list.append(str(request.user.username))
+
+    return render(request, 'asfmodule/export.html', {'rsc_list': rsc_list,'user_list': username_list})
 
 @csrf_exempt
 def get_export(request):
@@ -2509,8 +2521,13 @@ def get_export(request):
     if not has_permission(xform, owner, request):
         return HttpResponseForbidden(u'Not shared.')
     '''
-    query = request.POST.get('query')
-    #query = '{"$and" : [ {"_submission_time":{"$gte":"2019-09-24T00:00:00","$lte":"2019-09-24T23:59:59"}},{"_submitted_by":"fo1234"} ] }'
+    daterange = request.POST.get('date_range')
+    userlist = request.POST.getlist('userlist[]')
+    rsclist = request.POST.getlist('rsclist[]')
+
+    query = get_query(daterange, rsclist, userlist)
+    #query = '{"$and" : [ {"_submission_time":{"$gte":"2019-01-04T00:00:00","$lte":"2019-09-03T23:59:59"}},{"_submitted_by": { "$in" : ["iom_admin"] } }] }'
+    print query
 
     export = Export.objects.create(xform=xform, export_type='xls')
 
@@ -2540,6 +2557,52 @@ def get_export(request):
     }
     return HttpResponse(json.dumps(data),content_type='application/json')
 
+
+def get_query(daterange,rsclist,userlist):
+    query = ' {"$and" : [ '
+    daterange_query = daterange
+    query += daterange_query
+    total_u_list = get_total_user_list(rsclist,userlist)
+    if total_u_list is not None:
+        query += '{"_submitted_by": { "$in" : ' + json.dumps(total_u_list) + ' }' + ' },'
+    query += "] }";
+    # find the index of last occurance of ','
+    last_idx = query.rfind(',')
+    query = remove_at(last_idx, query)
+    print query
+
+    return query
+
+
+def get_total_user_list(rsclist,userlist):
+    rsc_user = []
+    total_user_list = []
+    if rsclist:
+        rsclist = [str(x) for x in rsclist]
+
+        rsc_user_list = __db_fetch_values_dict(
+            "select (select username from auth_user where id = user_id limit 1) username from usermodule_usermoduleprofile where rsc_name_id::text=any(ARRAY" + str(
+                rsclist) + ")")
+        for temp in rsc_user_list:
+            rsc_user.append(str(temp['username']))
+        #print rsc_user
+    if userlist is not None:
+        userlist = [str(x) for x in userlist]
+
+    # Merge twolist and remove duplicate
+    # creating set
+    rsc_user_set = set(rsc_user)
+    userlist_set = set(userlist)
+    # Difference in two sets
+    diff_element = userlist_set - rsc_user_set
+    # union of difference + first list
+    total_user_list = rsc_user + list(diff_element)
+    return total_user_list
+
+
+
+def remove_at(idx, s):
+    return s[:idx] + s[idx+1:]
 
 def get_export_arguments(export_type):
     options = {
@@ -2571,3 +2634,6 @@ def get_export_arguments(export_type):
                 arguments["show_label"] = False
 
     return arguments
+
+
+
