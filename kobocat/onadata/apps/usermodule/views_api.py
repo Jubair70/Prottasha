@@ -254,11 +254,10 @@ def get_user_schedule(request):
         hh_list = "['']"
     '''
 
-    q = "SELECT (select victim_id  from asf_victim where id=schedule.beneficiary_id limit 1) beneficiary_id, (select COALESCE (victim_name,'') victim_name from asf_victim where id=schedule.beneficiary_id limit 1) member_name,to_char(schedule_date,'yyyy-mm-dd') schedule_date,(SELECT id_string FROM logger_xform where id=schedule.scheduled_form_id) form_id,(SELECT title FROM logger_xform where id=schedule.scheduled_form_id) form_name,id schedule_id  , schedule_user_id,submitted_instance_id,priority FROM schedule where status='ACTIVE' and date(schedule_date) <= current_date  order by id"
+    q = "SELECT (select victim_id  from asf_victim where id=schedule.beneficiary_id limit 1) beneficiary_id,beneficiary_id as victim_tbl_id, (select COALESCE (victim_name,'') victim_name from asf_victim where id=schedule.beneficiary_id limit 1) member_name,to_char(schedule_date,'yyyy-mm-dd') schedule_date,(SELECT id_string FROM logger_xform where id=schedule.scheduled_form_id) form_id,(SELECT title FROM logger_xform where id=schedule.scheduled_form_id) form_name,id schedule_id  , schedule_user_id,submitted_instance_id,priority FROM schedule where status='ACTIVE' and date(schedule_date) <= current_date  order by id"
     print q
 
     main_df = pandas.read_sql(q, connection)
-    print main_df
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
 
@@ -269,7 +268,6 @@ def get_event_data(request):
     print q
 
     main_df = pandas.read_sql(q, connection)
-    print main_df
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
 
