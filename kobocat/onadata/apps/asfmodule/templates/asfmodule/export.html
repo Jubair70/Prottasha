@@ -21,7 +21,7 @@
                       <label class="control-label">Form list</label>
                       <select id ="form_list" class="form-control " >
                          {% for form in form_list %}
-                         <option value="{{form.id}}">{{form.title}}</option>
+                         <option value="{{form.id_string}}">{{form.title}}</option>
                          {% endfor%}
                       </select>
                    </div>
@@ -109,7 +109,7 @@
                 allSelectedText: 'All Selected'
         });
 
-        $("#form_list").val('703');
+        $("#form_list").val('returnee_case_initiation');
         $("#form_list").multiselect("refresh");
         $('#start_date').datepicker({
            endDate:'0d',
@@ -152,11 +152,12 @@
         var to_date = $("#end_date").val();
         var userlist = $("#userlist").val();
         var rsc = $("#rsc").val();
+        var id_string = $("#form_list").val();
         daterange  = get_daterange()
         $.ajax({
             url: '/asf/get_export/',
             type: 'POST',
-            data :{'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc},
+            data :{'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc,'id_string' : id_string},
             beforeSend: function () {
                 $('#container').show();
             },

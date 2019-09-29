@@ -2504,7 +2504,7 @@ def get_reintegration_sustainibility_data(request):
 '''
 @login_required
 def export(request):
-    form_list = __db_fetch_values_dict("select id,title from logger_xform")
+    form_list = __db_fetch_values_dict("select id,title,id_string from logger_xform")
     rsc_list = __db_fetch_values_dict("select id,rsc_name from usermodule_rsc")
     user_list = get_own_and_partner_orgs_usermodule_users(request)
     username_list = [str(custom_user.user.username) for custom_user in user_list]
@@ -2560,17 +2560,24 @@ def get_export(request):
 
 
 def get_query(daterange,rsclist,userlist):
-    query = ' {"$and" : [ '
-    daterange_query = daterange
-    query += daterange_query
-    total_u_list = get_total_user_list(rsclist,userlist)
-    if total_u_list is not None:
-        query += '{"_submitted_by": { "$in" : ' + json.dumps(total_u_list) + ' }' + ' },'
-    query += "] }";
-    # find the index of last occurance of ','
-    last_idx = query.rfind(',')
-    query = remove_at(last_idx, query)
-    print query
+    total_u_list = get_total_user_list(rsclist, userlist)
+    query = ""
+    if daterange or len(total_u_list) != 0:
+        query = ' {"$and" : [ '
+        daterange_query = daterange
+        if daterange:
+            query += daterange_query
+
+        if not total_u_list:
+            print "No  user query."
+        else:
+            query += '{"_submitted_by": { "$in" : ' + json.dumps(total_u_list) + ' }' + ' },'
+
+        query += "] }";
+        # find the index of last occurance of ','
+        last_idx = query.rfind(',')
+        query = remove_at(last_idx, query)
+        print query
 
     return query
 
