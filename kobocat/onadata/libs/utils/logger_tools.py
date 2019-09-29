@@ -431,6 +431,20 @@ def create_instance(username, xml_file, media_files,
 
         instance = save_submission(xform, xml, media_files, new_uuid,
                                    submitted_by, status, date_created_override)
+
+        '''
+        IOM Schedule status update
+        '''
+        FormXMLTree = clean_and_parse_xml(xml)
+        collection = FormXMLTree.documentElement
+        scheduletag = collection.getElementsByTagName("schedule_id")
+        scheduleid = -1
+        if scheduletag:
+            scheduleid = scheduletag[0].__dict__['childNodes'][0].data
+            print ("Schedule id is****")
+            print  scheduleid
+            update_schedule_status(scheduleid, instance.id)
+
         # commit all changes
         transaction.commit()
 
@@ -852,3 +866,10 @@ def remove_approval(xform):
     approval_list = ApprovalList.objects.filter(formid=xform.id_string)
     approval_list.delete()
 
+
+
+def update_schedule_status(scheduleid,instanceid):
+    qry="update schedule set status='DONE',updated_date=now(),submitted_instance_id=" + str(instanceid) + " where id="+str(scheduleid)+";"
+    print qry
+    cursor = connection.cursor()
+    cursor.execute(qry)
