@@ -2504,12 +2504,13 @@ def get_reintegration_sustainibility_data(request):
 '''
 @login_required
 def export(request):
+    form_list = __db_fetch_values_dict("select id,title from logger_xform")
     rsc_list = __db_fetch_values_dict("select id,rsc_name from usermodule_rsc")
     user_list = get_own_and_partner_orgs_usermodule_users(request)
     username_list = [str(custom_user.user.username) for custom_user in user_list]
     #username_list.append(str(request.user.username))
 
-    return render(request, 'asfmodule/export.html', {'rsc_list': rsc_list,'user_list': username_list})
+    return render(request, 'asfmodule/export.html', {'rsc_list': rsc_list,'user_list': username_list,'form_list' : form_list})
 
 @csrf_exempt
 def get_export(request):

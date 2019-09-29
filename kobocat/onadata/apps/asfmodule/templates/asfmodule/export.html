@@ -16,23 +16,23 @@
         </div>
         <div class="portlet-body">
            <div class="row">
-                <div class="col-md-2">
+                <div class="col-md-3">
                    <div class="form-group">
                       <label class="control-label">Form list</label>
-                      <select id ="" class="form-control " >
-                         {% for usermodule_user in user_list %}
-                         <option value="{{usermodule_user}}">{{usermodule_user}}</option>
+                      <select id ="form_list" class="form-control " >
+                         {% for form in form_list %}
+                         <option value="{{form.id}}">{{form.title}}</option>
                          {% endfor%}
                       </select>
                    </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                    <div class="form-group">
                       <label class="control-label">Start Date</label>
                       <input type="text" class="datepicker form-control" placeholder="From" name="start_date" id="start_date">
                    </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                    <div class="form-group">
                       <label class="control-label">End Date</label>
                       <input type="text" class="datepicker form-control" placeholder="To" name="end_date" id="end_date">
@@ -49,7 +49,7 @@
                    </div>
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-3">
                    <div class="form-group">
                       <label class="control-label">RSC</label>
                       <select id ="rsc" class="form-control" multiple = "true">
@@ -99,7 +99,18 @@
                 buttonWidth: '100%',
                 allSelectedText: 'All Selected'
         });
+        $("#form_list").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+        });
 
+        $("#form_list").val('703');
+        $("#form_list").multiselect("refresh");
         $('#start_date').datepicker({
            endDate:'0d',
            format: 'yyyy-mm-dd',
@@ -126,7 +137,6 @@
         var to  = document.getElementById("end_date").value ;
 
         if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {
-            console.log("date entered")
             from += "T00:00:00";
             to += "T23:59:59" ;
             temp_query = '{"_submission_time":{"$gte":"'+from+'","$lte":"'+to+'"}}';
@@ -134,64 +144,21 @@
             partial_query += temp_query + ',' ;
 
         }
-
         return partial_query
-
     }
-    function get_query(from,to,userlist,rsc) {
-        var query = ' {"$and" : [ ';
-        var partial_query = "";
-        var from = document.getElementById("start_date").value  ;
-        var to  = document.getElementById("end_date").value ;
-
-        if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {
-            console.log("date entered")
-            from += "T00:00:00";
-            to += "T23:59:59" ;
-            partial_query = '{"_submission_time":{"$gte":"'+from+'","$lte":"'+to+'"}}';
-            query += partial_query + ',' ;
-            console.log(partial_query)
-
-        }
-        var formatted_list = "[" ;
-        console.log(typeof(userlist+ ""))
-        for(loop = 0 ; loop < userlist.length; loop++,userlist = loop){
-            formatted_list += '"' + userlist[loop] + '",'
-        }
-        //console.log(formatted_list)
-        formatted_list = formatted_list.substring(0, (formatted_list.length -1 )) + ']';
-        if ( userlist !== 'null') {
-            query += '{"_submitted_by": { "$in" : ' + formatted_list + ' }'  + ' },' ;
-        }else{
-            if( allowed_users > 0 ){
-                query += '{"_submitted_by": { "$in" : ' + formatted_list + ' }'  + ' },' ;
-            }
-        }
-
-        query += "] }" ;
-
-        return query;
-}
 
     function get_export(){
         var from_date = $("#start_date").val();
         var to_date = $("#end_date").val();
         var userlist = $("#userlist").val();
         var rsc = $("#rsc").val();
-        //get_query(from_date,to_date,userlist,rsc)
         daterange  = get_daterange()
-        //console.log(userlist)
-        //console.log(rsc)
-        //console.log(from_date)
-        //console.log(to_date)
-
         $.ajax({
             url: '/asf/get_export/',
             type: 'POST',
             data :{'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc},
             beforeSend: function () {
                 $('#container').show();
-
             },
             success: function (data) {
                 $('#container').hide();
