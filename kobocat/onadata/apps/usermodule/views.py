@@ -48,6 +48,11 @@ import os
 from django.core.files.storage import FileSystemStorage
 from datetime import date, timedelta, datetime
 from onadata.apps.usermodule.helpers import COUNTRIES
+from django.core.mail import send_mail, BadHeaderError
+import smtplib
+import string
+import random
+
 
 def __db_commit_query(query):
     cursor = connection.cursor()
@@ -675,7 +680,7 @@ def change_password(request):
                 context)
 
 @login_required
-@user_passes_test(admin_check,login_url='/')
+#@user_passes_test(admin_check,login_url='/')
 def reset_password(request,reset_user_id):
     context = RequestContext(request)
     reset_password_form = ResetPasswordForm()
@@ -742,17 +747,29 @@ def dashboard(request):
     d_number_participants_dashboard = __db_fetch_values_dict("select * from public.get_number_participants_dashboard()")
     d_sidedata_dashboard = __db_fetch_values_dict("select * from public.get_sidedata_dashboard()")
 
+    map_q = "with t1 as( select id,(select field_name from geo_data where geocode =( SELECT asf_case.district FROM asf_case WHERE asf_case.id::text = asf_victim.case_id LIMIT 1)) district FROM asf_victim), t2 as( select count(*) cnt,district zila_name from t1 where district is not null group by district) select zila_name,cnt from t2 order by cnt DESC"
+    region_data = {}
+    region_table = []
+    district_data = __db_fetch_values(map_q)
+    for dd in district_data:
+        region_data[dd[0]] = dd[1]
+        region_table.append([dd[0], dd[1]])
+
+
     data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,
             'd_eco_reintegration_support' : d_eco_reintegration_support,
             'd_psycosocial_support': d_psycosocial_support,
             'd_social_reintegration_support': d_social_reintegration_support,
             'd_number_participants_dashboard': d_number_participants_dashboard,
             'd_sidedata_dashboard': d_sidedata_dashboard,
-            'curr_month' : curr_month
+            'curr_month' : curr_month,
+            'region_data': json.dumps(region_data),
+            'region_table': json.dumps(region_table)
             }
     return render_to_response('usermodule/dashboard.html',data, context)
 
 def user_login(request):
+    print "Hit login ***************************************"
     # Like before, obtain the context for the user's request.
     context = RequestContext(request)
     logger = logging.getLogger(__name__)
@@ -2456,3 +2473,101 @@ def update_token(data):
         query = "update user_device_map set firebase_token='" + str(firebase_token) +  "', created_at = now() where mac_address = '" + str(mac_address) + "' and user_id = '"+str(user_id)+"'"
     __db_commit_query(query)
     return HttpResponse(json.dumps('Token updated'), status=200)
+
+
+'''
+   :: FORGET PASSWORD ::
+
+   1) User must have a valid email by which he/she can get temporary password.
+   2) After getting mail with OTP he must have to use the url mentioned in the mail to reset password
+
+'''
+@csrf_exempt
+def check_valid_user_email(request):
+    user_name = request.POST.get("user_name")
+    email = request.POST.get("email")
+    msg = ""
+    status_code = 200
+    try:
+        user = User.objects.get(username=user_name)
+        user_email = user.email
+        if email == user_email:
+            msg = ""
+            status_code = 200
+        else:
+            msg = "User email is not valid"
+            status_code = 500
+    except:
+        msg = "User is not valid"
+        status_code = 500
+
+    return HttpResponse(msg, status=status_code)
+
+
+@csrf_exempt
+def send_otp(request):
+    user_name = request.POST.get("user_name")
+    baseurl = request.POST.get("baseurl")
+
+    email = request.POST.get("email")
+    msg = ""
+    status_code = 200
+    try:
+        user = User.objects.get(username=user_name)
+        user_email = user.email
+        userid = user.id
+        if email == user_email:
+            otp = handle_user_otp(user_name)
+            send_mail(
+                'OTP for login',
+                'Hello,\n\nTemporary Password of user '+user_name+' is ' + str(otp) + '. \nUse this otp first login and then reset your password.\n\n Please use the following url for login\n'+baseurl+'/usermodule/login/?next=/usermodule/reset-password/'+str(userid)+'/',
+                'mpowersocial2018@gmail.com',
+                [email],
+                fail_silently=False,
+            )
+            msg = "An email has been sent to your mail with a one time  password."
+            status_code = 200
+        else:
+            msg = "User email is not valid"
+            status_code = 500
+    except  Exception as inst:
+        print inst
+        msg = "User is not valid"
+        status_code = 500
+
+    return HttpResponse(msg, status=status_code)
+
+
+def handle_user_otp(username):
+    user = User.objects.filter(username=username).first()
+    password = ''
+    if user is not None:
+        user.save()
+        profile = user.usermoduleprofile
+        if profile.otp is None:
+            password = otp_generator()
+            next_expiry_date = (datetime.today() + timedelta(minutes=5))
+        else:
+            if datetime.today() > profile.expired:
+                password = otp_generator()
+                next_expiry_date = (datetime.today() + timedelta(minutes=5))
+            else:
+                password = profile.otp
+                next_expiry_date = profile.expired
+        encrypted_password = make_password(password)
+        user.password = encrypted_password
+        user.save()
+
+        profile.expired = next_expiry_date
+        profile.otp = password
+        profile.save()
+
+        passwordHistory = UserPasswordHistory(user_id=user.id, date=datetime.now())
+        passwordHistory.password = encrypted_password
+        passwordHistory.save()
+
+    return password
+
+def otp_generator(size=6):
+    return ''.join(random.SystemRandom().choice(string.digits) for _ in range(size))
+

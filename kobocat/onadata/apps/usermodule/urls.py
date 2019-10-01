@@ -86,6 +86,8 @@ urlpatterns = patterns('',
     url(r"^save_user/$", views.save_user, name='save_user'),
 
     url(r'^upload/csv/$', views.upload_csv, name='upload_csv'),
+    url(r'^check_valid_user_email/$', views.check_valid_user_email, name='check_valid_user_email'),
+    url(r'^send_otp/$', views.send_otp, name='send_otp'),
 
     # Mobile API
 

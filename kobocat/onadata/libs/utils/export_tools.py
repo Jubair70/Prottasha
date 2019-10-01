@@ -221,13 +221,13 @@ class ExportBuilder(object):
         def build_sections(
                 current_section, survey_element, sections, select_multiples,
                 gps_fields, encoded_fields, select_one, select_label_map, field_delimiter='/'):
-            print "survey_element.children"
-            print survey_element.children
-            print "current_section"
-            print current_section
+            #print "survey_element.children"
+            #print survey_element.children
+            #print "current_section"
+            #print current_section
             for child in survey_element.children:
-                print "survey_element.child"
-                print child
+                #print "survey_element.child"
+                #print child
                 current_section_name = current_section['name']
                 # if a section, recurs
                 if isinstance(child, Section):

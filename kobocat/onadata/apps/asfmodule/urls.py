@@ -139,6 +139,8 @@ urlpatterns = patterns('',
 
     url(r'^get-form/(?P<id_string>[^/]+)/$', views.get_form,name='get_form'),
     url(r'^get_form_access/(?P<id_string>[^/]+)/$', views.get_form_access,name='get_form_access'),
+    url(r'^get_export/$', views.get_export,name='get_export'),
+    url(r'^export/$', views.export,name='export'),
 
     url(r'^rsc_list/$', views.rsc_list,name='rsc_list'),
     url(r'^get_rsc_list/$', views.get_rsc_list,name='get_rsc_list'),

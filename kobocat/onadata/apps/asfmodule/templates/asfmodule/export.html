@@ -1,790 +1,183 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-   <head>
-    <meta charset="utf-8">
-    <title>IOM</title>
-    <meta name="description" content="KoBoToolbox is a free and open source suite of tools for field data collection for use in challenging environments.">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="" name="author">
-    <meta name="author" content="">
-    <meta name="MobileOptimized" content="320">
-    <link href="/static/assets/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-    <link href="/static/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="/static/assets/plugins/uniform/css/uniform.default.css" rel="stylesheet" type="text/css">
-    <link href="/static/assets/css/style-metronic.css" rel="stylesheet" type="text/css">
-    <link href="/static/assets/css/style.css" rel="stylesheet" type="text/css">
-    <link href="/static/assets/css/style-responsive.css" rel="stylesheet" type="text/css">
-    <link href="/static/assets/css/plugins.css" rel="stylesheet" type="text/css">
-    <link href="/static/css/vex.css" rel="stylesheet">
-    <link href="/static/css/vex-theme-kobo.css" rel="stylesheet">
-    <link href="/static/assets/css/themes/default.css" rel="stylesheet" type="text/css" id="style_color">
-    <link href="/static/assets/css/custom.css" rel="stylesheet" type="text/css">
-    <link href="/static/css/bootstrap-datepicker.css" rel="stylesheet" type="text/css">
-    <link rel="shortcut icon" type="image/png" href="/static/login_material/images/icons/favicon.ico">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
-    <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
-    <link href="/static/css/viewer.css" type="text/css" rel="stylesheet">
-    <style>
+{% extends 'base_test.html' %}
+{% load i18n %}
+{% block additional-headers %}
+
+    <link rel="stylesheet" type="text/css" href="/static/assets/plugins/bootstrap-multiselect/bootstrap-multiselect.css">
+
+{% endblock %}
 
 
-.page-content {
-    margin-left: 0px !important;
-}
 
-        .forms_data_panel_heading
-    {
-    background-color: #b97800 !important;
-    border-radius: 0px !important;
-    }
-    .forms_data_panel_title
-    {
-        font-weight: 600 !important;
-        color: #ffffff;
-        text-align: left;
-    }
+{% block content %}
 
-        .spinner {
-            margin: 100px auto 0;
-            width: 70px;
-            text-align: center;
-
-        }
-
-        .spinner > div {
-            width: 18px;
-            height: 18px;
-            background-color: deeppink;
-
-            border-radius: 100% !important;
-            display: inline-block;
-            -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;
-            animation: sk-bouncedelay 1.4s infinite ease-in-out both;
-        }
-
-        .spinner .bounce1 {
-            -webkit-animation-delay: -0.32s;
-            animation-delay: -0.32s;
-        }
-
-        .spinner .bounce2 {
-            -webkit-animation-delay: -0.16s;
-            animation-delay: -0.16s;
-        }
-
-        @-webkit-keyframes sk-bouncedelay {
-            0%, 80%, 100% {
-                -webkit-transform: scale(0)
-            }
-            40% {
-                -webkit-transform: scale(1.0)
-            }
-        }
-
-        @keyframes sk-bouncedelay {
-            0%, 80%, 100% {
-                -webkit-transform: scale(0);
-                transform: scale(0);
-            }
-            40% {
-                -webkit-transform: scale(1.0);
-                transform: scale(1.0);
-            }
-        }
-
-    </style>
-
-</head>
-    <body >
-
-<div id="ajx_cng_div"></div>
-
-<div class="spinner" id="loading" hidden>
-            <div class="bounce1"></div>
-            <div class="bounce2"></div>
-            <div class="bounce3"></div>
-        </div>
-
-    <div class="page-container">
-
-    <div class="page-content">
-
-        <div class="row">
-
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-		<div id="div_messages"></div>
-
-
-<div id="div_content">
-<div class="portlet box red" >
+    <div class="portlet box red">
         <div class="portlet-title">
-            <div class="caption"><i class="fa fa-adn"></i>Beneficiary Profile {% if victim_id %}- {{ victim_id | safe }} {% endif %}</div>
+            <div class="caption"><i class="fa fa-adn"></i>Form Export</div>
         </div>
         <div class="portlet-body">
-            <div class="row">
-            <div class="col-md-10 table-responsive">
-                <table class="table  table-striped table-hover">
-                    <tbody>
-                    <tr>
-                        <th>Case ID</th>
-                        <td>{{ case_id | safe }}</td>
-                         <th>Sex</th>
-                        <td>{{ victim_sex | safe }}</td>
-
-                    </tr>
-                    <tr>
-                        <th>Beneficiary's Name</th>
-                        <td>{{ victim_name | safe }}</td>
-                        <th>Address in country</th>
-                        <td>{{ birth_country | safe }}</td>
-                    </tr>
-                    <tr>
-                        <th>Date of Birth</th>
-                        <td>{{ birth_date | safe }}</td>
-                        <th>Return Date</th>
-                        <td>{{ date_return | safe }}</td>
-                    </tr>
-                    <tr>
-                        <th>Age at the time of return</th>
-                        <td>{{ victim_age | safe }}</td>
-                        <th>Country from</th>
-                        <td>{{ return_from | safe }}</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-md-2" >
-
-                <img src="{{ beneficiary_picture }}"  class="img-responsive" alt="" onerror=this.src="/static/images/profile.jpg"
-                     style="border: 3px solid #f9f9f9;width: 100%;margin: 0 auto; cursor:pointer">
-            </div>
-
-
-            <div class="col-md-6">
-                            <h4 style="padding-left: 9px; font-weight: 600 !important">Current Address</h4><hr class="hr_in">
-                            <table class="table table-responsive  table-striped table-hover">
-                                <tbody>
-                                <tr>
-                                    <th>Division</th>
-                                    <td>{{ current_division | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>District</th>
-                                    <td>{{ current_district | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Upazila</th>
-                                    <td>{{ current_upazila | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Union</th>
-                                    <td>{{ current_union | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ward</th>
-                                    <td>{{ current_ward | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Village</th>
-                                    <td>{{ current_village | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Post Office</th>
-                                    <td>{{ current_postoffice | safe }}</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h4 style="padding-left: 9px; font-weight: 600 !important">Permanent Address</h4><hr class="hr_in">
-                            <table class="table table-responsive  table-striped table-hover">
-                                <tbody>
-                                <tr>
-                                    <th>Division</th>
-                                    <td>{{ permanent_division | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>District</th>
-                                    <td>{{ permanent_district | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Upazila</th>
-                                    <td>{{ permanent_upazila | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Union</th>
-                                    <td>{{ permanent_union | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ward</th>
-                                    <td>{{ permanent_ward | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Village</th>
-                                    <td>{{ permanent_village | safe }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Post Office</th>
-                                    <td>{{ permanent_post_office | safe }}</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-
-
-        </div>
-
-
-
-        </div>
-
-    </div>
-
- <div id="container"></div>
-
-
-<div>
-    <div class="panel-group" role="tablist" aria-multiselectable="true">
-        <div class="panel panel-default" style="margin-bottom: 10px;">
-            <div style="height: 48px;" class="panel-heading" role="tab" id="heading100">
-                <h4 class="panel-title">
-                    <a style="font-weight: bold;" class="collapsed" onclick="" role="button" data-toggle="collapse" href="#collapse100" aria-expanded="false" aria-controls="collapse50"> Progress Status
-                    </a>
-                </h4>
-            </div>
-            <div id="collapse100"
- class="panel-collapse collapse" role="tabpanel"
-
- aria-labelledby="heading100">
-                <div class="panel-body">
-                    <div class="panel-group" id="internal_accordian100" role="tablist"
- aria-multiselectable="true">
-
-                        <div class="row"  >
-                <div id="individual_income_report"></div>
-
-            </div>
-            <div>
-                <div class="row" style="margin-bottom: 10px;">
-
-                    <div class="col-md-2"><label class="control-label">Quarter </label><br>
-                        <select class="form-control" id = "qr">
-                            <option value="%">select</option>
-                            <option value="March">Q-1: (January -March)</option>
-                            <option value="June">Q-2: (April - June)</option>
-                            <option value="September">Q-3: (July - September)</option>
-                            <option value="December">Q-4: (October - December)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2"><label class="control-label">Year </label><br>
-                        <select class="form-control" id = "yr">
-                            <option value="%">select</option>
-                            <option value="2019">2019</option>
-                            <option value="2020">2020</option>
-                            <option value="2021">2021</option>
-                            <option value="2022">2022</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="control-label"> </label><br>
-                        <button id="filter_reint_chart" style="margin-top:8px;" class="btn red-custom btn-md"  data-original-title="" title="">Search</button>
-                    </div>
-
+           <div class="row">
+                <div class="col-md-3">
+                   <div class="form-group">
+                      <label class="control-label">Form list</label>
+                      <select id ="form_list" class="form-control " >
+                         {% for form in form_list %}
+                         <option value="{{form.id_string}}">{{form.title}}</option>
+                         {% endfor%}
+                      </select>
+                   </div>
+                </div>
+                <div class="col-md-2">
+                   <div class="form-group">
+                      <label class="control-label">Start Date</label>
+                      <input type="text" class="datepicker form-control" placeholder="From" name="start_date" id="start_date">
+                   </div>
+                </div>
+                <div class="col-md-2">
+                   <div class="form-group">
+                      <label class="control-label">End Date</label>
+                      <input type="text" class="datepicker form-control" placeholder="To" name="end_date" id="end_date">
+                   </div>
+                </div>
+                <div class="col-md-2">
+                   <div class="form-group">
+                      <label class="control-label">Submitted By</label>
+                      <select id ="userlist" class="form-control userlist"  multiple = "true">
+                         {% for usermodule_user in user_list %}
+                         <option value="{{usermodule_user}}">{{usermodule_user}}</option>
+                         {% endfor%}
+                      </select>
+                   </div>
                 </div>
 
-            </div>
-            <div class="row"  >
-                <div id="reintegration_score"></div>
-            </div>
-                    </div>
+                <div class="col-md-3">
+                   <div class="form-group">
+                      <label class="control-label">RSC</label>
+                      <select id ="rsc" class="form-control" multiple = "true">
+                         {% for rsc in rsc_list %}
+                            <option value="{{ rsc.id }}">{{ rsc.rsc_name }}</option>
+                         {% endfor%}
+                      </select>
+                   </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-</div>
+           </div>
 
-
-
-
-    <div class="modal fade" id="myModal" data-backdrop="static" role="dialog" aria-labelledby="myModalLabel">
-            <div class="modal-dialog">
-                <div class="modal-content">
-
-                    <div class="modal-header">
-
-
-                        <h4 class="modal-title" id="myModalLabel"></h4>
-                        <button type="button" class="btn btn-sm pull-right" data-dismiss="modal" aria-label="Close" style="background-color: #f5b671;">
-          <span aria-hidden="true">×</span>
-        </button>
-                    </div>
-                    <div class="modal-body" >
-                    </div>
-
-{#                    <div class="modal-footer"></div>#}
-                </div>
-            </div>
-        </div>
-
-        <div id="images" hidden>
-        </div>
-
-
-
-
-
-
-
-
-
-
-
-
+            <button type="submit" class="btn btn-info pull-left" id="" onclick="get_export()"
+                                title=""><i class="fa fa-2x fa-download"></i> Export
+                        </button><br><br><br>
+        <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
 
         </div>
-
-        <div id="images" hidden="">
-        <img src="/media/iom_admin/attachments/csa_login.jpg" class="img-responsive" alt="" onerror="this.src=/static/images/profile.jpg" style="border: 3px solid #f9f9f9;width: 100%;margin: 0 auto; cursor:pointer">
-        </div>
-
-
-            </div>
-        </div>
-
     </div>
 
 
 
 
-<script type="text/javascript" src="/jsi18n/"></script>
+{% endblock %}
+{% block additional-javascript %}
 
-<script src="/static/assets/plugins/respond.min.js"></script>
-<script src="/static/assets/plugins/excanvas.min.js"></script>
+    <script type="text/javascript"
+            src="/static/assets/plugins/bootstrap-multiselect/bootstrap-multiselect.js"></script>
 
-<script src="/static/assets/plugins/jquery-1.10.2.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/jquery-migrate-1.2.1.min.js" type="text/javascript"></script>
 
-<script src="/static/assets/plugins/jquery-ui/jquery-ui-1.10.3.custom.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/bootstrap-hover-dropdown/twitter-bootstrap-hover-dropdown.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/jquery-slimscroll/jquery.slimscroll.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/jquery.blockui.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/jquery.cookie.min.js" type="text/javascript"></script>
-<script src="/static/assets/plugins/uniform/jquery.uniform.min.js" type="text/javascript"></script>
-<script src="/static/js/vex.combined.min.js"></script>
-<script>vex.defaultOptions.className = 'vex-theme-kobo';</script>
-
-<script src="/static/js/application.js"></script>
-<script src="/static/assets/scripts/app.js"></script>
-<script type="text/javascript" src="/static/js/bootstrap-datepicker.js"></script>
-<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/dataTables.buttons.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.flash.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
-    <script type="text/javascript" src="/static/js/viewer.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/series-label.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.5/jspdf.debug.js"></script>
-    <script src="/static/js/html2canvas.js"></script>
     <script>
+    $(document).ready(function () {
+        $("#rsc").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+        });
+        $("#userlist").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+        });
+        $("#form_list").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+        });
 
-        $( document ).ready(function() {
+        $("#form_list").val('returnee_case_initiation');
+        $("#form_list").multiselect("refresh");
+        $('#start_date').datepicker({
+           endDate:'0d',
+           format: 'yyyy-mm-dd',
+           todayHighlight:true
+       });
+       $('#end_date').datepicker({
+           endDate:'0d',
+           format: 'yyyy-mm-dd',
+           todayHighlight:true
+       });
+    });
 
-        // scroll lock
-        var scrollPosition = [
-          self.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft,
-          self.pageYOffset || document.documentElement.scrollTop  || document.body.scrollTop
-        ];
-        var html = jQuery('html'); // it would make more sense to apply this to body, but IE7 won't have that
-        html.data('scroll-position', scrollPosition);
-        html.data('previous-overflow', html.css('overflow'));
-        html.css('overflow', 'hidden');
-        window.scrollTo(scrollPosition[0], scrollPosition[1]);
-        // scroll lock
-
-        // loading
-        $.blockUI({
-                            css: {
-                                border: 'none',
-                                padding: '15px',
-                                backgroundColor: 'rgba(255, 255, 255, 0)',
-                                '-webkit-border-radius': '10px',
-                                '-moz-border-radius': '10px',
-                                opacity: 1
-                            },
-                            target: $('#ajx_cng_div'),
-                            message: $('#loading')
-                        });
-        //loading
-
-    intialize();
-});
-
-
-
-
-
-        function intialize() {
-        click_all_collapse();
-     setTimeout(function () {
-         var useWidth = $('.page-container').outerWidth();
-         var useHeight = $('.page-container').outerHeight();
-         console.log(useWidth,useHeight);
-         console.log($('.page-container')[0]);
-            html2canvas($('.page-container')[0],
-                {
-                    width:useWidth+50,
-                    height:useHeight+1000
-                }
-                ).then(function(canvas) {
-
-            console.log(canvas.width,canvas.height);
-            var img = canvas.toDataURL('image/jpeg');
-            var paperFormatInMm = [useWidth-260, useHeight];
-            var doc = new jsPDF('p', 'pt', paperFormatInMm);
-            doc.addImage(img, 'JPEG', 25, 10);
-            doc.save('{{ victim_id }}.pdf');
-            window.location.href = '/asf/victim_profile/' + victim_tbl_id + '/';
+    if ($('.alert-block').is(':visible')) {
+        window.setTimeout(function () {
+            $(".alert-success").fadeTo(1500, 0).slideUp(500, function () {
+                $(this).remove();
             });
-
         }, 5000);
+    }
 
+    function get_daterange() {
+        var partial_query = "";
+        var from = document.getElementById("start_date").value  ;
+        var to  = document.getElementById("end_date").value ;
 
-
-
-}
-
-
-        function expand(all_div) {
-            for(each in all_div)
-            {
-                $(".collapsed:eq(" + each + ")").trigger('click')
-            }
+        if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {
+            from += "T00:00:00";
+            to += "T23:59:59" ;
+            temp_query = '{"_submission_time":{"$gte":"'+from+'","$lte":"'+to+'"}}';
+            console.log(partial_query)
+            partial_query += temp_query + ',' ;
 
         }
+        return partial_query
+    }
 
-        function click_all_collapse() {
-            all_div = $('.collapsed');
-            console.log(all_div);
-            console.log("okajsbajh");
-            while(all_div.length)
-            {
-                expand(all_div);
-                all_div = $('.collapsed');
-                console.log(all_div);
-            }
-            for (each in instance_id_list) {
-                console.log(instance_id_list[each]);
-                $('#data_id_' + instance_id_list[each]).trigger('click');
-            }
-        }
-
- var instance_id_list = {{ instance_id_list | safe }};
- for(each in instance_id_list)
- {
-
-     $(document).on('click','[id^=data_id_'+instance_id_list[each]+']',function()
-{
-
-  console.log("okay");
-});
- }
-
-
-var form_builder_server = '{{ form_builder_server | safe}}';
-var iom_reference = '{{ iom_reference | safe }}'
-var victim_tbl_id = '{{ victim_tbl_id | safe }}'
-
-
-var quarter = '{{ qr }}'; var year = '{{ yr }}';$('#qr').val('{{ qr }}'); $('#yr').val('{{ yr }}');
-get_progress_report_data(victim_tbl_id)
-
-    var opened = [];
-
-    $('#container').html({{ main_str | safe }});
-
-
-    function load_forms(category_id, div_id,status) {
-
-        victim_id = '{{ victim_id | safe }}';
-        if (opened.indexOf(category_id) > -1)
-            return
-        else
-            opened.push(category_id);
-
+    function get_export(){
+        var from_date = $("#start_date").val();
+        var to_date = $("#end_date").val();
+        var userlist = $("#userlist").val();
+        var rsc = $("#rsc").val();
+        var id_string = $("#form_list").val();
+        daterange  = get_daterange()
         $.ajax({
-            url: '/asf/get_forms_data/',
+            url: '/asf/get_export/',
             type: 'POST',
-            dataType: 'json',
-            data: {'category_id': category_id, 'victim_id': victim_tbl_id},
+            data :{'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc,'id_string' : id_string},
             beforeSend: function () {
-
-                $('#' + div_id).html('<div class="alert alert-success">Please Wait...loading....</div>');
+                $('#container').show();
             },
-            success: function (result) {
-                $('#' + div_id).html(result);
-                    for(each in instance_id_list)
-                    {
-                        console.log(instance_id_list[each]);
-                        $('#data_id_' + instance_id_list[each]).trigger('click');
-                    }
-
-            }
-        });
-    }
-
-
-    function load_forms_list(category_id) {
-        victim_id = '{{ victim_id | safe }}';
-{#        $('#form' + category_id).popover();#}
-{##}
-{#        if (opened.indexOf('#form' + category_id) > -1)#}
-{#            return#}
-{#        else opened.push('#form' + category_id);#}
-        console.log(category_id,victim_id);
-
-        $.ajax({
-            url: '/asf/get_forms_list/',
-            type: 'POST',
-            dataType: 'json',
-            data: {'category_id': category_id, 'victim_id': victim_id},
-            beforeSend: function () {
-            },
-            success: function (result) {
-{#                console.log(result);#}
-                $('.modal-body').html(result);
-{#                if(category_id == 1)#}
-{#                    $('#myModalLabel').text("Medical Service")#}
-{#                else if(category_id == 2)#}
-{#                    $('#myModalLabel').text("Physiotherapy Service")#}
-{#                else if(category_id == 3)#}
-{#                    $('#myModalLabel').text("Psychological Service")#}
-{#                else if(category_id == 4)#}
-{#                    $('#myModalLabel').text("Social Rehabilitation Support")#}
-{#                $('#form' + category_id).attr('data-content', result);#}
-{#                $('#form' + category_id).popover('show');#}
-
-            }
-        });
-    }
-var imgs = $(".img-responsive");
-                    {#        console.log(imgs[0].outerHTML);#}
-                    for (each in imgs) {
-
-                        obj = imgs[each].outerHTML
-                        $('#images').append(obj);
-                    }
-                    var images = document.getElementById("images");
-                    console.log(images);
-                    const gallery = new Viewer(images);
-                    $(".img-responsive").on('click', function (event) {
-                        gallery.view($(".img-responsive").index(this));
-                    });
-
-
-    function load_forms_data(logger_id, div_id) {
-        console.log(logger_id);
-
-        if (opened.indexOf(logger_id) > -1)
-            return
-        else
-            opened.push(logger_id);
-
-        victim_id = '{{ victim_id | safe }}';
-
-        jQuery.ajax({
-            url: '/asf/get_data_view/',
-            type: 'POST',
-            dataType: 'json',
-            data: {'logger_id': logger_id},
-            beforeSend: function () {
-
-                jQuery('#' + div_id).html('<div class="alert alert-success">Please Wait...loading....</div>');
-            },
-            success: function (result) {
-                {#                console.log(result);#}
-                $('#' + div_id).html(result);
-
-
-                    $('#images').html("");
-                    var imgs = $(".img-responsive");
-                    for (each in imgs) {
-
-                        obj = imgs[each].outerHTML
-                        $('#images').append(obj);
-                    }
-
-                    gallery.update()
-
-                    $(".img-responsive").on('click', function (event) {
-                        gallery.view($(".img-responsive").index(this));
-                    });
-
-
-
-            }
-        });
-    }
-
-
-{#    get_all_img();#}
-function get_all_img() {
-        var imgs = document.getElementsByClassName("img-responsive");
-        console.log(imgs[0].outerHTML);
-        for( each in imgs)
-        {
-            console.log(imgs[each])
-            obj = imgs[each].outerHTML
-            $('#images').append(obj);
-        }
-        var images = document.getElementById("images");
-        console.log(images);
-
-    }
-
-function load_forms_html(form_id) {
-    server_address = '{{ server_address | safe }}'
-    username = '{{ username | safe }}'
-    victim_id = '{{victim_id | safe}}'
-
-    url = form_builder_server+"/?id="+form_id+"&url="+server_address+"&username="+username+"&beneficiary_id="+victim_id+"&iom_reference="+iom_reference+"&victim_tbl_id="+victim_tbl_id
-    console.log(url)
-    $('.modal-body').html('<iframe src="'+url+'" style="width:100%;height:500px;"></iframe>');
-    window.addEventListener('message',handleIframeTask);
-     $('#myModalLabel').text("")
-    }
-
- function load_forms_edit_mode(form_id,instance_id) {
-    server_address = '{{ server_address | safe }}'
-    username = '{{ username | safe }}'
-    url = form_builder_server+"/?id="+form_id+"&url="+server_address+"&username="+username+"&instance_id="+instance_id
-    console.log(url)
-    $('.modal-body').html('<iframe src="'+url+'" style="width:100%;height:500px;"></iframe>');
-    window.addEventListener('message',handleIframeTask);
-     $('#myModalLabel').text("")
- }
-
-     function handleIframeTask(e){
-            console.log("okay")
-
-            if (e.data === 'submitted form') {
-               $('#myModal').modal('hide')
-            }
-        };
-
-
-function get_chart(chartType,container,title,yAxisTitle,cat,data){
-            Highcharts.chart(container, {
-            chart: {
-                type: chartType
-            },
-            title: {
-                text: title
-            },
-            subtitle: {
-                text: ''
-            },
-            xAxis: {
-                categories: cat
-            },
-                legend: {
-                     enabled: false
-                 }, credits: {
-                    enabled: false
-                },
-            yAxis: {
-                title: {
-                    text: yAxisTitle
-                },
-                labels: {
-                    formatter: function () {
-                        return this.value ;
-                    }
+            success: function (data) {
+                $('#container').hide();
+                d = data
+                if (d.flag =='1'){
+                    window.location = d.path
                 }
-            },
-            tooltip: {
-                crosshairs: true,
-                shared: true
-            },
-            plotOptions: {
-                spline: {
-                    marker: {
-                        radius: 4,
-                        lineColor: '#666666',
-                        lineWidth: 1
-                    }
+                if (d.flag =='0'){
+                    alert("File does not exist.")
                 }
-            },
-            series: data
+                if (d.flag =='2'){
+                    alert("Export Failed.")
+                }
+
+            }
         });
-}
 
-
-function getfilterCriteria(){
-            qr = $('#qr').val();
-            yr = $('#yr').val();
-        }
-
-function get_progress_report_data(ben_tbl_id) {
-
-    $.ajax({
-        url: '/asf/get_progress_report_data/',
-        type: 'POST',
-        dataType: 'json',
-        data: {
-            'ben_tbl_id': ben_tbl_id
-
-        },
-        beforeSend: function () {
-
-        },
-        success: function (result) {
-            get_chart('spline','individual_income_report','Individual Income data','Monthly average income(tk)',result.income_cat_list,result.income_data_list)
-
-        }
-    });
-}
-
-function get_reintegration_sustainibility_report(ben_tbl_id) {
-    getfilterCriteria()
-    $.ajax({
-        url: '/asf/get_reintegration_sustainibility_data/',
-        type: 'POST',
-        dataType: 'json',
-        data: {
-            'ben_tbl_id': ben_tbl_id,'qr' : qr,'yr' : yr
-
-        },
-        beforeSend: function () {
-
-        },
-        success: function (result) {
-            get_chart('column','reintegration_score','Individual Reintegration Score trend','',result.cat_list,result.data_list)
-
-        }
-    });
-}
-
-
-
-$(document).on("click", "#filter_reint_chart", function () {
- get_reintegration_sustainibility_report(victim_tbl_id)
-});
-$('#filter_reint_chart').trigger('click');
-
-
-
+    }
 
     </script>
-</body>
-</html>
+{% endblock %}

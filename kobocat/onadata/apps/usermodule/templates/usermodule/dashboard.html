@@ -335,8 +335,9 @@
   <div class="row">
     <div class=" col-md-8">
     <div class="thumbnail">
-    	<div class="caption">
-      <img src="/static/dashboard/assets/images/bd-map.png">
+    	<div class="caption" id="map">
+      <!--<img src="/static/dashboard/assets/images/bd-map.png">-->
+
       </div>
       </div>
     </div>
@@ -424,16 +425,16 @@
 </table>
 
 
-    
+
     </div>
     </div>
     </div>
-    
-    
-    
+
+
+
     <div class=" col-md-4">
     <div class="thumbnail">
-    	<div class="caption">
+                <div class="caption">
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
     <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Returnees Identified</td>
@@ -528,4 +529,160 @@
             </div>
         </div>
 </section>
+{% block additional-javascript %}
+ <script src="http://cdn.leafletjs.com/leaflet-0.5/leaflet.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}reportmodule/js/bd_admin_3.js"></script>
+   <script>
+        var rdata = {{ region_data|safe }};
+
+        var region_table = {{ region_table|safe }};
+
+        var total_hh = objsum(rdata);
+
+        var map = L.map('map').setView([23.946096, 90.128173], 7);
+
+        var cloudmade = L.tileLayer('http://{s}.tile.cloudmade.com/{key}/{styleId}/256/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; 2011 OpenStreetMap contributors, Imagery &copy; 2011 CloudMade',
+            key: 'BC9A493B41014CAABB98F0471D759707',
+            styleId: 22677
+        }).addTo(map);
+
+
+        // control that shows state info on hover
+        var info = L.control();
+
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+
+        info.update = function (props) {
+            this._div.innerHTML = '<h4>Sample Distribution</h4>' + (props ?
+                    '<br /><b>' + props.NAME_3 + ' </b> ' + rdata[props.NAME_3] + ' (' + (rdata[props.NAME_3] / total_hh * 100).toFixed(1) + '%)'
+                    : 'Hover over a district');
+        };
+
+        info.addTo(map);
+
+
+        // get color depending on population density value
+        function getColor(s) {
+            d = rdata[s];
+            return d > 200 ? '#71B7FD' :
+                                d > 150 ? '#85C1FD' :
+                                    d > 100 ? '#71B7FD' :
+                                        d > 50 ? '#5DADFD' :
+                                            d > 30 ? '#49A3FD':
+                                                d > 10 ? '#3599FD' :
+                                                    d > 0 ? '#481bfd' :
+                                                        '#FFFFFF';
+        }
+
+        function getColorOld(d) {
+            return d > 200 ? '#71B7FD' :
+                                d > 150 ? '#85C1FD' :
+                                    d > 100 ? '#71B7FD' :
+                                        d > 50 ? '#5DADFD' :
+                                            d > 30 ? '#49A3FD':
+                                                d > 10 ? '#3599FD' :
+                                                    d > 0 ? '#481bfd' :
+                                                        '#FFFFFF';
+        }
+
+        function style(feature) {
+            return {
+                weight: 1,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7,
+                fillColor: getColor(feature.properties.NAME_3)
+            };
+        }
+
+        function highlightFeature(e) {
+            var layer = e.target;
+
+            layer.setStyle({
+                weight: 1,
+                color: '#666',
+                dashArray: '',
+                fillOpacity: 0.7,
+            });
+
+            if (!L.Browser.ie && !L.Browser.opera) {
+                layer.bringToFront();
+            }
+
+            info.update(layer.feature.properties);
+        }
+
+        var geojson;
+
+        function resetHighlight(e) {
+            geojson.resetStyle(e.target);
+            info.update();
+        }
+
+        function zoomToFeature(e) {
+            map.fitBounds(e.target.getBounds());
+        }
+
+        function onEachFeature(feature, layer) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
+                click: zoomToFeature
+            });
+        }
+
+        geojson = L.geoJson(statesData, {
+            style: style,
+            onEachFeature: onEachFeature
+        }).addTo(map);
+
+
+        var legend = L.control({position: 'bottomleft'});
+
+        legend.onAdd = function (map) {
+
+            var div = L.DomUtil.create('div', 'info legend'),
+                grades = [0, 10, 30, 50, 100, 150, 200],
+                labels = [],
+                from, to;
+
+            for (var i = 0; i < grades.length; i++) {
+                from = grades[i];
+                to = grades[i + 1];
+
+                labels.push(
+                    '<i style="background:' + getColorOld(from + 1) + '"></i> ' +
+                    from + (to ? '&ndash;' + to : '+')+'<br>');
+            }
+
+            div.innerHTML = labels.join('<br>');
+            return div;
+        };
+
+        legend.addTo(map);
+
+        map.scrollWheelZoom.disable();
+
+
+        function objsum(obj) {
+
+            var vals = Object.keys(obj).map(function(keys) {
+                return obj[keys];
+            });
+            var val_arr = vals;
+            for (var i = 0, sum = 0; i < val_arr.length; sum += val_arr[i++]);
+            return sum;
+        }
+
+
+   </script>
+
+
+{% endblock %}
 {% include 'usermodule/footer.html' %}

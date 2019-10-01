@@ -17,7 +17,7 @@ class UserModuleProfile(models.Model):
     rsc_name = models.ForeignKey('RSC', on_delete=models.PROTECT,null=True)
     designation = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=100)
-
+    otp = models.CharField(max_length=100,blank=True,null=True)
 
     #psu = models.OneToOneField(GeoPSU,related_name='user_psu',on_delete=models.PROTECT)
     

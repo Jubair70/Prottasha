@@ -10,12 +10,12 @@
       <div class="loginmodal-container">
         <form method="post" action="/usermodule/login/">
              {% csrf_token %}
-          <input type="text" name="username" placeholder="Username">
+          <input type="text" name="username" id = "username" placeholder="Username">
           <input type="password" name="password" placeholder="Password">
             <input type="hidden" id="redirect_url" name="redirect_url" value="{{ redirect_url }}"/>
           <input type="submit" name="login" class="login loginmodal-submit" value="LOGIN">
         </form>
-        <div class="login-help"> <a href="#">Forgot Password</a> </div>
+        <div class="login-help"> <a href="#" onclick="get_forget_pass_modal()">Forgot Password</a> </div>
       </div>
     </div>
     <section class="base-padding">
@@ -35,4 +35,140 @@
     </section>
   </div>
 </section>
+
+
+    <!-- The Modal  Add product -->
+<div class="modal" id="forget_password">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+     <!-- <div class="modal-header">
+        <h4 class="modal-title" id="modal_title">Add Product</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>-->
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <form class="horizontal-form"  method="post" id = "forget_pass_form" action="/usermodule/send_otp/"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label >Enter email address you are registered with. </label>
+                                <input type="text" class="form-control" name="email" id="email" required onblur="check_valid_user_email(this)">
+                                <input type="hidden" id="user_name" name="user_name" value = "">
+                                <input type="hidden" name="baseurl" value="" id="baseurl">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-danger pull-right" id="submit" name="submit" type="submit"
+                                    data-original-title=""
+                                    title="">Submit</button>
+                            <!--<button onclick="history.go(-1);" style="margin-left:10px;" type="button"
+                                    class="btn btn-info pull-left" data-original-title="" title="">Cancel
+                            </button>-->
+                        </div>
+                    </div>
+
+                </div>
+
+            </form>
+      </div>
+
+      <!-- Modal footer
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+      </div> -->
+
+    </div>
+  </div>
+</div>
+
+{% block additional-javascript %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+    <script>
+        function get_forget_pass_modal() {
+            $('#forget_password').appendTo("body").modal('show');
+            $('#user_name').val($('#username').val());
+            $('#email').val('');
+            $('#baseurl').val(window.location.origin);
+        }
+
+
+
+        $(document).on("submit", "#forget_pass_form", function (event) {
+            event.preventDefault();
+            form_url = $(this).attr('action')
+            ajaxcall()
+            $.ajax({
+                type: 'POST',
+                url: form_url,
+                data: $(this).serialize(),
+                success: function (data) {
+                    alert(data)
+                    $('#forget_password').modal('toggle');
+                },
+                error: function (xhr) {
+                    alert(xhr.responseText); // the message
+                    $('#forget_password').modal('toggle');
+                }
+            }); //ajax endblock
+            return false;
+        });
+
+        function ajaxcall() {
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    function getCookie(name) {
+                        var cookieValue = null;
+                        if (document.cookie && document.cookie != '') {
+                            var cookies = document.cookie.split(';');
+                            for (var i = 0; i < cookies.length; i++) {
+                                var cookie = jQuery.trim(cookies[i]);
+                                // Does this cookie string begin with the name we want?
+                                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+
+                    if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+        }
+
+        function check_valid_user_email(obj) {
+            $.ajax({
+                type: 'POST',
+                url: '/usermodule/check_valid_user_email/',
+                data: {'user_name' : $("#user_name").val(),'email' : obj.value},
+                success: function (data) {
+                    console.log(data)
+                },
+                error: function(xhr) {
+                    alert(xhr.responseText); // the message
+                    $('#forget_password').modal('toggle');
+                    //$('.modal-backdrop').hide();
+                    }
+            }); //ajax endblock
+            return false;
+
+        }
+
+    </script>
+{% endblock %}
+
 {% include 'usermodule/footer.html' %}
