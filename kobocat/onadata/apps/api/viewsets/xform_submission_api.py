@@ -287,7 +287,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
     def get_preloaded_json(self, form_id, preset_data):
         json = {}
 
-        qry = "select form_id from forms_categories_relation where category_id = any('{1,2,10,20,30,40,50}')"
+        qry = "select form_id from forms_categories_relation where category_id = any('{1,2,10,20,30,40,50,60}')"
         df = pandas.read_sql(qry,connection)
         form_list_for_beneficiary = df.form_id.tolist()
 
@@ -320,6 +320,12 @@ Here is some example JSON, it would replace `[the JSON]` above:
         username = self.kwargs.get('username')
         # user_path_filename = os.path.join(settings.MEDIA_ROOT, username)
         user_path_filename = os.path.join(settings.MEDIA_ROOT, 'formid-media')
+        if not os.path.isdir(user_path_filename):
+            os.makedirs(user_path_filename)
+        event_q = "select event_name as event_label, code as event_name from iom_event"
+        event_df = pandas.read_sql(event_q, connection)
+        final_path_event = user_path_filename + '/event.csv'
+        event_df.to_csv(final_path_event, encoding='utf-8', index=False)
         try:
             list_of_files = os.listdir(user_path_filename)
 

@@ -157,7 +157,7 @@ def get_forms_data(request):
     category_id = request.POST.get('category_id')
     victim_id = request.POST.get('victim_id')
     user_id = request.user.id
-    query = """ WITH t AS( SELECT ( SELECT title FROM logger_xform WHERE id = form_id), form_id FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS ( SELECT logger_instance.id log_ins_id, json->>'victim_tbl_id'::text victim_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id order by date_created desc) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''')" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || to_char(date_created::date,'DD/MM/YYYY') ||'</a><span style="margin-left:30%">'|| replace(greatest(title,rpad(title, 32,' '))::text,' ','&nbsp;') ||'</span><a onclick="load_forms_edit_mode('|| xform_id ||','|| log_ins_id ||')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a></h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE victim_id LIKE '%""" + str(victim_id) + """%' """
+    query = """ WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id,rf.can_edit,rf.can_delete FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS (SELECT logger_instance.id log_ins_id, json ->> 'victim_tbl_id' :: text victim_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id and deleted_at is null ORDER BY date_created DESC) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a id="data_id_' ||log_ins_id ||'" class="collapsed" onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''',1)" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || To_char(date_created :: DATE, 'DD/MM/YYYY') ||'</a><span style="margin-left:30%">' || Replace(Greatest(title, Rpad(title, 32, ' ')) :: text, ' ', '&nbsp;') ||'</span>' || case when can_edit = 1 then '<a onclick="load_forms_edit_mode(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer;margin-right: -5px;margin-left: 11px;" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a>' else '' end || case when can_delete = 1 then '<a onclick="delete_forms_data(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-trash"></i></a>' else '' end || '</h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE victim_id LIKE '%""" + str(victim_id) + """%' """
     print(query)
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
@@ -787,7 +787,7 @@ def victim_profile(request,victim_tbl_id):
     beneficiary_picture = '/media/iom_admin/attachments/'+df.beneficiary_picture.tolist()[0] if len(df.beneficiary_picture.tolist()) and df.beneficiary_picture.tolist()[0] is not None  else '/static/images/profile.jpg'
 
     user_id = request.user.id
-    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50}') AND user_id = """ + str(user_id) + """ order by category_id asc """
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60}') AND user_id = """ + str(user_id) + """ order by category_id asc """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -812,7 +812,12 @@ def victim_profile(request,victim_tbl_id):
     for tmp in dta:
         qr = tmp['mon']
         yr = tmp['yr']
+    qery = "select id from logger_instance where json->>'victim_tbl_id' = '"+str(victim_tbl_id)+"'"
+    df = pandas.DataFrame()
+    df = pandas.read_sql(qery,connection)
+    instance_id_list = df.id.tolist()
     data = {
+        'instance_id_list': instance_id_list,
         'main_str': main_str,
         'username':username,
         'beneficiary_picture':beneficiary_picture,
@@ -860,6 +865,164 @@ def victim_profile(request,victim_tbl_id):
     return render(request, "asfmodule/victim_profile.html",data)
 
 
+@csrf_exempt
+def generate_pdf(request):
+    victim_tbl_id = request.POST.get('victim_tbl_id')
+    qry = "select *,(select label_text return_from from vw_country where value_text = return_from limit 1),case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,birth_date::date,date_return::date,(select field_name from geo_data where geocode = division limit 1) division,(select field_name from geo_data where geocode = district limit 1) district,(select field_name from geo_data where geocode = upazila limit 1) upazila,(select field_name from geo_data where geocode = union_id limit 1) union_id, ward ,(select field_name from geo_data where geocode = asf_victim.permanent_division limit 1) permanent_division,(select field_name from geo_data where geocode = asf_victim.permanent_district limit 1) permanent_district,(select field_name from geo_data where geocode = asf_victim.permanent_upazila limit 1) permanent_upazila,(select field_name from geo_data where geocode = asf_victim.permanent_union limit 1) permanent_union, permanent_ward from asf_case,asf_victim where asf_case.id = case_id::int and asf_victim.id =" + str(
+        victim_tbl_id)
+    df = pandas.read_sql(qry, connection)
+    victim_id = df.victim_id.tolist()[0] if len(df.victim_id.tolist()) and df.victim_id.tolist()[0] is not None  else ''
+    iom_reference = df.iom_reference.tolist()[0] if len(df.iom_reference.tolist()) and df.iom_reference.tolist()[
+                                                                                           0] is not None  else ''
+    case_id = df.incident_id.tolist()[0] if len(df.case_id.tolist()) and df.case_id.tolist()[0] is not None  else ''
+    return_from = df.return_from.values[0][1] if len(df.return_from.values) and df.return_from.values[0][
+                                                                                    1] is not None  else ''
+    birth_date = df.birth_date.values[0][1] if len(df.birth_date.values) and df.birth_date.values[0][
+                                                                                 1] is not None  else ''
+    victim_age = df.victim_age.tolist()[0] if len(df.victim_age.tolist()) and df.victim_age.tolist()[0] is not None and \
+                                              df.victim_age.tolist()[0] != 'NaN' else ''
+    date_return = df.date_return.values[0][1] if len(df.date_return.values) and df.date_return.values[0][
+                                                                                    1] is not None  else ''
+    victim_name = df.victim_name.tolist()[0] if len(df.victim_name.tolist()) and df.victim_name.tolist()[
+                                                                                     0] is not None  else ''
+    victim_sex = df.sex.values[0][1] if len(df.sex.values) and df.sex.values[0][1] is not None  else ''
+    status = df.status.tolist()[0] if len(df.status.tolist()) and df.status.tolist()[0] is not None else ''
+    education = df.education.tolist()[0] if len(df.education.tolist()) and df.education.tolist()[0] is not None  else ''
+    beneficiary_reference_no = df.beneficiary_reference_no.tolist()[0] if len(df.beneficiary_reference_no.tolist()) and \
+                                                                          df.beneficiary_reference_no.tolist()[
+                                                                              0] is not None else ''
+    maritial_status = df.maritial_status.tolist()[0] if len(df.maritial_status.tolist()) and \
+                                                        df.maritial_status.tolist()[0] is not None  else ''
+    father_name = df.father_name.tolist()[0] if len(df.father_name.tolist()) and df.father_name.tolist()[
+                                                                                     0] is not None  else ''
+    mother_name = df.mother_name.tolist()[0] if len(df.mother_name.tolist()) and df.mother_name.tolist()[
+                                                                                     0] is not None  else ''
+    birth_country = df.birth_country.tolist()[0] if len(df.birth_country.tolist()) and df.birth_country.tolist()[
+                                                                                           0] is not None  else ''
+    nationality = df.nationality.tolist()[0] if len(df.nationality.tolist()) and df.nationality.tolist()[
+                                                                                     0] is not None  else ''
+
+    current_division = df.division.values[0][1] if len(df.division.values) and df.division.values[0][
+                                                                                   1] is not None  else ''
+    current_district = df.district.values[0][1] if len(df.district.values) and df.district.values[0][
+                                                                                   1] is not None  else ''
+    current_upazila = df.upazila.values[0][1] if len(df.upazila.values) and df.upazila.values[0][1] is not None  else ''
+    current_union = df.union_id.values[0][1] if len(df.union_id.values) and df.union_id.values[0][
+                                                                                1] is not None  else ''
+    current_ward = df.ward.values[0][1] if len(df.ward.values) and df.ward.values[0][1] is not None  else ''
+    current_village = df.village.tolist()[0] if len(df.village.tolist()) and df.village.tolist()[0] is not None  else ''
+    current_postoffice = df.post_office.tolist()[0] if len(df.post_office.tolist()) and df.post_office.tolist()[
+                                                                                            0] is not None  else ''
+
+    permanent_division = df.permanent_division.values[0][1] if len(df.permanent_division.values) and \
+                                                               df.permanent_division.values[0][1] is not None  else ''
+    permanent_district = df.permanent_district.values[0][1] if len(df.permanent_district.values) and \
+                                                               df.permanent_district.values[0][1] is not None  else ''
+    permanent_upazila = df.permanent_upazila.values[0][1] if len(df.permanent_upazila.values) and \
+                                                             df.permanent_upazila.values[0][1] is not None  else ''
+    permanent_union = df.permanent_union.values[0][1] if len(df.permanent_union.values) and \
+                                                         df.permanent_union.values[0][1] is not None  else ''
+    permanent_ward = df.permanent_ward.values[0][1] if len(df.permanent_ward.values) and df.permanent_ward.values[0][
+                                                                                             1] is not None  else ''
+    permanent_village = df.permanent_village.tolist()[0] if len(df.permanent_village.tolist()) and \
+                                                            df.permanent_village.tolist()[0] is not None  else ''
+    permanent_post_office = df.permanent_post_office.tolist()[0] if len(df.permanent_post_office.tolist()) and \
+                                                                    df.permanent_post_office.tolist()[
+                                                                        0] is not None  else ''
+    print(permanent_district, df.permanent_district.values[0][1])
+    contact_self = df.contact_self.tolist()[0] if len(df.contact_self.tolist()) and df.contact_self.tolist()[
+                                                                                        0] is not None  else ''
+    contact_emergency = df.contact_emergency.tolist()[0] if len(df.contact_emergency.tolist()) and \
+                                                            df.contact_self.tolist()[0] is not None  else ''
+    occupation_in_host_country = df.occupation_in_host_country.values[0][1] if len(
+        df.occupation_in_host_country.values) and df.occupation_in_host_country.values[0][1] is not None  else ''
+    beneficiary_picture = '/media/iom_admin/attachments/' + df.beneficiary_picture.tolist()[0] if len(
+        df.beneficiary_picture.tolist()) and df.beneficiary_picture.tolist()[
+                                                 0] is not None  else '/static/images/profile.jpg'
+
+    user_id = request.user.id
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60}') AND user_id = """ + str(
+        user_id) + """ order by category_id asc """
+    df = pandas.DataFrame()
+    df = pandas.read_sql(query, connection)
+    main_str = ""
+    for each in df['form_str']:
+        main_str += str(each)
+    main_str = json.dumps(main_str)
+    username = request.user
+    # if in local environment, you should use your ip instead of localhost
+    # server_address = request.META.get('ip')+':'+request.META.get('HTTP_HOST').split(':', 1)[1]
+    # when in developement/live/client server
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    print(form_builder_server)
+
+    # For loading default quarter,year
+    qr = '%'
+    yr = '%'
+    q = "select BTRIM(to_char((date(quarter||'-'||yr)),'Month'),' ') mon,yr from public.vw_reintegration_sustainability where beneficiary_id='" + victim_id + "' order by id desc limit 1"
+
+    dta = __db_fetch_values_dict(q)
+    for tmp in dta:
+        qr = tmp['mon']
+        yr = tmp['yr']
+
+    qery = "select id from logger_instance where json->>'victim_tbl_id' = '"+str(victim_tbl_id)+"'"
+    df = pandas.DataFrame()
+    df = pandas.read_sql(qery, connection)
+    instance_id_list = df.id.tolist()
+    data = {
+        'main_str': main_str,
+        'instance_id_list':instance_id_list,
+        'username': username,
+        'beneficiary_picture': beneficiary_picture,
+        'iom_reference': iom_reference,
+        'victim_tbl_id': victim_tbl_id,
+        'victim_id': victim_id,
+        'victim_name': victim_name,
+        'victim_sex': victim_sex,
+        'birth_date': birth_date,
+        'victim_age': victim_age,
+        'birth_country': birth_country,
+        'case_id': case_id,
+        'return_from': return_from,
+        'date_return': date_return,
+        'education': education,
+        'beneficiary_reference_no': beneficiary_reference_no,
+        'maritial_status': maritial_status,
+        'father_name': father_name,
+        'mother_name': mother_name,
+        'nationality': nationality,
+        'current_division': current_division,
+        'current_district': current_district,
+        'current_upazila': current_upazila,
+        'current_union': current_union,
+        'current_ward': current_ward,
+        'current_village': current_village,
+        'current_postoffice': current_postoffice,
+        'permanent_division': permanent_division,
+        'permanent_district': permanent_district,
+        'permanent_upazila': permanent_upazila,
+        'permanent_union': permanent_union,
+        'permanent_ward': permanent_ward,
+        'permanent_village': permanent_village,
+        'permanent_post_office': permanent_post_office,
+        'contact_self': contact_self,
+        'contact_emergency': contact_emergency,
+        'occupation_in_host_country': occupation_in_host_country,
+        'permanent_address': '',
+        'permanent_postoffice': '',
+        'injury_details': '',
+        'notified_within_24h': '',
+        'verification_within_24h': '',
+        'server_address': server_address, 'form_builder_server': form_builder_server, 'qr': qr, 'yr': yr
+    }
+    return render(request, "asfmodule/export.html",data)
+    # pdf = render_to_pdf('asfmodule/export.html', data)
+    # response = HttpResponse(pdf, mimetype='application/pdf')
+    # response['Content-Disposition'] = 'attachment; filename=export.pdf'
+    # return response
 
 @login_required
 def victim_list(request):
@@ -942,6 +1105,79 @@ def capacity_building_form(request):
         instance_id = -1
 
     return render(request, 'asfmodule/capacity_building_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server':form_builder_server,'instance_id':instance_id})
+
+
+# Case Study
+@login_required
+def case_study_list(request):
+    return render(request, 'asfmodule/case_study_list.html')
+
+
+@csrf_exempt
+def get_case_study_list(request):
+    from_date = request.POST.get('from_date')
+    to_date = request.POST.get('to_date')
+    user_id = request.user.id
+    role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
+    if role == 'Field Officer':
+        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id="+str(user_id)
+    elif role == 'Admin':
+        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
+    else:
+        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+    print(query)
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
+
+@login_required
+def case_study_form(request):
+    username = request.user
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='case_study'")
+    redirected_url = '/asf/case_study_list/'
+    if request.GET:
+        instance_id = request.GET.get('instance_id')
+    else:
+        instance_id = -1
+    return render(request, 'asfmodule/formbuilder_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server' : form_builder_server,'redirected_url':redirected_url, 'instance_id':instance_id })
+
+# MSC story
+@login_required
+def msc_story_list(request):
+    return render(request, 'asfmodule/msc_story_list.html')
+
+
+@csrf_exempt
+def get_msc_story_list(request):
+    from_date = request.POST.get('from_date')
+    to_date = request.POST.get('to_date')
+    user_id = request.user.id
+    role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
+    if role == 'Field Officer':
+        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id="+str(user_id)
+    elif role == 'Admin':
+        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
+    else:
+        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+    print(query)
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
+
+@login_required
+def msc_story_form(request):
+    username = request.user
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='msc_story'")
+    redirected_url = '/asf/msc_story_list/'
+    if request.GET:
+        instance_id = request.GET.get('instance_id')
+    else:
+        instance_id = -1
+    return render(request, 'asfmodule/formbuilder_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server' : form_builder_server,'redirected_url':redirected_url, 'instance_id':instance_id })
 
 # Event
 @login_required
@@ -2334,6 +2570,46 @@ def get_rsc_list(request):
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
+@login_required
+def events_from_csv_list(request):
+    return render(request, 'asfmodule/events_from_csv_list.html')
+
+
+@csrf_exempt
+def get_events_from_csv_list(request):
+    query = "select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,event_name from iom_event"
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
+
+@login_required
+def add_events_from_csv_form(request):
+    if request.POST:
+        event_name = request.POST.get('event_name')
+        code = __db_fetch_single_value("select code::int+1 from iom_event order by code::int desc limit 1")
+        query = "INSERT INTO public.iom_event (event_name,code) values('"+str(event_name)+"','"+str(code)+"')"
+        __db_commit_query(query)
+        return HttpResponseRedirect('/asf/events_from_csv_list/')
+    return render(request, 'asfmodule/add_events_from_csv_form.html')
+
+@login_required
+def edit_events_from_csv(request,events_tbl_id):
+    if request.POST:
+        event_name = request.POST.get('event_name')
+        query = "update public.iom_event  set event_name='"+str(event_name)+"' where id ="+str(events_tbl_id)
+        __db_commit_query(query)
+        return HttpResponseRedirect('/asf/events_from_csv_list/')
+
+    qry = "select event_name from iom_event where id="+str(events_tbl_id)
+    df = pandas.DataFrame()
+    df = pandas.read_sql(qry,connection)
+    event_name = df.event_name.tolist()[0]
+    return render(request, 'asfmodule/edit_events_from_csv_form.html',{'event_name':event_name,'events_tbl_id':events_tbl_id})
+
+@login_required
+def delete_events_from_csv(request,events_tbl_id):
+    query = "delete from public.iom_event  where id ="+str(events_tbl_id)
+    __db_commit_query(query)
+    return HttpResponseRedirect('/asf/events_from_csv_list/')
 
 @login_required
 def catchment_tree_test(request,rsc_id):

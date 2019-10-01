@@ -27,6 +27,7 @@ urlpatterns = patterns('',
     url(r'^victim_status/(?P<victim_tbl_id>\d+)/$', views.victim_status, name='victim_status'),
     url(r'^refer_victim/(?P<victim_id>[\w\-]+)/(?P<victim_tbl_id>\d+)/$', views.refer_victim, name='refer_victim'),
     url(r'^victim_profile/(?P<victim_tbl_id>\d+)/$', views.victim_profile, name='victim_profile'),
+    url(r'^generate_pdf/$', views.generate_pdf, name='generate_pdf'),
     url(r'^victim_list/$', views.victim_list,name='victim_list'),
     url(r'^get_victims_list/$', views.get_victims_list,name='get_victims_list'),
 
@@ -146,8 +147,20 @@ urlpatterns = patterns('',
     url(r'^add_rsc_form/$', views.add_rsc_form, name='add_rsc_form'),
     url(r'^beneficiary_progress_report/(?P<id>\d+)/$', views.beneficiary_progress_report,name='beneficiary_progress_report'),
     url(r'^get_progress_report_data/$', views.get_progress_report_data,name='get_progress_report_data'),
-    url(r'^get_reintegration_sustainibility_data/$', views.get_reintegration_sustainibility_data,name='get_reintegration_sustainibility_data')
+    url(r'^get_reintegration_sustainibility_data/$', views.get_reintegration_sustainibility_data,name='get_reintegration_sustainibility_data'),
 
+    url(r'^events_from_csv_list/$', views.events_from_csv_list,name='events_from_csv_list'),
+    url(r'^get_events_from_csv_list/$', views.get_events_from_csv_list,name='get_events_from_csv_list'),
+    url(r'^add_events_from_csv_form/$', views.add_events_from_csv_form,name='add_events_from_csv_form'),
+    url(r'^edit_events_from_csv/(?P<events_tbl_id>\d+)/$', views.edit_events_from_csv,name='edit_events_from_csv'),
+    url(r'^delete_events_from_csv/(?P<events_tbl_id>\d+)/$', views.delete_events_from_csv,name='delete_events_from_csv'),
 
+    url(r'^case_study_list/$', views.case_study_list,name='case_study_list'),
+    url(r'^get_case_study_list/$', views.get_case_study_list,name='get_case_study_list'),
+    url(r'^case_study_form/$', views.case_study_form,name='case_study_form'),
+
+    url(r'^msc_story_list/$', views.msc_story_list,name='msc_story_list'),
+    url(r'^get_msc_story_list/$', views.get_msc_story_list,name='get_msc_story_list'),
+    url(r'^msc_story_form/$', views.msc_story_form,name='msc_story_form'),
 
     )
