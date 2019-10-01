@@ -1035,7 +1035,7 @@ def generate_pdf(request):
         'verification_within_24h': '',
         'server_address': server_address, 'form_builder_server': form_builder_server, 'qr': qr, 'yr': yr
     }
-    return render(request, "asfmodule/export.html",data)
+    return render(request, "asfmodule/profile_export.html",data)
     # pdf = render_to_pdf('asfmodule/export.html', data)
     # response = HttpResponse(pdf, mimetype='application/pdf')
     # response['Content-Disposition'] = 'attachment; filename=export.pdf'
