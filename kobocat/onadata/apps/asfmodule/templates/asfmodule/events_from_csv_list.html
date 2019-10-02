@@ -11,77 +11,15 @@
 
     <div class="portlet box red">
         <div class="portlet-title">
-            <div class="caption"><i class="fa fa-adn"></i>Case</div>
+            <div class="caption"><i class="fa fa-adn"></i>RSC</div>
         </div>
         <div class="portlet-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Division: </label>
-                        <select class="form-control" name="division" id="division" onclick="load_district(this)"
-                                required>
-                            <option value="%">Select One</option>
-                            {% for id,field_name in divisions %}
-                                <option value="{{ id }}">{{ field_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>District: </label>
-                        <select class="form-control" name="district" id="district" onclick="load_upazila(this)" required>
-                            <option value="%">Select One</option>
-
-                        </select>
-                    </div>
-                </div>
-            <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Upazila: </label>
-                        <select class="form-control" name="upazila" id="upazila" onclick="" required>
-                            <option value="%">Select One</option>
-
-                        </select>
-                    </div>
-                </div>
-            <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Status: </label>
-                        <select class="form-control" name="status" id="status" onclick="" required>
-                            <option value="%">Select One</option>
-                            <option value="1">New Case</option>
-                            <option value="2">Assigned Profiling</option>
-                            <option value="3">Ongoing</option>
-                            <option value="4">Completed</option>
-                            <option value="5">Graduated</option>
-                            <option value="6">Cancelled</option>
-                            <option value="7">Dropout</option>
-
-
-                        </select>
-                    </div>
-                </div>
-            <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Gender: </label>
-                        <select class="form-control" name="gender" id="gender" onclick="" required>
-                            <option value="%">Select One</option>
-                            <option value="1">Male</option>
-                            <option value="2">Female</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
 
             <div class="row">
                 <div class="col-md-12">
-                    <button type="submit" class="btn btn-info pull-left" id="generate_report" style="margin-right: 10px" id="generate_report"
-                            title=""><i class="fa fa-2x fa fa-search-plus"></i>Search
-                    </button>
-                    <a href="/asf/add_case_form/" class="pull-right">
+                    <a href="/asf/add_events_from_csv_form/" class="pull-right">
                         <button type="submit" class="btn btn-info pull-left" id="add_new" data-original-title=""
-                                title=""><i class="fa fa-2x fa-plus"></i>New Case
+                                title=""><i class="fa fa-2x fa-plus"></i>Add New
                         </button>
                     </a>
                 </div>
@@ -91,13 +29,9 @@
             <table id="all_info_table" class="table table-bordered table-striped table-condensed flip-content nowrap">
                 <thead class="flip-content">
                 <tr>
-                    <th>Case Number</th>
-                    <th>Name</th>
-                    <th>Sex</th>
-                    <th>Age</th>
-                     <th>Beneficiary Id</th>
-                    <th>Status</th>
-                    <th>Case Initiation date</th>
+                    <th>SL</th>
+
+                            <th>Event</th>
                     <th class="td-center">Action</th>
                 </tr>
                 </thead>
@@ -105,7 +39,8 @@
 
                 </tbody>
             </table>
-        </div>
+
+    </div>
     </div>
 
 
@@ -192,10 +127,7 @@
 
 
 
-        $('.delete-item').on('click', function (e) {
-            var criteria_id = $(this).attr("data-href");
-            $('.btn-ok').attr("href", criteria_id);
-        });
+
 
         if ($('.alert-block').is(':visible')) {
             window.setTimeout(function () {
@@ -206,7 +138,7 @@
         }
 
 
-            $('#generate_report').on('click', function (e) {
+function start (e) {
 
                 table.destroy();
 
@@ -218,49 +150,41 @@
 {#                to_date = to_date.split('/')#}
 {#                to_date = to_date[2]+"-"+to_date[1]+"-"+to_date[0]#}
 
-                var division    = $('#division').val();
-                var district    = $('#district').val();
-                var upazila     = $('#upazila').val();
-                var gender     = $('#gender').val();
-                var status     = $('#status').val();
 
 
 
                 $.ajax({
-                    url: '/asf/get_case_list/',
-                    type: 'POST',
+                    url: '/asf/get_events_from_csv_list/',
                     dataType: 'json',
-                    data: {
-
-                        'division'            : division
-                        , 'district'            : district
-                        ,'upazila':upazila
-                        ,'status':status,'gender':gender
-
-                    },
                     beforeSend: function () {
                         $('#container').show();
 
                     },
-
-
-{#<a class="btn btn-info" data-container="body"  data-placement="top" data-original-title="Detail" href="/asf/edit_victim/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-bars"></i>Update</a>#}
                     success: function (case_list) {
                         $('#container').hide();
                             var tbody = '';
                         for (var idx in case_list) {
-                            tbody += '<tr><td>' + case_list[idx].iom_case_no + '</td><td>' + case_list[idx].victim_name +'</td><td>' + case_list[idx].sex +'</td><td>' + case_list[idx].victim_age +'</td><td>' +  case_list[idx].returnee_id + '</td><td>' + case_list[idx].status + '</td><td>' + case_list[idx].case_initation_date + '</td><td class="td-center"><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Profile" href="/asf/victim_profile/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-user-circle-o"></i>Profile</a><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Status" '+ (case_list[idx].assaign_to != 0 || (case_list[idx].role_name !='RSC Manager' && case_list[idx].role_name !='Admin') ? 'disabled':'enabled')   +' href="/asf/victim_status/' + case_list[idx].id + '"><i class="fa fa-2x fa fa-check-circle-o"></i>Assaign</a><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Refer" '+ (case_list[idx].returnee_id.length == 0  ? 'disabled':'enabled')   +' href="/asf/refer_victim/' + case_list[idx].returnee_id + '/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-external-link"></i>Refer</a></td></tr>';
+                            tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].event_name +'</td><td class="td-center "> <a class="tooltips" data-placement="top" data-original-title="Edit" href="/asf/edit_events_from_csv/'+case_list[idx].id+'"><i class="fa fa-2x fa-pencil-square-o"></i></a> <a class="delete-item tooltips" data-placement="top" data-original-title="Delete" href="#" data-href="/asf/delete_events_from_csv/'+case_list[idx].id+'/" data-toggle="modal" data-target="#confirm-delete"><i class="fa fa-2x fa-trash-o"></i></a> </td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
 
+$('.delete-item').on('click', function (e) {
+            var criteria_id = $(this).attr("data-href");
+            console.log(criteria_id)
+            $('.btn-ok').attr("href", criteria_id);
+        });
 
                     }
                 });
 
 
-            });
-        $('#generate_report').trigger('click');
+            }
+             start()
+
+
+
+
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": false,"iDisplayLength": 50,

@@ -2,7 +2,9 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from onadata.apps.usermodule.models import MenuItem,UserModuleProfile
 from onadata.apps.usermodule.models import MenuRoleMap,UserRoleMap
-import sys 
+import sys
+import pandas
+from django.db import connection
 
 def site_name(request):
     site_id = getattr(settings, 'SITE_ID', None)
@@ -46,7 +48,16 @@ def additional_menu_items(request):
     menu_items = sorted(menu_items, key=lambda x: x.sort_order)
     sub_menu_items = list(set(sub_menu_items))
     sub_menu_items = sorted(sub_menu_items, key=lambda x: x.sort_order)
-    return {'main_menu_items': menu_items, 'sub_menu_items':sub_menu_items}
+    try:
+        user_id = request.user.id
+        qry = "select substring(user_img from 8) user_img from usermodule_usermoduleprofile where user_id ="+str(user_id)
+        df = pandas.DataFrame()
+        df = pandas.read_sql(qry,connection)
+        user_img = df.user_img.tolist()[0]
+        print(user_img)
+        return {'main_menu_items': menu_items, 'sub_menu_items':sub_menu_items,'user_img':user_img}
+    except Exception :
+        return {'main_menu_items': menu_items, 'sub_menu_items': sub_menu_items}
 
 
 def is_admin(request):
