@@ -328,9 +328,76 @@
 
 
 <section class="base-padding">
+      <div class="container">
+          <div class="row">
+              <div class=" col-md-6">
+                        <div class="thumbnail">
+                                    <div class="caption">
+                                        {% for d in d_sidedata_dashboard %}
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                        <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Returnees Identified</td>
+                        </tr>
+                      <tr>
+                        <td colspan="2">&nbsp;</td>
+                        <td align="right" class="july-top">{{ curr_month }}</td>
+                        <td align="right" class="cumulative-top"><strong>Cumulative</strong></td>
+                      </tr>
+                      <tr>
+                        <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/workshops.png"></td>
+                        <td align="left">Number of Returnee Identified</td>
+                        <td align="right" class="july">{{ d.cur_returnee_identified }}</td>
+                        <td align="right" class="cumulative">{{ d.total_returnee_identified }}</td>
+                      </tr>
+
+                    </table>
+                                {% endfor %}
+
+
+                    </div>
+                    </div>
+                </div>
+
+
+              <div class=" col-md-6">
+                <div class="thumbnail">
+                    <div class="caption">
+                        {% for d in d_sidedata_dashboard %}
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                <td colspan="6" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Hotline Services</td>
+                </tr>
+              <tr>
+                <td colspan="4">&nbsp;</td>
+                <td align="right" class="july-top">{{ curr_month }}</td>
+                <td align="right" class="cumulative-top"><strong>Cumulative</strong></td>
+              </tr>
+              <tr>
+                <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/female.png"></td>
+                <td align="left" class="cumulative">{{ d.cur_num_female_call }}</td>
+                <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/male.png"></td>
+                <td align="left" class="july">{{ d.cur_num_male_call }}</td>
+                <td align="right" class="july">{{ d.cur_num_call }}</td>
+                <td align="right" class="cumulative">{{ d.total_num_call }}</td>
+              </tr>
+              <tr>
+                <td colspan="6" class="cumulative-top">164 beneciaries received immediate assistance to date</td>
+                </tr>
+            </table>
+            {% endfor %}
+
+                </div>
+                </div>
+                </div>
+          </div>
+      </div>
+</section>
+
+<section class="base-padding">
   <div class="container">
   <div class="row">
     <h2 class="title text-center text-primary">10 REINTEGRATION SERVICE CENTER (RSC) covering 64 DISTRICTS</h2>
+      <div id="cell">Other Table Text654758568</div>
   </div>
   <div class="row">
     <div class=" col-md-8">
@@ -344,28 +411,25 @@
     <div class=" col-md-4">
     <div class="thumbnail">
     	<div class="caption">
-            {% for d in d_sidedata_dashboard %}
-    <table width="100%" border="0" cellspacing="0" cellpadding="0">
-    <tr>
-    <td colspan="6" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Hotline Services</td>
-    </tr>
-  <tr>
-    <td colspan="4">&nbsp;</td>
-    <td align="right" class="july-top">{{ curr_month }}</td>
-    <td align="right" class="cumulative-top"><strong>Cumulative</strong></td>
-  </tr>
-  <tr>
-    <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/female.png"></td>
-    <td align="left" class="cumulative">{{ d.cur_num_female_call }}</td>
-    <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/male.png"></td>
-    <td align="left" class="july">{{ d.cur_num_male_call }}</td>
-    <td align="right" class="july">{{ d.cur_num_call }}</td>
-    <td align="right" class="cumulative">{{ d.total_num_call }}</td>
-  </tr>
-  <tr>
-    <td colspan="6" class="cumulative-top">164 beneciaries received immediate assistance to date</td>
-    </tr>
-</table>
+
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                <td colspan="6" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">% of Returnees sustainably reintegrated</td>
+                </tr>
+              <tr>
+                <td colspan="2">&nbsp;</td>
+                <td align="right" class="july-top">{{ curr_month }}</td>
+                <td align="right" class="cumulative-top"><strong>Cumulative</strong></td>
+              </tr>
+              <tr>
+                <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/workshops.png"></td>
+                <td align="left">% of Returnees sustainably reintegrated</td>
+                <td align="right" class="july"><div id = "cur_rs"></div></td>
+                <td align="right" class="cumulative"><div id = "total_rs"></div></td>
+              </tr>
+
+            </table>
+
 
     
     </div>
@@ -376,6 +440,7 @@
     <div class=" col-md-4">
     <div class="thumbnail">
     	<div class="caption">
+            {% for d in d_sidedata_dashboard %}
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
     <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Increase capacity of migrants and their families on financial literacy and awareness of available products and services</td>
@@ -424,7 +489,7 @@
   
 </table>
 
-
+ {% endfor %}
 
     </div>
     </div>
@@ -435,9 +500,10 @@
     <div class=" col-md-4">
     <div class="thumbnail">
                 <div class="caption">
+
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
-    <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Returnees Identified</td>
+    <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Received immediate assistance</td>
     </tr>
   <tr>
     <td colspan="2">&nbsp;</td>
@@ -446,13 +512,13 @@
   </tr>
   <tr>
     <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/workshops.png"></td>
-    <td align="left">Number of Returnee Identified</td>
-    <td align="right" class="july">{{ d.cur_returnee_identified }}</td>
-    <td align="right" class="cumulative">{{ d.total_returnee_identified }}</td>
+    <td align="left">Number of returnees who received immediate assistance</td>
+    <td align="right" class="july"><div id = "cur_poais"></div></td>
+    <td align="right" class="cumulative"><div id="total_poais"></div></td>
   </tr>
   
 </table>
-            {% endfor %}
+
 
     
     </div>
@@ -534,6 +600,9 @@
 <script type="text/javascript" src="{{ STATIC_URL }}reportmodule/js/bd_admin_3.js"></script>
    <script>
         var rdata = {{ region_data|safe }};
+        var post_arrival_support = {{ POAIS_DATA|safe }}
+        var d_rs = {{ d_rs | safe }}
+        var d_poais = {{ d_poais | safe }}
 
         var region_table = {{ region_table|safe }};
 
@@ -561,6 +630,21 @@
             this._div.innerHTML = '<h4>Sample Distribution</h4>' + (props ?
                     '<br /><b>' + props.NAME_3 + ' </b> ' + rdata[props.NAME_3] + ' (' + (rdata[props.NAME_3] / total_hh * 100).toFixed(1) + '%)'
                     : 'Hover over a district');
+            if (props){
+                document.getElementById("cur_poais").innerHTML = '<b>' +  post_arrival_support[props.NAME_3]['cur'] + '</b>';
+                document.getElementById("total_poais").innerHTML = '<b>' + post_arrival_support[props.NAME_3]['total'] + '</b>';
+
+                document.getElementById("cur_poais").innerHTML = '<b>' +  post_arrival_support[props.NAME_3]['cur'] + '</b>';
+                document.getElementById("total_poais").innerHTML = '<b>' + post_arrival_support[props.NAME_3]['total'] + '</b>';
+            }
+            else{
+                document.getElementById("cur_rs").innerHTML = '<b>'+d_poais['curmon_cnt']+'</b>';
+                document.getElementById("total_rs").innerHTML = '<b>'+d_poais['total_cnt']+'</b>';
+
+                document.getElementById("cur_rs").innerHTML = '<b>'+d_rs['curmon_cnt']+'</b>';
+                document.getElementById("total_rs").innerHTML = '<b>'+d_rs['total_cnt']+'</b>';
+            }
+
         };
 
         info.addTo(map);
