@@ -52,6 +52,7 @@ from django.core.mail import send_mail, BadHeaderError
 import smtplib
 import string
 import random
+import decimal
 
 
 def __db_commit_query(query):
@@ -59,6 +60,15 @@ def __db_commit_query(query):
     cursor.execute(query)
     connection.commit()
     cursor.close()
+
+def decimal_date_default(obj):
+    if isinstance(obj, decimal.Decimal):
+        return float(obj)
+    elif hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    else:
+        return obj
+    raise TypeError
 
 def admin_check(user):
     current_user = UserModuleProfile.objects.filter(user=user)
@@ -746,7 +756,8 @@ def dashboard(request):
     d_social_reintegration_support = __db_fetch_values_dict("select * from public.get_social_reintegration_support()")
     d_number_participants_dashboard = __db_fetch_values_dict("select * from public.get_number_participants_dashboard()")
     d_sidedata_dashboard = __db_fetch_values_dict("select * from public.get_sidedata_dashboard()")
-
+    d_rs = json.dumps(get_rs(), default=decimal_date_default)
+    d_poais = json.dumps(get_poais(), default=decimal_date_default)
     map_q = "with t1 as( select id,(select field_name from geo_data where geocode =( SELECT asf_case.district FROM asf_case WHERE asf_case.id::text = asf_victim.case_id LIMIT 1)) district FROM asf_victim), t2 as( select count(*) cnt,district zila_name from t1 where district is not null group by district) select zila_name,cnt from t2 order by cnt DESC"
     region_data = {}
     region_table = []
@@ -755,6 +766,10 @@ def dashboard(request):
         region_data[dd[0]] = dd[1]
         region_table.append([dd[0], dd[1]])
 
+    POAIS_DATA_SET = json.dumps(get_post_arrival_immediate_support_data())
+    RS_DATA_SET = json.dumps(get_reintegration_sustainibility_data())
+    print RS_DATA_SET
+    print d_rs
 
     data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,
             'd_eco_reintegration_support' : d_eco_reintegration_support,
@@ -764,9 +779,56 @@ def dashboard(request):
             'd_sidedata_dashboard': d_sidedata_dashboard,
             'curr_month' : curr_month,
             'region_data': json.dumps(region_data),
-            'region_table': json.dumps(region_table)
+            'region_table': json.dumps(region_table),
+            'POAIS_DATA' : POAIS_DATA_SET,'d_poais' : d_poais,
+            'RS_DATA_SET' : RS_DATA_SET,'d_rs' : d_rs
             }
     return render_to_response('usermodule/dashboard.html',data, context)
+
+def get_poais():
+    data  = __db_fetch_values_dict("select sum(total_cnt) total_cnt,sum(curmon_cnt) curmon_cnt from public.get_post_arrival_immediate_service_data()")
+    dic = {}
+    for temp in data:
+        dic = {
+            'curmon_cnt' : temp['curmon_cnt'],'total_cnt' : temp['total_cnt']
+        }
+
+    return dic
+
+
+def get_rs():
+    data = __db_fetch_values_dict(
+        "select sum(total_cnt) total_cnt,sum(curmon_cnt) curmon_cnt from public.get_reintegration_sustainibility_data()")
+    dic = {}
+    for temp in data:
+        dic = {
+            'curmon_cnt': temp['curmon_cnt'], 'total_cnt': temp['total_cnt']
+        }
+
+    return dic
+
+
+def get_post_arrival_immediate_support_data():
+    each_data = {}
+    data = __db_fetch_values_dict("select * from public.get_post_arrival_immediate_service_data()")
+    for temp in data:
+        dic = {}
+        dic = {"cur" : temp['curmon_cnt'],"total" : temp['total_cnt']}
+        each_data[temp['dist']] = dic
+    return each_data
+
+
+def get_reintegration_sustainibility_data():
+    each_data = {}
+    data = __db_fetch_values_dict("select * from public.get_reintegration_sustainibility_data()")
+    for temp in data:
+        dic = {}
+        dic = {"cur": temp['curmon_cnt'], "total": temp['total_cnt']}
+        each_data[temp['dist']] = dic
+    return each_data
+
+
+
 
 def user_login(request):
     print "Hit login ***************************************"
