@@ -287,7 +287,10 @@ def case_list(request):
     query = "select id,field_name from geo_data where field_type_id = 85"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
-    return render(request, 'asfmodule/case_list.html', {'divisions':divisions})
+    query = "select id,status from iom_status"
+    df = pandas.read_sql(query, connection)
+    status_list = zip(df.id.tolist(), df.status.tolist())
+    return render(request, 'asfmodule/case_list.html', {'divisions':divisions,'status_list':status_list})
 
 @csrf_exempt
 def get_case_list(request):
@@ -299,16 +302,16 @@ def get_case_list(request):
     user_id = request.user.id
     role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= "+str(user_id)+")")
     if role == 'Field Officer':
-        query = "select (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= "+str(user_id)+")),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex, coalesce(victim_age,'') victim_age,coalesce(victim_id,'') returnee_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '"+str(gender)+"' and case_id::int = any(select id from asf_case where assaign_to::int = "+str(user_id)+" and division like '"+str(division)+"' and district like '"+str(district)+"' and upazila like '"+str(upazila)+"' and status like '"+str(status)+"')"
+        query = "select (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= "+str(user_id)+")),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex, coalesce(victim_age,'') victim_age,coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '"+str(gender)+"' and case_id::int = any(select id from asf_case where assaign_to::int = "+str(user_id)+" and division like '"+str(division)+"' and district like '"+str(district)+"' and upazila like '"+str(upazila)+"' and status like '"+str(status)+"')"
     elif role == 'RSC Manager':
         query = "select (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
-            user_id) + ")),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex, coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '" + str(
+            user_id) + ")),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex, coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '" + str(
             gender) + "' and case_id::int = any(select id from asf_case where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
             upazila) + "' and status like '" + str(status) + "' and ( division::int = any(select geo_id from rsc_catchment_area where rsc_id = (select rsc_name_id from usermodule_usermoduleprofile where user_id = "+str(user_id)+")) or district::int = any(select geo_id from rsc_catchment_area where rsc_id = (select rsc_name_id from usermodule_usermoduleprofile where user_id = "+str(user_id)+")) or upazila::int = any(select geo_id from rsc_catchment_area where rsc_id = (select rsc_name_id from usermodule_usermoduleprofile where user_id = "+str(user_id)+")) ))"
     else:
         query = "select (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
-            user_id) + ")),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '" + str(
+            user_id) + ")),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '" + str(
             gender) + "' and case_id::int = any(select id from asf_case where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
             upazila) + "' and status like '" + str(status) + "')"
@@ -746,6 +749,22 @@ def victim_status(request,victim_tbl_id):
     df = pandas.read_sql(qry, connection)
     users = zip(df.user_id.tolist(), df.username.tolist())
     return render(request, 'asfmodule/victim_status_form.html',{'victim_tbl_id':victim_tbl_id,'users':users})
+
+@login_required
+def victim_status_from_web(request,victim_tbl_id):
+    if request.POST:
+        status = request.POST.get('status')
+        case_id = __db_fetch_single_value("select case_id from asf_victim where id = " + str(victim_tbl_id))
+        updt_qry = "UPDATE public.asf_case SET status='" + str(status) + "' where id = " + str(case_id)
+        __db_commit_query(updt_qry)
+        messages.success(request, '<i class="fa fa-check-circle"></i> Status has been changed successfully!',extra_tags='alert-success crop-both-side')
+        return HttpResponseRedirect('/asf/case_list/')
+
+    user_id  = request.user.id
+    qry = "select id,status from iom_status where id > 2 "
+    df = pandas.read_sql(qry, connection)
+    status_list = zip(df.id.tolist(), df.status.tolist())
+    return render(request, 'asfmodule/victim_status_from_web.html',{'victim_tbl_id':victim_tbl_id,'status_list':status_list})
 
 @login_required
 def refer_victim(request, victim_id,victim_tbl_id):
