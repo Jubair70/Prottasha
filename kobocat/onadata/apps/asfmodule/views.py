@@ -2743,10 +2743,16 @@ def get_progress_report_data(request):
 @csrf_exempt
 def get_reintegration_sustainibility_data(request):
     ben_tbl_id = request.POST.get('ben_tbl_id')
-    quarter = request.POST.get('qr')
-    year = request.POST.get('yr')
+    #quarter = request.POST.get('qr')
+    #year = request.POST.get('yr')
 
-    reintegration_q = "with t1 as(SELECT beneficiary_id, coalesce(round(economic_reintegration_score::numeric,2),0)economic_reintegration_score , coalesce(round(social_reintegration_score::numeric,2),0) social_reintegration_score, coalesce(round(psychosocial_score::numeric,2),0) psychosocial_score, coalesce(round(composite_score::numeric,2),0) composite_score, _submission_time, quarter, BTRIM (to_char((date(quarter||'-'||yr)),'Month'),' ') mon, yr FROM public.vw_reintegration_sustainability where beneficiary_id=(select victim_id from asf_victim where id="+str(ben_tbl_id)+")) select *,(case when mon='March' then yr||'-'||'Q1' when mon='June' then yr||'-'||'Q2' when mon='September' then yr||'-'||'Q3' when mon='December' then yr||'-'||'Q4' else '' end) q_name from t1 where mon like '"+str(quarter)+"' and yr like '"+str(year)+"' ";
+    q ="with t1 as(SELECT beneficiary_id, coalesce(round(economic_reintegration_score::numeric,2),0)economic_reintegration_score , coalesce(round(social_reintegration_score::numeric,2),0) social_reintegration_score, coalesce(round(psychosocial_score::numeric,2),0) psychosocial_score, coalesce(round(composite_score::numeric,2),0) composite_score, _submission_time, quarter, BTRIM(to_char((date(quarter||'-'||yr)),'Month'),' ') mon, yr FROM public.vw_reintegration_sustainability where victim_tbl_id = "+str(ben_tbl_id)+") select *,(case when mon='March' then yr||'-'||'Q1' when mon='June' then yr||'-'||'Q2' when mon='September' then yr||'-'||'Q3' when mon='December' then yr||'-'||'Q4' else '' end) q_name from t1;"
+    '''
+    reintegration_q = "with t1 as(SELECT beneficiary_id, coalesce(round(economic_reintegration_score::numeric,2),0)economic_reintegration_score , coalesce(round(social_reintegration_score::numeric,2),0) social_reintegration_score, coalesce(round(psychosocial_score::numeric,2),0) psychosocial_score, coalesce(round(composite_score::numeric,2),0) composite_score, _submission_time, quarter, BTRIM (to_char((date(quarter||'-'||yr)),'Month'),' ') mon, yr FROM public.vw_reintegration_sustainability where beneficiary_id=(select victim_id from asf_victim where id=" + str(
+        ben_tbl_id) + ")) select *,(case when mon='March' then yr||'-'||'Q1' when mon='June' then yr||'-'||'Q2' when mon='September' then yr||'-'||'Q3' when mon='December' then yr||'-'||'Q4' else '' end) q_name from t1 where mon like '" + str(
+        quarter) + "' and yr like '" + str(year) + "' ";
+
+    print reintegration_q
     df = pandas.DataFrame()
     df = pandas.read_sql(reintegration_q, connection)
     cat_list = []
@@ -2769,6 +2775,27 @@ def get_reintegration_sustainibility_data(request):
             'cat_list': cat_list,
             'data_list': [{'name': row['q_name'], 'data': data_list}]
         }
+
+    data = json.dumps(d, default=decimal_date_default)
+    '''
+    df_u = pandas.read_sql(q, connection)
+    cat_list_u = []
+    eco_list = []
+    social_list = []
+    psy_list = []
+    com_list = []
+    for index, row in df_u.iterrows():
+        cat_list_u.append(row['q_name'])
+
+        eco_list.append(row['economic_reintegration_score'])
+        social_list.append(row['social_reintegration_score'])
+        psy_list.append(row['psychosocial_score'])
+        com_list.append(row['composite_score'])
+    d = {
+        'cat_list': cat_list_u,
+        'data_list': [{'name': 'Economic', 'data': eco_list},{'name': 'Social', 'data': social_list},{'name': 'Psychosocial', 'data': psy_list}
+                      ,{'name': 'Composite', 'data': com_list}
+                      ]}
 
     data = json.dumps(d, default=decimal_date_default)
 
