@@ -255,35 +255,7 @@ iframe
                 <div id="individual_income_report"></div>
 
             </div>
-            <div>
-                <div class="row" style="margin-bottom: 10px;">
 
-                    <div class="col-md-2"><label class="control-label">Quarter </label><br>
-                        <select class="form-control" id = "qr">
-                            <option value="%">select</option>
-                            <option value="March">Q-1: (January -March)</option>
-                            <option value="June">Q-2: (April - June)</option>
-                            <option value="September">Q-3: (July - September)</option>
-                            <option value="December">Q-4: (October - December)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2"><label class="control-label">Year </label><br>
-                        <select class="form-control" id = "yr">
-                            <option value="%">select</option>
-                            <option value="2019">2019</option>
-                            <option value="2020">2020</option>
-                            <option value="2021">2021</option>
-                            <option value="2022">2022</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="control-label"> </label><br>
-                        <button id="filter_reint_chart" style="margin-top:8px;" class="btn red-custom btn-md"  data-original-title="" title="">Search</button>
-                    </div>
-
-                </div>
-
-            </div>
             <div class="row"  >
                 <div id="reintegration_score"></div>
             </div>
@@ -350,6 +322,7 @@ var victim_tbl_id = '{{ victim_tbl_id | safe }}'
 
 var quarter = '{{ qr }}'; var year = '{{ yr }}';$('#qr').val('{{ qr }}'); $('#yr').val('{{ yr }}');
 get_progress_report_data(victim_tbl_id)
+get_reintegration_sustainibility_report(victim_tbl_id)
 
     var opened = [];
 
@@ -598,32 +571,33 @@ function get_progress_report_data(ben_tbl_id) {
 }
 
 function get_reintegration_sustainibility_report(ben_tbl_id) {
-    getfilterCriteria()
+    //getfilterCriteria()
     $.ajax({
         url: '/asf/get_reintegration_sustainibility_data/',
         type: 'POST',
         dataType: 'json',
         data: {
-            'ben_tbl_id': ben_tbl_id,'qr' : qr,'yr' : yr
+            'ben_tbl_id': ben_tbl_id
+            //,'qr' : qr,'yr' : yr
 
         },
         beforeSend: function () {
 
         },
         success: function (result) {
-            get_chart('column','reintegration_score','Individual Reintegration Score trend','',result.cat_list,result.data_list)
+            get_chart('spline','reintegration_score','Individual Reintegration Score trend','',result.cat_list,result.data_list)
 
         }
     });
 }
 
-
+/*
 
 $(document).on("click", "#filter_reint_chart", function () {
  get_reintegration_sustainibility_report(victim_tbl_id)
 });
 $('#filter_reint_chart').trigger('click');
-
+*/
 function delete_forms_data(form_id,log_ins_id) {
     console.log(form_id,log_ins_id);
 
