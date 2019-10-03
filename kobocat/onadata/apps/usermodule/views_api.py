@@ -176,13 +176,14 @@ def get_returnee_list(request):
         user_id = __db_fetch_single_value("select id from auth_user where username = '"+str(username)+"'")
         role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
         if role == 'Field Officer':
-            q = "with t as( select *, asf_victim.id as victim_tbl_id from asf_victim,asf_case where asf_case.id = asf_victim.case_id::int) SELECT COALESCE(( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1),'') iom_case_id, ( SELECT label_text FROM vw_country WHERE value_text = ( SELECT return_from FROM asf_case WHERE id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name, COALESCE(contact_self,'') mobile_no, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' END gender, (Date_part('year',Age(Date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id, (SELECT CASE WHEN status = '1' THEN 'New Case' WHEN status = '2' THEN 'Assigned Profiling' WHEN status = '3' THEN 'Support Ongoing' WHEN status = '4' THEN 'Support Completed' WHEN status = '5' THEN 'Graduated' WHEN status = '6' THEN 'Cancelled' WHEN status = '7' THEN 'Dropout' END status FROM asf_case WHERE id = case_id::int limit 1) status,victim_tbl_id FROM t where upazila = ANY ( select geocode from geo_data where field_parent_id = any(SELECT (select id from geo_data where geocode =geo_id::text) FROM rsc_catchment_area WHERE rsc_id =( SELECT rsc_name_id FROM usermodule_usermoduleprofile WHERE user_id = "+str(user_id)+")) intersect select (select geocode from geo_data where id = geoid limit 1) from usermodule_catchment_area where user_id = "+str(user_id)+")"
+            q = "with t as( select *, asf_victim.id as victim_tbl_id ,(asf_victim.created_at)::text  case_initiation_date from asf_victim,asf_case where asf_case.id = asf_victim.case_id::int) SELECT COALESCE(( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1),'') iom_case_id, ( SELECT label_text FROM vw_country WHERE value_text = ( SELECT return_from FROM asf_case WHERE id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name, COALESCE(contact_self,'') mobile_no, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' END gender, (Date_part('year',Age(Date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id, (SELECT CASE WHEN status = '1' THEN 'New Case' WHEN status = '2' THEN 'Assigned Profiling' WHEN status = '3' THEN 'Support Ongoing' WHEN status = '4' THEN 'Support Completed' WHEN status = '5' THEN 'Graduated' WHEN status = '6' THEN 'Cancelled' WHEN status = '7' THEN 'Dropout' END status FROM asf_case WHERE id = case_id::int limit 1) status,victim_tbl_id,case_initiation_date FROM t where upazila = ANY ( select geocode from geo_data where field_parent_id = any(SELECT (select id from geo_data where geocode =geo_id::text) FROM rsc_catchment_area WHERE rsc_id =( SELECT rsc_name_id FROM usermodule_usermoduleprofile WHERE user_id = "+str(user_id)+")) intersect select (select geocode from geo_data where id = geoid limit 1) from usermodule_catchment_area where user_id = "+str(user_id)+")"
+            print q
         elif role == 'RSC Manager':
-            q = "with t as( select *, asf_victim.id as victim_tbl_id from asf_victim,asf_case where asf_case.id = asf_victim.case_id::int) SELECT COALESCE( ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1),'') iom_case_id, ( SELECT label_text FROM vw_country WHERE value_text = ( SELECT return_from FROM asf_case WHERE id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name, COALESCE(contact_self,'') mobile_no, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' END gender, (Date_part('year',Age(Date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id, (SELECT CASE WHEN status = '1' THEN 'New Case' WHEN status = '2' THEN 'Assigned Profiling' WHEN status = '3' THEN 'Support Ongoing' WHEN status = '4' THEN 'Support Completed' WHEN status = '5' THEN 'Graduated' WHEN status = '6' THEN 'Cancelled' WHEN status = '7' THEN 'Dropout' END status FROM asf_case WHERE id = case_id::int limit 1) status,victim_tbl_id FROM t where district = ANY ( SELECT geo_id::text geo_code FROM rsc_catchment_area WHERE rsc_id =( SELECT rsc_name_id FROM usermodule_usermoduleprofile WHERE user_id = "+str(user_id)+") intersect select (select geocode from geo_data where id = geoid limit 1) from usermodule_catchment_area where user_id = "+str(user_id)+" )"
+            q = "with t as( select *, asf_victim.id as victim_tbl_id,(asf_victim.created_at)::text case_initiation_date from asf_victim,asf_case where asf_case.id = asf_victim.case_id::int) SELECT COALESCE( ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1),'') iom_case_id, ( SELECT label_text FROM vw_country WHERE value_text = ( SELECT return_from FROM asf_case WHERE id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name, COALESCE(contact_self,'') mobile_no, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' END gender, (Date_part('year',Age(Date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id, (SELECT CASE WHEN status = '1' THEN 'New Case' WHEN status = '2' THEN 'Assigned Profiling' WHEN status = '3' THEN 'Support Ongoing' WHEN status = '4' THEN 'Support Completed' WHEN status = '5' THEN 'Graduated' WHEN status = '6' THEN 'Cancelled' WHEN status = '7' THEN 'Dropout' END status FROM asf_case WHERE id = case_id::int limit 1) status,victim_tbl_id,case_initiation_date FROM t where district = ANY ( SELECT geo_id::text geo_code FROM rsc_catchment_area WHERE rsc_id =( SELECT rsc_name_id FROM usermodule_usermoduleprofile WHERE user_id = "+str(user_id)+") intersect select (select geocode from geo_data where id = geoid limit 1) from usermodule_catchment_area where user_id = "+str(user_id)+" )"
         else:
-            q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id from asf_victim"
+            q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id,(asf_victim.created_at)::text  case_initiation_date from asf_victim"
     else:
-        q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id from asf_victim "
+        q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id,(asf_victim.created_at)::text  case_initiation_date from asf_victim "
     main_df = pandas.read_sql(q, connection)
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
@@ -192,7 +193,7 @@ def get_returnee_list(request):
 def get_returnee_form(request):
     username = request.GET.get('username')
     returnee_id = request.GET.get('returneeid')
-    q = "select id, xml xml_url,json->>'_xform_id_string' form_id,(select title  from  logger_xform where id = xform_id limit 1) form_name,json->>'meta/instanceID' instance_id,TO_CHAR((json->>'_submission_time')::timestamptz, 'yyyy-MM-dd HH:mm:ss') created_date from logger_instance where json->>'beneficiary_id' = '"+str(returnee_id)+"'"
+    q = "select id, xml xml_url,json->>'_xform_id_string' form_id,(select title  from  logger_xform where id = xform_id limit 1) form_name,json->>'meta/instanceID' instance_id,TO_CHAR((json->>'_submission_time')::timestamptz, 'yyyy-MM-dd HH:mm:ss') created_date from logger_instance where json->>'victim_tbl_id' = '"+str(returnee_id)+"'"
     json_data_response = []
     cursor = connection.cursor()
     cursor.execute(q)
@@ -209,25 +210,25 @@ def get_returnee_form(request):
     cursor.close()
     return HttpResponse(json.dumps(json_data_response))
 
-
+'''
 @csrf_exempt
 def get_returnee_info(request):
 
     returnee_id = request.GET.get('returneeid')
 
-    q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where victim_id ='"+returnee_id+"' limit 1"
+    q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where id ='"+returnee_id+"' limit 1"
 
     main_df = pandas.read_sql(q, connection)
 
     j = main_df.to_json(orient='records')
 
     return HttpResponse(j)
-
+'''
 
 @csrf_exempt
 def get_returnee_info(request):
     returnee_id = request.GET.get('returneeid')
-    q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where victim_id ='"+returnee_id+"' limit 1"
+    q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id, (asf_victim.created_at)::text case_initiation_date from asf_victim where id ='"+returnee_id+"' limit 1"
     tmp_db_value = __db_fetch_values_dict(q)
     if tmp_db_value is not None:
         for temp in tmp_db_value:
@@ -240,6 +241,8 @@ def get_returnee_info(request):
             instance_data_json['gender'] = str(temp['gender'])
             instance_data_json['beneficiary_id'] = str(temp['beneficiary_id'])
             instance_data_json['status'] = str(temp['status'])
+            instance_data_json['victim_tbl_id'] = str(temp['victim_tbl_id'])
+            instance_data_json['case_initiation_date'] = str(temp['case_initiation_date'])
 
     return HttpResponse(json.dumps(instance_data_json))
 
@@ -258,16 +261,31 @@ def get_user_schedule(request):
     print q
 
     main_df = pandas.read_sql(q, connection)
+    print main_df
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
 
 @csrf_exempt
 def get_event_data(request):
     username = request.GET.get('username')
-    q = "select * from get_event_data('"+username+"')"
+    user_id = __db_fetch_single_value("select id from auth_user where username = '" + str(username) + "'")
+    role = __db_fetch_single_value(
+        "select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
+            user_id) + ")")
+    query_part = ""
+    if role == 'Field Officer':
+        query_part = " where user_id = "+str(user_id)
+
+    elif role == 'RSC Manager':
+        query_part = " where user_id = any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+    else:
+        query_part = ""
+
+    q = "select * from get_event_data('"+username+"','"+query_part+"')"
     print q
 
     main_df = pandas.read_sql(q, connection)
+    print main_df
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
 
