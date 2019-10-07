@@ -746,9 +746,20 @@ def __db_fetch_single_value(query):
 def dashboard(request):
     context = RequestContext(request)
     home = "home"
-    mgi_file_url = '/media/shared_file/' +__db_fetch_single_value("select shared_file from file_shared where document_type = 'MGI INDICATOR' order by created_date::date desc limit 1")
-    sdg_file_url = '/media/shared_file/' +__db_fetch_single_value("select shared_file from file_shared where document_type = 'SDG INDICATOR' order by created_date::date desc limit 1")
-    print(mgi_file_url)
+    try:
+        mgi_file_url = '/media/shared_file/' + __db_fetch_single_value(
+            "select shared_file from file_shared where document_type = 'Weekly Flash Report' order by id desc limit 1")
+        print(mgi_file_url)
+    except Exception:
+        mgi_file_url = ''
+        print(Exception)
+
+    try:
+        sdg_file_url = '/media/shared_file/' + __db_fetch_single_value("select shared_file from file_shared where document_type = 'SDG INDICATOR' order by id desc limit 1")
+        print(sdg_file_url)
+    except Exception:
+        sdg_file_url = ''
+        print(Exception)
 
     curr_month = __db_fetch_single_value("select to_char(current_date, 'Month')")
     d_eco_reintegration_support = __db_fetch_values_dict("select * from public.get_receive_eco_reintegration_support()")

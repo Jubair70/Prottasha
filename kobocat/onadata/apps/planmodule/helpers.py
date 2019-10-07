@@ -249,7 +249,7 @@ DOCUMENT_TYPE = (
     ('Research Reports', _('Research Reports')),
     ('Event Reports', _('Event Reports')),
     ('Meeting Minutes', _('Meeting Minutes')),
-    ('MGI INDICATOR', _('MGI INDICATOR')),
+    ('Weekly Flash Report', _('Weekly Flash Report')),
     ('SDG INDICATOR', _('SDG INDICATOR')),
     ('Others', _('Others')),
 )
