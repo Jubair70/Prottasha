@@ -118,22 +118,43 @@ iframe
                     <tr>
                         <th>Para/Bazar/School Name</th>
                         <td>{{ para_bazar_school | safe }}</td>
+                        <th></th>
+                        <td></td>
+                    </tr>
+
+                    {% if module == 'school_quiz_profile' %}
+                    <tr>
+                        <th>Male (Age 11 - 14)</th>
+                        <td>{{ male_11_14 | safe }}</td>
+                        <th>Male (Age 15 - 16)</th>
+                        <td>{{ male_15_16 | safe }}</td>
+
+                    </tr>
+                    <tr>
+                        <th>Female (Age 11 - 14)</th>
+                        <td>{{ female_11_14 | safe }}</td>
+                        <th>Female (Age 15 - 16)</th>
+                        <td>{{ female_15_16 | safe }}</td>
+                    </tr>
+                        {% else %}
+                        <tr>
                         <th>Male (Age >= 18 )</th>
                         <td>{{ male_greater_equal_18 | safe }}</td>
+                        <th>Male (Age < 18 )</th>
+                        <td>{{ male_less_18 | safe }}</td>
+
                     </tr>
                     <tr>
-                        <th>Male < 18</th>
-                        <td>{{ male_less_18 | safe }}</td>
                         <th>Female (Age >= 18 )</th>
                         <td>{{ female_greater_equal_18 | safe }}</td>
-                    </tr>
-                    <tr>
-                        <th>Female < 18</th>
+                        <th>Female (Age < 18 )</th>
                         <td>{{ female_less_18 | safe }}</td>
+                    </tr>
+                    {% endif %}
+
+                    <tr>
                         <th>Total Participants</th>
                         <td>{{ total_participant | safe }}</td>
-                    </tr>
-                    <tr>
                         <th>Participants Category</th>
                         <td>{{ participant_category | safe }}</td>
                     </tr>

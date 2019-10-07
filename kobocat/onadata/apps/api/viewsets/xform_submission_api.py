@@ -291,7 +291,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
         df = pandas.read_sql(qry,connection)
         form_list_for_beneficiary = df.form_id.tolist()
 
-        qry = "select form_id from forms_categories_relation where category_id = any('{100,101,200,201,300,301,400,401}')"
+        qry = "select form_id from forms_categories_relation where category_id = any('{100,101,102,200,201,202,300,301,302,400,401,402}')"
         df = pandas.read_sql(qry, connection)
         form_list_for_event = df.form_id.tolist()
 
