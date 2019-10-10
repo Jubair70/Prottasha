@@ -900,7 +900,7 @@ def user_login(request):
             print request.GET.get('next')
             redirect_url = request.GET.get('next')
         else:
-            redirect_url = '/'
+            redirect_url = '/reports/generate_report/case_identification/'
         # No context variables to pass to the template system, hence the
         # blank dictionary object...
         home = "login"
