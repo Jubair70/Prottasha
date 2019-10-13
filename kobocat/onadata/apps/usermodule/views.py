@@ -746,9 +746,21 @@ def __db_fetch_single_value(query):
 def dashboard(request):
     context = RequestContext(request)
     home = "home"
-    mgi_file_url = '/media/shared_file/' +__db_fetch_single_value("select shared_file from file_shared where document_type = 'MGI INDICATOR' order by created_date::date desc limit 1")
-    sdg_file_url = '/media/shared_file/' +__db_fetch_single_value("select shared_file from file_shared where document_type = 'SDG INDICATOR' order by created_date::date desc limit 1")
-    print(mgi_file_url)
+    try:
+        mgi_file_url = '/media/shared_file/' + __db_fetch_single_value(
+            "select shared_file from file_shared where document_type = 'Weekly Flash Report' order by id desc limit 1")
+        print(mgi_file_url)
+    except Exception:
+        mgi_file_url = ''
+        print(Exception)
+
+    try:
+        sdg_file_url = '/media/shared_file/' + __db_fetch_single_value(
+            "select shared_file from file_shared where document_type = 'SDG INDICATOR' order by id desc limit 1")
+        print(sdg_file_url)
+    except Exception:
+        sdg_file_url = ''
+        print(Exception)
 
     curr_month = __db_fetch_single_value("select to_char(current_date, 'Month')")
     d_eco_reintegration_support = __db_fetch_values_dict("select * from public.get_receive_eco_reintegration_support()")
@@ -758,6 +770,8 @@ def dashboard(request):
     d_sidedata_dashboard = __db_fetch_values_dict("select * from public.get_sidedata_dashboard()")
     d_rs = json.dumps(get_rs(), default=decimal_date_default)
     d_poais = json.dumps(get_poais(), default=decimal_date_default)
+    d_rp = json.dumps(get_rp(), default=decimal_date_default)
+    d_np = json.dumps(get_np(), default=decimal_date_default)
     map_q = "with t1 as( select id,(select field_name from geo_data where geocode =( SELECT asf_case.district FROM asf_case WHERE asf_case.id::text = asf_victim.case_id LIMIT 1)) district FROM asf_victim), t2 as( select count(*) cnt,district zila_name from t1 where district is not null group by district) select zila_name,cnt from t2 order by cnt DESC"
     region_data = {}
     region_table = []
@@ -768,8 +782,9 @@ def dashboard(request):
 
     POAIS_DATA_SET = json.dumps(get_post_arrival_immediate_support_data())
     RS_DATA_SET = json.dumps(get_reintegration_sustainibility_data())
-    print RS_DATA_SET
-    print d_rs
+    RP_DATA_SET = json.dumps(get_returnee_profiled_data())
+    NP_DATA_SET = json.dumps(get_number_participants_data())
+
 
     data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,
             'd_eco_reintegration_support' : d_eco_reintegration_support,
@@ -780,8 +795,10 @@ def dashboard(request):
             'curr_month' : curr_month,
             'region_data': json.dumps(region_data),
             'region_table': json.dumps(region_table),
-            'POAIS_DATA' : POAIS_DATA_SET,'d_poais' : d_poais,
-            'RS_DATA_SET' : RS_DATA_SET,'d_rs' : d_rs
+            'POAIS_DATA_SET' : POAIS_DATA_SET,'d_poais' : d_poais,
+            'RS_DATA_SET' : RS_DATA_SET,'d_rs' : d_rs,
+            'RP_DATA_SET' : RP_DATA_SET,'d_rp' : d_rp,
+            'NP_DATA_SET' : NP_DATA_SET,'d_np' : d_np
             }
     return render_to_response('usermodule/dashboard.html',data, context)
 
@@ -807,6 +824,30 @@ def get_rs():
 
     return dic
 
+def get_rp():
+    data = __db_fetch_values_dict(
+        "select sum(total_cnt) total_cnt,sum(curmon_cnt) curmon_cnt from public.get_returnee_profiled_data()")
+    dic = {}
+    for temp in data:
+        dic = {
+            'curmon_cnt': temp['curmon_cnt'], 'total_cnt': temp['total_cnt']
+        }
+
+    return dic
+
+
+
+def get_np():
+    data = __db_fetch_values_dict(
+        "select sum(total_cnt) total_cnt,sum(curmon_cnt) curmon_cnt from public.get_number_participants_data()")
+    dic = {}
+    for temp in data:
+        dic = {
+            'curmon_cnt': temp['curmon_cnt'], 'total_cnt': temp['total_cnt']
+        }
+
+    return dic
+
 
 def get_post_arrival_immediate_support_data():
     each_data = {}
@@ -823,11 +864,29 @@ def get_reintegration_sustainibility_data():
     data = __db_fetch_values_dict("select * from public.get_reintegration_sustainibility_data()")
     for temp in data:
         dic = {}
-        dic = {"cur": temp['curmon_cnt'], "total": temp['total_cnt']}
+        dic = {"cur_rs": temp['curmon_cnt'], "total_rs": temp['total_cnt']}
+        each_data[temp['dist']] = dic
+    return each_data
+
+def get_returnee_profiled_data():
+    each_data = {}
+    data = __db_fetch_values_dict("select * from public.get_returnee_profiled_data()")
+    for temp in data:
+        dic = {}
+        dic = {"cur_rp": temp['curmon_cnt'], "total_rp": temp['total_cnt']}
         each_data[temp['dist']] = dic
     return each_data
 
 
+
+def get_number_participants_data():
+    each_data = {}
+    data = __db_fetch_values_dict("select * from public.get_number_participants_data()")
+    for temp in data:
+        dic = {}
+        dic = {"cur_np": temp['curmon_cnt'], "total_np": temp['total_cnt']}
+        each_data[temp['dist']] = dic
+    return each_data
 
 
 def user_login(request):

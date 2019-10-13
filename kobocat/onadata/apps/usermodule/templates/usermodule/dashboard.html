@@ -397,7 +397,6 @@
   <div class="container">
   <div class="row">
     <h2 class="title text-center text-primary">10 REINTEGRATION SERVICE CENTER (RSC) covering 64 DISTRICTS</h2>
-      <div id="cell">Other Table Text654758568</div>
   </div>
   <div class="row">
     <div class=" col-md-8">
@@ -423,7 +422,7 @@
               </tr>
               <tr>
                 <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/workshops.png"></td>
-                <td align="left">% of Returnees sustainably reintegrated</td>
+                <td align="left">% of Returnees </td>
                 <td align="right" class="july"><div id = "cur_rs"></div></td>
                 <td align="right" class="cumulative"><div id = "total_rs"></div></td>
               </tr>
@@ -440,10 +439,10 @@
     <div class=" col-md-4">
     <div class="thumbnail">
     	<div class="caption">
-            {% for d in d_sidedata_dashboard %}
+
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
-    <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Increase capacity of migrants and their families on financial literacy and awareness of available products and services</td>
+    <td colspan="4" align="center" valign="middle " bgcolor="#CCCCCC" class="cumulative-top">Number of people reached with messages on safe migration, reintegration and remittance utilization.</td>
     </tr>
   <tr>
     <td colspan="2">&nbsp;</td>
@@ -452,14 +451,15 @@
   </tr>
   <tr>
     <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/workshops.png"></td>
-    <td align="left">Number of Returnee Identified</td>
-    <td align="right" class="july">{{ d.cur_conduct_tot }}</td>
-    <td align="right" class="cumulative">{{ d.total_conduct_tot }}</td>
+    <td align="left">Number of participants</td>
+    <td align="right" class="july"><div id = "cur_np"></div></td>
+    <td align="right" class="cumulative"><div id = "total_np"></div></td>
   </tr>
   
 </table>
 
-    
+
+
     </div>
     </div>
     </div>
@@ -483,13 +483,12 @@
   <tr>
     <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/kind-support.png"></td>
     <td align="left">EU Transit</td>
-    <td align="right" class="july">{{ d.cur_returnee_profiled }}</td>
-    <td align="right" class="cumulative">{{ d.total_returnee_profiled }}</td>
+      <td align="right" class="july"><div id = "cur_rp"></div></td>
+    <td align="right" class="cumulative"><div id = "total_rp"></div></td>
   </tr>
   
 </table>
 
- {% endfor %}
 
     </div>
     </div>
@@ -512,7 +511,7 @@
   </tr>
   <tr>
     <td align="left" valign="middle"><img src="/static/dashboard/assets/images/icons/workshops.png"></td>
-    <td align="left">Number of returnees who received immediate assistance</td>
+    <td align="left">Number of returnees </td>
     <td align="right" class="july"><div id = "cur_poais"></div></td>
     <td align="right" class="cumulative"><div id="total_poais"></div></td>
   </tr>
@@ -596,17 +595,30 @@
         </div>
 </section>
 {% block additional-javascript %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
  <script src="http://cdn.leafletjs.com/leaflet-0.5/leaflet.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}reportmodule/js/bd_admin_3.js"></script>
+ <script type="text/javascript" src="{{ STATIC_URL }}reportmodule/js/bd_admin_3.js"></script>
    <script>
-        var rdata = {{ region_data|safe }};
-        var post_arrival_support = {{ POAIS_DATA|safe }}
-        var d_rs = {{ d_rs | safe }}
-        var d_poais = {{ d_poais | safe }}
+   var rdata = {{ region_data|safe }};
+   var region_table = {{ region_table|safe }};
+   var set_rp = {{ RP_DATA_SET|safe }}
+   var set_poais = {{ POAIS_DATA_SET|safe }}
+   var set_rs = {{ RS_DATA_SET|safe }}
+   var set_np = {{ NP_DATA_SET|safe }}
 
-        var region_table = {{ region_table|safe }};
+    var d_rs = {{ d_rs | safe }}
+    var d_poais = {{ d_poais | safe }}
+    var d_rp = {{ d_rp | safe }}
+   var d_np = {{ d_np | safe }}
 
-        var total_hh = objsum(rdata);
+
+   var total_hh = objsum(rdata);
+        $(document).ready(function(){
+
+
+
+        });
+
 
         var map = L.map('map').setView([23.946096, 90.128173], 7);
 
@@ -630,20 +642,61 @@
             this._div.innerHTML = '<h4>Sample Distribution</h4>' + (props ?
                     '<br /><b>' + props.NAME_3 + ' </b> ' + rdata[props.NAME_3] + ' (' + (rdata[props.NAME_3] / total_hh * 100).toFixed(1) + '%)'
                     : 'Hover over a district');
+
+            // When Hover a district on map change the following div values
             if (props){
-                document.getElementById("cur_poais").innerHTML = '<b>' +  post_arrival_support[props.NAME_3]['cur'] + '</b>';
-                document.getElementById("total_poais").innerHTML = '<b>' + post_arrival_support[props.NAME_3]['total'] + '</b>';
+                try{
+                    document.getElementById("cur_rp").innerHTML = '<b>' +  set_rp[props.NAME_3]['cur_rp'] + '</b>';
+                    document.getElementById("total_rp").innerHTML = '<b>' + set_rp[props.NAME_3]['total_rp'] + '</b>';
+                }
+                catch(e){
+                    document.getElementById("cur_rp").innerHTML = '<b> 0</b>';
+                    document.getElementById("total_rp").innerHTML = '<b> 0</b>';
+                }
+                try{
+                    document.getElementById("cur_rs").innerHTML = '<b>' + ( set_rs[props.NAME_3]['cur_rs']/ total_hh * 100).toFixed(1)+ '%' + '</b>';
+                    document.getElementById("total_rs").innerHTML = '<b>' + (set_rs[props.NAME_3]['total_rs']/ total_hh * 100).toFixed(1)+ '%'+ '</b>';
+                }
+                catch(e){
+                    document.getElementById("cur_rs").innerHTML = '<b> 0%</b>';
+                    document.getElementById("total_rs").innerHTML = '<b> 0%</b>';
+                }
+                try{
+                    document.getElementById("cur_poais").innerHTML = '<b>' +  set_poais[props.NAME_3]['cur'] + '</b>';
+                    document.getElementById("total_poais").innerHTML = '<b>' + set_poais[props.NAME_3]['total'] + '</b>';
 
-                document.getElementById("cur_poais").innerHTML = '<b>' +  post_arrival_support[props.NAME_3]['cur'] + '</b>';
-                document.getElementById("total_poais").innerHTML = '<b>' + post_arrival_support[props.NAME_3]['total'] + '</b>';
-            }
+                }
+                catch(e){
+                    document.getElementById("cur_poais").innerHTML = '<b> 0</b>';
+                    document.getElementById("total_poais").innerHTML = '<b> 0</b>';
+                }
+
+                try{
+                    document.getElementById("cur_np").innerHTML = '<b>' +  set_np[props.NAME_3]['cur_np'] + '</b>';
+                    document.getElementById("total_np").innerHTML = '<b>' + set_np[props.NAME_3]['total_np'] + '</b>';
+
+                }
+                catch(e){
+                    document.getElementById("cur_np").innerHTML = '<b> 0</b>';
+                    document.getElementById("total_np").innerHTML = '<b> 0</b>';
+                }
+
+           }
             else{
-                document.getElementById("cur_rs").innerHTML = '<b>'+d_poais['curmon_cnt']+'</b>';
-                document.getElementById("total_rs").innerHTML = '<b>'+d_poais['total_cnt']+'</b>';
 
-                document.getElementById("cur_rs").innerHTML = '<b>'+d_rs['curmon_cnt']+'</b>';
-                document.getElementById("total_rs").innerHTML = '<b>'+d_rs['total_cnt']+'</b>';
+                document.getElementById("cur_poais").innerHTML = '<b>'+d_poais['curmon_cnt']+'</b>';
+                document.getElementById("total_poais").innerHTML = '<b>'+d_poais['total_cnt']+'</b>';
+
+                document.getElementById("cur_rs").innerHTML = '<b>'+(d_rs['curmon_cnt']/ total_hh * 100).toFixed(1)+ '%'+'</b>';
+                document.getElementById("total_rs").innerHTML = '<b>'+(d_rs['total_cnt']/ total_hh * 100).toFixed(1)+ '%'+'</b>';
+
+                document.getElementById("cur_rp").innerHTML = '<b>'+d_rp['curmon_cnt']+'</b>';
+                document.getElementById("total_rp").innerHTML = '<b>'+d_rp['total_cnt']+'</b>';
+
+                document.getElementById("cur_np").innerHTML = '<b>'+d_np['curmon_cnt']+'</b>';
+                document.getElementById("total_np").innerHTML = '<b>'+d_np['total_cnt']+'</b>';
             }
+
 
         };
 
