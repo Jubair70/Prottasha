@@ -574,10 +574,10 @@
         <div class="thumbnail"> <img src="/static/dashboard/assets/images/pdf1.jpg" alt="DESIGN SOLUTIONS">
           <div class="caption">
             <h2 class="title text-primary text-left" >
-            MGI Indicator Report I 2019
+            Weekly Flash Report I 2019
             </h2>
             
-            <a href="{{ mgi_file_url }}" type="button" class="btn btn-primary" download>Download</a> </div>
+            <a  type="button" class="btn btn-primary" {% if mgi_file_url %} href="{{ mgi_file_url }}" download {% endif %}>Download</a>  </div>
         </div>
       </div>
       <div class="col-sm-6 col-md-6">
@@ -587,7 +587,7 @@
             SDG Indicator Report I 2019
             </h2>
             
-          <a href="{{ sdg_file_url }}" type="button"  class="btn btn-primary"  download>Download</a> </div>
+          <a  type="button"  class="btn btn-primary" {% if sdg_file_url %} href="{{ sdg_file_url }}" download {% endif %}>Download</a>  </div>
         </div>
       </div>
 				

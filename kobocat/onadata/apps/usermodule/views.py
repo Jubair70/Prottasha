@@ -87,17 +87,16 @@ def index(request):
     if user:
         admin = user[0].admin
     if current_user.is_superuser:
-        users = UserModuleProfile.objects.all().order_by("user__username")
+        query = """ SELECT auth_user.id, auth_user.username, auth_user.email,(SELECT organization FROM usermodule_organizations WHERE id = usermodule_usermoduleprofile.organisation_name_id) organisation_name, coalesce((SELECT "role" FROM usermodule_organizationrole WHERE id = (select role_id from usermodule_userrolemap where user_id = usermodule_usermoduleprofile.id limit 1) LIMIT 1),'') role_name, coalesce((SELECT rsc_name FROM usermodule_rsc WHERE id = rsc_name_id LIMIT 1),'') rsc_name, Coalesce((SELECT field_name FROM geo_data WHERE id in (select geoid from usermodule_catchment_area where user_id = auth_user.id limit 1) AND field_type_id = 88 LIMIT 1), '') upazila FROM auth_user, usermodule_usermoduleprofile WHERE auth_user.id = usermodule_usermoduleprofile.user_id """
         admin = True
-        # json_posts = json.dumps(list(users.values('id','user__username' ,'organisation_name__organization','user__email')))
     elif admin:
         org_id_list = get_organization_by_user(request.user)
-        users = UserModuleProfile.objects.filter(organisation_name__in=org_id_list).order_by("user__username")
-        # json_posts = json.dumps(list(users))
+        query = """ SELECT auth_user.id, auth_user.username, auth_user.email,(SELECT organization FROM usermodule_organizations WHERE id = usermodule_usermoduleprofile.organisation_name_id) organisation_name, coalesce((SELECT "role" FROM usermodule_organizationrole WHERE id = (select role_id from usermodule_userrolemap where user_id = usermodule_usermoduleprofile.id limit 1) LIMIT 1),'') role_name, coalesce((SELECT rsc_name FROM usermodule_rsc WHERE id = rsc_name_id LIMIT 1),'') rsc_name, Coalesce((SELECT field_name FROM geo_data WHERE id in (select geoid from usermodule_catchment_area where user_id = auth_user.id limit 1) AND field_type_id = 88 LIMIT 1), '') upazila FROM auth_user, usermodule_usermoduleprofile WHERE auth_user.id = usermodule_usermoduleprofile.user_id and organisation_name_id in """+str(org_id_list)
         admin = True
     else:
-        users = user
+        query = """ SELECT auth_user.id, auth_user.username, auth_user.email,(SELECT organization FROM usermodule_organizations WHERE id = usermodule_usermoduleprofile.organisation_name_id) organisation_name, coalesce((SELECT "role" FROM usermodule_organizationrole WHERE id = (select role_id from usermodule_userrolemap where user_id = usermodule_usermoduleprofile.id limit 1) LIMIT 1),'') role_name, coalesce((SELECT rsc_name FROM usermodule_rsc WHERE id = rsc_name_id LIMIT 1),'') rsc_name, Coalesce((SELECT field_name FROM geo_data WHERE id in (select geoid from usermodule_catchment_area where user_id = auth_user.id limit 1) AND field_type_id = 88 LIMIT 1), '') upazila FROM auth_user, usermodule_usermoduleprofile WHERE auth_user.id = usermodule_usermoduleprofile.user_id and auth_user.id = """ + str(current_user.id)
         admin = False
+    users = __db_fetch_values_dict(query)
     template = loader.get_template('usermodule/index.html')
     context = RequestContext(request, {
             'users': users,
@@ -635,6 +634,19 @@ def delete_user(request,user_id):
     return HttpResponseRedirect('/usermodule/')
 
 
+@login_required
+@user_passes_test(admin_check,login_url='/')
+def inactive_user(request,user_id):
+    context = RequestContext(request)
+    user = User.objects.get(pk = user_id)
+    # inactivates the user from both user and rango
+    user.is_active = False
+    user.save()
+    messages.success(request, '<i class="fa fa-check-circle"></i> This user has been disabled successfully!',
+                     extra_tags='alert-success crop-both-side')
+    return HttpResponseRedirect('/usermodule/')
+
+
 def change_password(request):
     context = RequestContext(request)
     if request.GET.get('userid'):
@@ -948,7 +960,7 @@ def user_login(request):
             print request.GET.get('next')
             redirect_url = request.GET.get('next')
         else:
-            redirect_url = '/'
+            redirect_url = '/reports/generate_report/case_identification/'
         # No context variables to pass to the template system, hence the
         # blank dictionary object...
         home = "login"
