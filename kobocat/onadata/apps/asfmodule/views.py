@@ -169,6 +169,16 @@ def profile_view(request,victim_id):
     return render(request, 'asfmodule/profile_view_test.html',{'main_str':main_str, 'victim_id':victim_id,'id_string': id_string, 'xform_id': xform_id,
                    'form_uuid': form_uuid, 'username': username})
 
+@login_required
+def delete_data(request):
+    form_id = request.GET.get('form_id')
+    log_ins_id = request.GET.get('log_ins_id')
+    redirect_url = request.GET.get('redirect_url')
+    query = "update logger_instance set deleted_at = now() where id = "+str(log_ins_id)
+    __db_commit_query(query)
+    messages.success(request, '<i class="fa fa-check-circle"></i> Data has been deleted successfully!',extra_tags='alert-success crop-both-side')
+    return HttpResponseRedirect(redirect_url)
+
 @csrf_exempt
 def get_forms_data(request):
     category_id = request.POST.get('category_id')
@@ -208,9 +218,28 @@ def get_forms_list(request):
     category_id = request.POST.get('category_id')
     victim_id = request.POST.get('victim_id')
     user_id = request.user.id
-    query = """ WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id,category_id,orders FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """+str(user_id)+"""),t1 as(SELECT '<a class="btn btn-outline form-group form-control" onclick="load_forms_html('|| form_id ||')" >'|| title ||'</a><br>' AS popup_str FROM t ORDER  BY category_id,orders)select * from t1"""
+    query = """  WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id, category_id, orders, submission_times FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ +str(user_id)+ """), fre as (select xform_id,count(id) frequency from logger_instance where (json->>'victim_tbl_id')::int = """ +str(victim_id)+ """ and deleted_at is null and xform_id = any(select form_id from t) group by xform_id ), t1 AS (select case when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) < submission_times then '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) >= submission_times then '' else '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' end AS popup_str FROM t left join fre on t.form_id = fre.xform_id ORDER BY category_id, orders) SELECT * FROM t1 """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
+    # main_str = """ <ul class="list-group"> """
+    # for each in df['popup_str']:
+    #     main_str += """ <li class="list-group-item"> """ + str(each) + """ </li> """
+    # main_str += """ </ul> """
+    main_str = ""
+    for each in df['popup_str']:
+        main_str += str(each)
+    main_str = json.dumps(main_str)
+    return HttpResponse(main_str)
+
+@csrf_exempt
+def get_events_forms_list(request):
+    category_id = request.POST.get('category_id')
+    event_id = request.POST.get('event_id')
+    user_id = request.user.id
+    query = """  WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id, category_id, orders, submission_times FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ +str(user_id)+ """), fre as (select xform_id,count(id) frequency from logger_instance where (json->>'event_id')::int = """ +str(event_id)+ """ and deleted_at is null and xform_id = any(select form_id from t) group by xform_id ), t1 AS (select case when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) < submission_times then '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) >= submission_times then '' else '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' end AS popup_str FROM t left join fre on t.form_id = fre.xform_id ORDER BY category_id, orders) SELECT * FROM t1 """
+    df = pandas.DataFrame()
+    df = pandas.read_sql(query, connection)
+    print(query)
     # main_str = """ <ul class="list-group"> """
     # for each in df['popup_str']:
     #     main_str += """ <li class="list-group-item"> """ + str(each) + """ </li> """
@@ -292,6 +321,13 @@ def case_list(request):
     status_list = zip(df.id.tolist(), df.status.tolist())
     return render(request, 'asfmodule/case_list.html', {'divisions':divisions,'status_list':status_list})
 
+@login_required
+def delete_case(request, victim_tbl_id):
+    qry = "select update_deleted_at_case("+str(victim_tbl_id)+")"
+    __db_fetch_single_value(qry)
+    messages.success(request, '<i class="fa fa-check-circle"></i> Data has been deleted successfully!',extra_tags='alert-success crop-both-side')
+    return HttpResponseRedirect('/asf/case_list/')
+
 @csrf_exempt
 def get_case_list(request):
     division = request.POST.get('division')
@@ -302,10 +338,10 @@ def get_case_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = "+str(user_id))
-        query = "SELECT( SELECT ( SELECT role FROM PUBLIC.usermodule_organizationrole WHERE id = role_id limit 1)role_name FROM usermodule_userrolemap WHERE user_id = ( SELECT id FROM usermodule_usermoduleprofile WHERE user_id= "+ str(user_id) +")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference, COALESCE( ( SELECT assaign_to FROM asf_case WHERE id = case_id::int limit 1)::int,0) assaign_to FROM asf_victim WHERE sex LIKE '"+ str(gender) +"' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' AND status LIKE '"+ str(status) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+ str(user_id) +") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+ str(user_id) +") and field_type_id = 88)))"
+        query = "SELECT( SELECT ( SELECT role FROM PUBLIC.usermodule_organizationrole WHERE id = role_id limit 1)role_name FROM usermodule_userrolemap WHERE user_id = ( SELECT id FROM usermodule_usermoduleprofile WHERE user_id= "+ str(user_id) +")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference, COALESCE( ( SELECT assaign_to FROM asf_case WHERE id = case_id::int limit 1)::int,0) assaign_to FROM asf_victim WHERE deleted_at is null and sex LIKE '"+ str(gender) +"' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' AND status LIKE '"+ str(status) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+ str(user_id) +") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+ str(user_id) +") and field_type_id = 88)))"
     except Exception:
         query = "select (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
-            user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '" + str(
+            user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where  deleted_at is null and  sex like '" + str(
             gender) + "' and case_id::int = any(select id from asf_case where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
             upazila) + "' and status like '" + str(status) + "')"
@@ -1099,7 +1135,8 @@ def services_to_other_institutes_form(request):
 # Capacity Building
 @login_required
 def capacity_building_list(request):
-    return render(request, 'asfmodule/capacity_building_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='capacity_building'")
+    return render(request, 'asfmodule/capacity_building_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_capacity_building_list(request):
@@ -1136,7 +1173,8 @@ def capacity_building_form(request):
 # Case Study
 @login_required
 def case_study_list(request):
-    return render(request, 'asfmodule/case_study_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='case_study'")
+    return render(request, 'asfmodule/case_study_list.html',{'form_id':form_id})
 
 
 @csrf_exempt
@@ -1172,7 +1210,8 @@ def case_study_form(request):
 # MSC story
 @login_required
 def msc_story_list(request):
-    return render(request, 'asfmodule/msc_story_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='msc_story'")
+    return render(request, 'asfmodule/msc_story_list.html',{'form_id':form_id})
 
 
 @csrf_exempt
@@ -1208,7 +1247,8 @@ def msc_story_form(request):
 # Event
 @login_required
 def event_list(request):
-    return render(request, 'asfmodule/event_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_workshop'")
+    return render(request, 'asfmodule/event_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_event_list(request):
@@ -1251,7 +1291,8 @@ def event_form(request):
 #IPT show List
 @login_required
 def ipt_show_list(request):
-    return render(request, 'asfmodule/ipt_show_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_ipt_show'")
+    return render(request, 'asfmodule/ipt_show_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_ipt_show_list(request):
@@ -1342,7 +1383,7 @@ def get_events_forms_data(request):
     category_id = request.POST.get('category_id')
     event_id = request.POST.get('event_id')
     user_id = request.user.id
-    query = """ WITH t AS( SELECT ( SELECT title FROM logger_xform WHERE id = form_id), form_id FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS ( SELECT logger_instance.id log_ins_id, json->>'event_id'::text event_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id order by date_created desc) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''')" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || to_char(date_created::date,'DD/MM/YYYY') ||'</a><span style="margin-left:30%">'|| replace(greatest(title,rpad(title, 32,' '))::text,' ','&nbsp;') ||'</span><a onclick="load_forms_edit_mode('|| xform_id ||','|| log_ins_id ||')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a></h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE event_id LIKE '%""" + str(event_id) + """%' """
+    query = """ WITH t AS( SELECT ( SELECT title FROM logger_xform WHERE id = form_id), form_id,rf.can_edit,rf.can_delete FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS ( SELECT logger_instance.id log_ins_id, json->>'event_id'::text event_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id and deleted_at is null order by date_created desc) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a id="data_id_' ||log_ins_id ||'" class="collapsed" onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''',1)" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || To_char(date_created :: DATE, 'DD/MM/YYYY') ||'</a><span style="margin-left:30%">' || Replace(Greatest(title, Rpad(title, 32, ' ')) :: text, ' ', '&nbsp;') ||'</span>' || case when can_edit = 1 then '<a onclick="load_forms_edit_mode(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer;margin-right: -5px;margin-left: 11px;" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a>' else '' end || case when can_delete = 1 then '<a onclick="delete_forms_data(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-trash"></i></a>' else '' end || '</h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE event_id LIKE '%""" + str(event_id) + """%' """
     print(query)
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
@@ -1355,7 +1396,8 @@ def get_events_forms_data(request):
 #Video Show List
 @login_required
 def video_show_list(request):
-    return render(request, 'asfmodule/video_show_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_video_show'")
+    return render(request, 'asfmodule/video_show_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_video_show_list(request):
@@ -1445,7 +1487,8 @@ def video_show_profile(request,event_id):
 #School Quiz List
 @login_required
 def school_quiz_list(request):
-    return render(request, 'asfmodule/school_quiz_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_school_quiz'")
+    return render(request, 'asfmodule/school_quiz_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_school_quiz_list(request):
@@ -1534,7 +1577,8 @@ def school_quiz_profile(request,event_id):
 #Tea Stall Meeting List
 @login_required
 def tea_stall_meeting_list(request):
-    return render(request, 'asfmodule/tea_stall_meeting_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_tea_stall_meeting'")
+    return render(request, 'asfmodule/tea_stall_meeting_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_tea_stall_meeting_list(request):
@@ -2334,7 +2378,8 @@ def call_center_report(request):
     query = "select id,field_name from geo_data where field_type_id = 85"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
-    return render(request, 'asfmodule/call_center_report.html', {'divisions':divisions})
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='call_center_support'")
+    return render(request, 'asfmodule/call_center_report.html', {'divisions':divisions,'form_id':form_id})
 
 @csrf_exempt
 def get_call_center_report(request):
@@ -2380,6 +2425,7 @@ def call_center_form(request):
 def consultancy_matrix(request):
 
     status_list = __db_fetch_values_dict("select status from cm_status")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='consultation_matrix'")
 
     # Status Update form
 
@@ -2408,7 +2454,7 @@ def consultancy_matrix(request):
         messages.success(request, '<i class="fa fa-check-circle"></i> Status updated successfully!',
                          extra_tags='alert-success crop-both-side')
 
-    return render(request, 'asfmodule/consultancy_matrix.html',{'status_list' : status_list})
+    return render(request, 'asfmodule/consultancy_matrix.html',{'status_list' : status_list,'form_id':form_id})
 
 
 @csrf_exempt

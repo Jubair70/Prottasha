@@ -76,7 +76,7 @@
                 </div>
 
                 <div class="modal-body">
-                    <p>You are about to delete a facility info, this procedure is irreversible.</p>
+                    <p>You are about to delete an info, this procedure is irreversible.</p>
                     <p>Do you want to proceed?</p>
                     <p class="debug-url"></p>
                 </div>
@@ -102,6 +102,8 @@
 
 
     <script>
+    var form_id = {{ form_id | safe }};
+    var redirect_url = window.location.pathname;
         $(function () {
             $('#from_date').datepicker({
                 endDate: '0d',
@@ -144,17 +146,6 @@
 
             });
 
-
-
-
-
-
-
-        $('.delete-item').on('click', function (e) {
-            var criteria_id = $(this).attr("data-href");
-            $('.btn-ok').attr("href", criteria_id);
-        });
-
         if ($('.alert-block').is(':visible')) {
             window.setTimeout(function () {
                 $(".alert-success").fadeTo(1500, 0).slideUp(500, function () {
@@ -190,10 +181,15 @@
                         $('#container').hide();
                             var tbody = '';
                         for (var idx in list) {
-                            tbody += '<tr><td>' + list[idx].training_name + '</td> <td>' + list[idx].date_created + '</td> <td>' + list[idx].division + '</td> <td>' + list[idx].district + '</td> <td>' + list[idx].upazila + '</td><td class="td-center"><a class="tooltips" data-container="body" data-placement="top" data-original-title="Edit" href="/asf/capacity_building_form/?instance_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-pencil-square"></i></a></td></tr>';
+                            tbody += '<tr><td>' + list[idx].training_name + '</td> <td>' + list[idx].date_created + '</td> <td>' + list[idx].division + '</td> <td>' + list[idx].district + '</td> <td>' + list[idx].upazila + '</td><td class="td-center"><a class="tooltips" data-container="body" data-placement="top" data-original-title="Edit" href="/asf/capacity_building_form/?instance_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-pencil-square"></i></a><a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].instance_id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a></td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
+
+                        $('.delete-item').on('click', function (e) {
+                                var criteria_id = $(this).attr("data-href");
+                                $('.btn-ok').attr("href", criteria_id);
+                        });
 
 
                     }

@@ -93,7 +93,7 @@
                 </div>
 
                 <div class="modal-body">
-                    <p>You are about to delete a facility info, this procedure is irreversible.</p>
+                    <p>You are about to delete an info, this procedure is irreversible.</p>
                     <p>Do you want to proceed?</p>
                     <p class="debug-url"></p>
                 </div>
@@ -119,6 +119,8 @@
     <script type="text/javascript" src="/static/plugins/DataTables-1.10.15/extensions/Buttons/js/buttons.html5.js"></script>
 
     <script>
+    var form_id = {{ form_id | safe }};
+    var redirect_url = window.location.pathname;
         $(function () {
             $('#from_date').datepicker({
                 endDate: '0d',
@@ -165,10 +167,6 @@
 
 
 
-        $('.delete-item').on('click', function (e) {
-            var criteria_id = $(this).attr("data-href");
-            $('.btn-ok').attr("href", criteria_id);
-        });
 
         if ($('.alert-block').is(':visible')) {
             window.setTimeout(function () {
@@ -217,11 +215,15 @@
                         var tbody = '';
                         for (var idx in result) {
                             detail = "<a class=\"btn red\" href=\"/iom_admin/forms/call_center_support/instance/?s_id="+result[idx].id+ "\" role=\"button\">Details</a>"
-                            tbody += '<tr><td>' + result[idx].serial_no + '</td><td>' + result[idx].date_call_received + '</td><td>' + result[idx].caller_name + '</td><td>' + result[idx].gender + '</td><td>' + result[idx].caller_age + '</td><td>' + result[idx].call_from +'</td><td>' + result[idx].district+ '</td><td>' + result[idx].calling_reason+'</td><td>' + result[idx].reffered+'</td><td>' + detail+'<a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Edit" href="/asf/call_center_form/?instance_id=' + result[idx].id + '"><i class="fa fa-2x fa-pencil"></i>Edit</a></td></tr>';
+                            tbody += '<tr><td>' + result[idx].serial_no + '</td><td>' + result[idx].date_call_received + '</td><td>' + result[idx].caller_name + '</td><td>' + result[idx].gender + '</td><td>' + result[idx].caller_age + '</td><td>' + result[idx].call_from +'</td><td>' + result[idx].district+ '</td><td>' + result[idx].calling_reason+'</td><td>' + result[idx].reffered+'</td><td>' + detail+'<a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Edit" href="/asf/call_center_form/?instance_id=' + result[idx].id + '"><i class="fa fa-2x fa-pencil"></i>Edit</a><a class="btn btn-danger delete-item tooltips" style="margin-left:10px" data-placement="top" data-toggle="modal"  data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + result[idx].id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i>Delete</a></td></tr>';
                         }
                         $("#ipd_table").find('tbody').html(tbody);
                         ipd_table = datatable_reinitialize('ipd_table');
 
+                        $('.delete-item').on('click', function (e) {
+                            var criteria_id = $(this).attr("data-href");
+                            $('.btn-ok').attr("href", criteria_id);
+                        });
 
 
 
