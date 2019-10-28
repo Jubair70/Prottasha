@@ -180,7 +180,13 @@
                         $('#container').hide();
                             var tbody = '';
                         for (var idx in list) {
-                            tbody += '<tr><td>' + list[idx].organization_name + '</td> <td>' + list[idx].individual_name + '</td><td>' + list[idx].date_submission + '</td> <td>' + list[idx].data_source + '</td> <td>' + list[idx].introduction + '</td> <td>' + list[idx].lesson_learned + '</td><td>' + list[idx].challenge + '</td><td>' + list[idx].challenge_overcome + '</td><td>' + list[idx].promising_practice + '</td><td>' + list[idx].conclusion + '</td><td class="td-center"><a class="tooltips" data-container="body" data-placement="top" data-original-title="Edit" href="/asf/case_study_form/?instance_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-pencil-square"></i></a><a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].instance_id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a></td></tr>';
+                            del_html = ""
+                            edit_html = ""
+                            if(list[idx].can_delete == 1)
+                                del_html = '<a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].instance_id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a>'
+                            if(list[idx].can_edit == 1)
+                                edit_html = '<a class="tooltips" data-container="body" data-placement="top" data-original-title="Edit" href="/asf/case_study_form/?instance_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-pencil-square"></i></a>'
+                            tbody += '<tr><td>' + list[idx].organization_name + '</td> <td>' + list[idx].individual_name + '</td><td>' + list[idx].date_submission + '</td> <td>' + list[idx].data_source + '</td> <td>' + list[idx].introduction + '</td> <td>' + list[idx].lesson_learned + '</td><td>' + list[idx].challenge + '</td><td>' + list[idx].challenge_overcome + '</td><td>' + list[idx].promising_practice + '</td><td>' + list[idx].conclusion + '</td><td class="td-center">'+edit_html+del_html+'</td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
@@ -199,6 +205,9 @@ $('.delete-item').on('click', function (e) {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": false,"iDisplayLength": 50,
                 deferRender: true,
+                "scrollY": "500px",
+                "scrollCollapse": true,
+                "paging": false
 {#                dom: 'Bfrtip'#}
 {#                ,#}
 {#                buttons: [#}
