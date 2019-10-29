@@ -773,6 +773,24 @@ def dashboard(request):
     except Exception:
         sdg_file_url = ''
         print(Exception)
+    try:
+        mgi_img_url = '/media/shared_file/' + __db_fetch_single_value(
+            "select rpt_img_file from file_shared where document_type = 'Weekly Flash Report' order by id desc limit 1")
+        print(mgi_file_url)
+    except Exception:
+        mgi_img_url = '/static/dashboard/assets/images/pdf1.jpg'
+        print(Exception)
+
+    try:
+        sdg_img_url = '/media/shared_file/' + __db_fetch_single_value(
+            "select rpt_img_file from file_shared where document_type = 'SDG INDICATOR' order by id desc limit 1")
+        print(sdg_file_url)
+    except Exception:
+        sdg_img_url = '/static/dashboard/assets/images/pdf2.jpg'
+        print(Exception)
+
+    mgi_file_title = __db_fetch_single_value("select title from file_shared where document_type = 'Weekly Flash Report' order by id desc limit 1")
+    sdg_file_title = __db_fetch_single_value("select title from file_shared where document_type = 'SDG INDICATOR' order by id desc limit 1")
 
     curr_month = __db_fetch_single_value("select to_char(current_date, 'Month')")
     d_eco_reintegration_support = __db_fetch_values_dict("select * from public.get_receive_eco_reintegration_support()")
@@ -798,7 +816,8 @@ def dashboard(request):
     NP_DATA_SET = json.dumps(get_number_participants_data())
 
 
-    data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,
+    data = {'home':home,'mgi_file_url':mgi_file_url,'sdg_file_url':sdg_file_url,'mgi_file_title':mgi_file_title,'sdg_file_title':sdg_file_title,
+            'mgi_img_url':mgi_img_url,'sdg_img_url':sdg_img_url,
             'd_eco_reintegration_support' : d_eco_reintegration_support,
             'd_psycosocial_support': d_psycosocial_support,
             'd_social_reintegration_support': d_social_reintegration_support,

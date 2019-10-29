@@ -571,20 +571,20 @@
         		<h2 class="title text-center text-white">LATEST REPORTS</h2>
 			<div class="row">
             <div class="col-sm-6 col-md-6">
-        <div class="thumbnail"> <img src="/static/dashboard/assets/images/pdf1.jpg" alt="DESIGN SOLUTIONS">
+        <div class="thumbnail"> <img src="{{ mgi_img_url }}" alt="DESIGN SOLUTIONS">
           <div class="caption">
             <h2 class="title text-primary text-left" >
-            Weekly Flash Report I 2019
+            {{ mgi_file_title | safe }}
             </h2>
             
             <a  type="button" class="btn btn-primary" {% if mgi_file_url %} href="{{ mgi_file_url }}" download {% endif %}>Download</a>  </div>
         </div>
       </div>
       <div class="col-sm-6 col-md-6">
-        <div class="thumbnail"> <img src="/static/dashboard/assets/images/pdf2.jpg" alt="DESIGN SOLUTIONS">
+        <div class="thumbnail"> <img src="{{ sdg_img_url }}" alt="DESIGN SOLUTIONS">
           <div class="caption">
             <h2 class="title text-primary text-left" >
-            SDG Indicator Report I 2019
+            {{ sdg_file_title | safe }}
             </h2>
             
           <a  type="button"  class="btn btn-primary" {% if sdg_file_url %} href="{{ sdg_file_url }}" download {% endif %}>Download</a>  </div>
