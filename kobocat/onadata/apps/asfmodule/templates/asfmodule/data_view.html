@@ -51,6 +51,11 @@
                             $('#' + pField).append(tr);
                         }
                         else {
+                            if(form_data[i]._field_name != '_submitted_by' && form_data[i]._field_name != '_submission_time' && form_data[i]._field_name != '_geolocation' && form_data[i]._q_title == null)
+                            {
+                                console.log("what")
+                                continue
+                            }
 
                             var tr = document.createElement('tr');
                             tr.id = mainField;
@@ -125,6 +130,7 @@
             } else if (row_data._field_name == '_geolocation') {
                 return 'Geo Location';
             } else {
+                console.log(row_data,row_data._q_title)
                 if (row_data._q_title.startsWith('{')) {
                     return JSON.parse(row_data._q_title)[selected_lang];
                 } else {
