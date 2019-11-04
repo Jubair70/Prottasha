@@ -241,7 +241,7 @@
                         var html_code = "<option value=\"%\">Select One</option>";
 
                         for (i = 0; i < result.length; i++) {
-                            html_code += "<option value=\"" + result[i].id + "\"> " + result[i].field_name + "</option>";
+                            html_code += "<option value=\"" + result[i].geocode + "\"> " + result[i].field_name + "</option>";
                         }
                         $('#district').html(html_code);
 
@@ -270,7 +270,7 @@
                         var html_code = "<option value=\"%\">Select One</option>";
 
                         for (i = 0; i < result.length; i++) {
-                            html_code += "<option value=\"" + result[i].id + "\"> " + result[i].field_name + "</option>";
+                            html_code += "<option value=\"" + result[i].geocode + "\"> " + result[i].field_name + "</option>";
                         }
                         $('#upazila').html(html_code);
 

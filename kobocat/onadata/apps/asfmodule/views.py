@@ -273,7 +273,7 @@ def get_forms_html(request):
 @csrf_exempt
 def get_districts(request):
     field_parent_id = request.POST.get('div')
-    query = "select id,field_name from geo_data where field_type_id = 86 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 86 and field_parent_id = (select id from geo_data where geocode = '"+str(field_parent_id)+"')"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
@@ -281,21 +281,21 @@ def get_districts(request):
 @csrf_exempt
 def get_upazilas(request):
     field_parent_id = request.POST.get('dist')
-    query = "select id,field_name from geo_data where field_type_id = 88 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 88 and field_parent_id = (select id from geo_data where geocode = '"+str(field_parent_id)+"')"
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
 
 @csrf_exempt
 def get_unions(request):
     field_parent_id = request.POST.get('upz')
-    query = "select id,field_name from geo_data where field_type_id = 89 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 89 and field_parent_id = (select id from geo_data where geocode = '"+str(field_parent_id)+"')"
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
 
 @csrf_exempt
 def get_wards(request):
     field_parent_id = request.POST.get('uni')
-    query = "select id,field_name from geo_data where field_type_id = 92 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 92 and field_parent_id = "+str(field_parent_id)
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
 
@@ -313,7 +313,7 @@ def incident_id_generator():
 
 @login_required
 def case_list(request):
-    query = "select id,field_name from geo_data where field_type_id = 85"
+    query = "select geocode as id ,field_name from geo_data where field_type_id = 85 order by geocode"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
     query = "select id,status from iom_status"
@@ -335,13 +335,15 @@ def get_case_list(request):
     upazila = request.POST.get('upazila')
     gender = request.POST.get('gender')
     status = request.POST.get('status')
+    from_date = request.POST.get('from_date')
+    to_date = request.POST.get('to_date')
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = "+str(user_id))
-        query = "SELECT COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = 703 limit 1),0) can_delete,( SELECT ( SELECT role FROM PUBLIC.usermodule_organizationrole WHERE id = role_id limit 1)role_name FROM usermodule_userrolemap WHERE user_id = ( SELECT id FROM usermodule_usermoduleprofile WHERE user_id= "+ str(user_id) +")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference, COALESCE( ( SELECT assaign_to FROM asf_case WHERE id = case_id::int limit 1)::int,0) assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency FROM asf_victim WHERE deleted_at is null and sex LIKE '"+ str(gender) +"' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' AND status LIKE '"+ str(status) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+ str(user_id) +") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+ str(user_id) +") and field_type_id = 88)))"
+        query = "SELECT COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = 703 limit 1),0) can_delete,( SELECT ( SELECT role FROM PUBLIC.usermodule_organizationrole WHERE id = role_id limit 1)role_name FROM usermodule_userrolemap WHERE user_id = ( SELECT id FROM usermodule_usermoduleprofile WHERE user_id= "+ str(user_id) +")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency FROM asf_victim WHERE created_at:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND deleted_at is null and sex LIKE '"+ str(gender) +"' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' AND status LIKE '"+ str(status) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+ str(user_id) +") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+ str(user_id) +") and field_type_id = 88)))"
     except Exception:
         query = "select COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = 703 limit 1),0) can_delete, (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
-            user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency from asf_victim where  deleted_at is null and  sex like '" + str(
+            user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency from asf_victim where created_at:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND  deleted_at is null and  sex like '" + str(
             gender) + "' and case_id::int = any(select id from asf_case where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
             upazila) + "' and status like '" + str(status) + "')"
@@ -2305,7 +2307,7 @@ def get_psychotherapy_patient_report(request):
 
 @login_required
 def referral_list(request):
-    query = "select id,field_name from geo_data where field_type_id = 85"
+    query = "select geocode as id,field_name from geo_data where field_type_id = 85"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
 
