@@ -217,10 +217,11 @@ iframe
                 </div>
             </div>
             <div class="col-md-2">
-                <form method="post"  action="/asf/generate_pdf/" >
+                <form method="post" id="generate_pdf"  action="/asf/generate_pdf/" >
             {% csrf_token %}
-            <input type="hidden" name="victim_tbl_id" value="{{ victim_tbl_id | safe }}">
-          <button type="submit" class="btn btn-info" data-original-title="" title="">Generate PDF</button>
+                    <input type="hidden" name="victim_tbl_id" value="{{ victim_tbl_id | safe }}">
+                    <div id = "checked_div"></div>
+                    <button type="submit" class="btn btn-info" data-original-title="" title="" >Generate PDF</button>
         </form>
             </div>
 
@@ -233,13 +234,13 @@ iframe
 
 
 
-
+<h5 style="font-weight: bold !important; font-size: 16px !important;"> <input style="margin-left: 17px;" type="checkbox"   id="all" >&nbsp;Select All</h5>
 <div>
     <div class="panel-group" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default" style="margin-bottom: 10px;">
             <div style="height: 48px; background-color: rgba(10, 174, 176, 0.35)" class="panel-heading" role="tab" id="heading100">
                 <h4 class="panel-title">
-                    <a style="font-weight: bold;" class="collapsed" onclick="" role="button" data-toggle="collapse" href="#collapse100" aria-expanded="false" aria-controls="collapse50"> Progress Status
+                    <input type="checkbox" id="report"><a style="font-weight: bold;" class="collapsed" onclick="" role="button" data-toggle="collapse" href="#collapse100" aria-expanded="false" aria-controls="collapse50"> Beneficiary Progress Dashboard
                     </a>
                 </h4>
             </div>
@@ -313,7 +314,29 @@ iframe
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
 
     <script>
+$("#all").change(function () {
+    var ischecked = $(this).is(':checked');
+    if (ischecked) {
+        $('#div_content').find( "input:checkbox" ).prop( "checked", true );
+    }
+    else
+    {
+        $('#div_content').find( "input:checkbox" ).prop( "checked", false);
+    }
+});
 
+var idSelector = function() { if(this.id !== 'all') return this.id; };
+$('#generate_pdf').on('submit',function () {
+    $('#checked_div').html('');
+    check_div_list = $(":checkbox:checked").map(idSelector).get();
+    for(idx in check_div_list)
+    {
+        if(check_div_list[idx]!=='report')
+        $('#checked_div').append('<input type="hidden" name="checked_id" value="'+check_div_list[idx]+'">')
+        else
+            $('#checked_div').append('<input type="hidden" name="checked_report_id" value="'+check_div_list[idx]+'">')
+    }
+});
 
 var form_builder_server = '{{ form_builder_server | safe}}';
 var iom_reference = '{{ iom_reference | safe }}'

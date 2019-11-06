@@ -185,7 +185,7 @@ def get_forms_data(request):
     victim_id = request.POST.get('victim_id')
     user_id = request.user.id
     query = """ WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id,rf.can_edit,rf.can_delete FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS (SELECT logger_instance.id log_ins_id, json ->> 'victim_tbl_id' :: text victim_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id and deleted_at is null ORDER BY date_created DESC) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a id="data_id_' ||log_ins_id ||'" class="collapsed" onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''',1)" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || To_char(date_created :: DATE, 'DD/MM/YYYY') ||'</a><span style="margin-left:30%">' || Replace(Greatest(title, Rpad(title, 32, ' ')) :: text, ' ', '&nbsp;') ||'</span>' || case when can_edit = 1 then '<a onclick="load_forms_edit_mode(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer;margin-right: -5px;margin-left: 11px;" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a>' else '' end || case when can_delete = 1 then '<a onclick="delete_forms_data(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-trash"></i></a>' else '' end || '</h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE victim_id LIKE '%""" + str(victim_id) + """%' """
-    print(query)
+    # print(query)
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -208,7 +208,7 @@ def get_data_view(request):
         'root':root
     })
     rendered = json.dumps(rendered)
-    print(rendered)
+    # print(rendered)
     return HttpResponse(rendered)
 
 
@@ -239,7 +239,7 @@ def get_events_forms_list(request):
     query = """  WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id, category_id, orders, submission_times FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ +str(user_id)+ """), fre as (select xform_id,count(id) frequency from logger_instance where (json->>'event_id')::int = """ +str(event_id)+ """ and deleted_at is null and xform_id = any(select form_id from t) group by xform_id ), t1 AS (select case when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) < submission_times then '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) >= submission_times then '' else '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' end AS popup_str FROM t left join fre on t.form_id = fre.xform_id ORDER BY category_id, orders) SELECT * FROM t1 """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
-    print(query)
+    # print(query)
     # main_str = """ <ul class="list-group"> """
     # for each in df['popup_str']:
     #     main_str += """ <li class="list-group-item"> """ + str(each) + """ </li> """
@@ -855,7 +855,7 @@ def victim_profile(request,victim_tbl_id):
     beneficiary_picture = '/media/iom_admin/attachments/'+df.beneficiary_picture.tolist()[0] if len(df.beneficiary_picture.tolist()) and df.beneficiary_picture.tolist()[0] is not None  else '/static/images/profile.jpg'
 
     user_id = request.user.id
-    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60,70}') AND user_id = """ + str(user_id) + """ order by category_id asc """
+    query = """ SELECT distinct category_id,'<div class="row"><div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><input type="checkbox" id="'||category_id||'"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60,70}') AND user_id = """ + str(user_id) + """ order by category_id asc """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -935,6 +935,9 @@ def victim_profile(request,victim_tbl_id):
 
 @csrf_exempt
 def generate_pdf(request):
+    checked_id_list = request.POST.getlist('checked_id')
+    checked_id_list = str([int(i) for i in checked_id_list]).replace('[','{').replace(']','}')
+    report_check = request.POST.get('checked_report_id','no')
     victim_tbl_id = request.POST.get('victim_tbl_id')
     qry = "select *,(select label_text return_from from vw_country where value_text = return_from limit 1),case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,birth_date::date,date_return::date,(select field_name from geo_data where geocode = division limit 1) division,(select field_name from geo_data where geocode = district limit 1) district,(select field_name from geo_data where geocode = upazila limit 1) upazila,(select field_name from geo_data where geocode = union_id limit 1) union_id, ward ,(select field_name from geo_data where geocode = asf_victim.permanent_division limit 1) permanent_division,(select field_name from geo_data where geocode = asf_victim.permanent_district limit 1) permanent_district,(select field_name from geo_data where geocode = asf_victim.permanent_upazila limit 1) permanent_upazila,(select field_name from geo_data where geocode = asf_victim.permanent_union limit 1) permanent_union, permanent_ward from asf_case,asf_victim where asf_case.id = case_id::int and asf_victim.id =" + str(
         victim_tbl_id)
@@ -997,20 +1000,18 @@ def generate_pdf(request):
     permanent_post_office = df.permanent_post_office.tolist()[0] if len(df.permanent_post_office.tolist()) and \
                                                                     df.permanent_post_office.tolist()[
                                                                         0] is not None  else ''
-    print(permanent_district, df.permanent_district.values[0][1])
+    # print(permanent_district, df.permanent_district.values[0][1])
     contact_self = df.contact_self.tolist()[0] if len(df.contact_self.tolist()) and df.contact_self.tolist()[
                                                                                         0] is not None  else ''
     contact_emergency = df.contact_emergency.tolist()[0] if len(df.contact_emergency.tolist()) and \
                                                             df.contact_self.tolist()[0] is not None  else ''
-    occupation_in_host_country = df.occupation_in_host_country.values[0][1] if len(
-        df.occupation_in_host_country.values) and df.occupation_in_host_country.values[0][1] is not None  else ''
+    occupation_in_host_country = ''
     beneficiary_picture = '/media/iom_admin/attachments/' + df.beneficiary_picture.tolist()[0] if len(
         df.beneficiary_picture.tolist()) and df.beneficiary_picture.tolist()[
                                                  0] is not None  else '/static/images/profile.jpg'
 
     user_id = request.user.id
-    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60}') AND user_id = """ + str(
-        user_id) + """ order by category_id asc """
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('"""+str(checked_id_list)+"""') AND user_id = """ + str(user_id) + """ order by category_id asc """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -1041,6 +1042,7 @@ def generate_pdf(request):
     df = pandas.read_sql(qery, connection)
     instance_id_list = df.id.tolist()
     data = {
+        'report_check':report_check,
         'main_str': main_str,
         'instance_id_list':instance_id_list,
         'username': username,
