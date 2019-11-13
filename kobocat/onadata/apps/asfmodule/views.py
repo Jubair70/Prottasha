@@ -2328,7 +2328,7 @@ def get_referral_list(request):
     user_id = request.user.id
     role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
     if role == 'Field Officer':
-        q = "select id, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral where user_id="+str(user_id)
+        q = "select id,COALESCE ((select incident_id from asf_case where id = (select case_id::int from asf_victim where id =(json->>'victim_tbl_id')::int ) limit 1),'') iom_case_no, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral where user_id="+str(user_id)
         main_df = pd.read_sql(q, connection)
 
         ref_service_q = "select id , get_form_option_label(714,'referral/referral_services_for',json->>'referral/referral_services_for') referral_services from  vw_referral where user_id="+str(user_id)
@@ -2337,10 +2337,10 @@ def get_referral_list(request):
         ref_org_q = "select id , get_form_option_label(714,'referral/referral_organization_name',json->>'referral/referral_organization_name') referral_organization from  vw_referral where user_id="+str(user_id)
         ref_org_df = pd.read_sql(ref_org_q, connection)
 
-        returnee_info_q = "select  COALESCE ((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_no,COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where created_by::int="+str(user_id)
+        returnee_info_q = "select  COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where created_by::int="+str(user_id)
         returnee_info_df = pd.read_sql(returnee_info_q, connection)
     elif role == 'RSC Manager':
-        q = "select id, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+        q = "select id, json->>'beneficiary_id' beneficiary_id,COALESCE ((select incident_id from asf_case where id = (select case_id::int from asf_victim where id =(json->>'victim_tbl_id')::int ) limit 1),'') iom_case_no,date(json->>'referral/referral_date') referral_date from vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
         main_df = pd.read_sql(q, connection)
 
         ref_service_q = "select id , get_form_option_label(714,'referral/referral_services_for',json->>'referral/referral_services_for') referral_services from  vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
@@ -2349,10 +2349,11 @@ def get_referral_list(request):
         ref_org_q = "select id , get_form_option_label(714,'referral/referral_organization_name',json->>'referral/referral_organization_name') referral_organization from  vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
         ref_org_df = pd.read_sql(ref_org_q, connection)
 
-        returnee_info_q = "select  COALESCE ((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_no,COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where created_by::int=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+        returnee_info_q = "select COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where created_by::int=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
         returnee_info_df = pd.read_sql(returnee_info_q, connection)
+        print(returnee_info_q)
     else:
-        q = "select id, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral"
+        q = "select id, json->>'beneficiary_id' beneficiary_id,COALESCE ((select incident_id from asf_case where id = (select case_id::int from asf_victim where id =(json->>'victim_tbl_id')::int ) limit 1),'') iom_case_no,date(json->>'referral/referral_date') referral_date from vw_referral"
         main_df = pd.read_sql(q, connection)
 
         ref_service_q = "select id , get_form_option_label(714,'referral/referral_services_for',json->>'referral/referral_services_for') referral_services from  vw_referral"
@@ -2361,7 +2362,7 @@ def get_referral_list(request):
         ref_org_q = "select id , get_form_option_label(714,'referral/referral_organization_name',json->>'referral/referral_organization_name') referral_organization from  vw_referral"
         ref_org_df = pd.read_sql( ref_org_q, connection)
 
-        returnee_info_q = "select  COALESCE ((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_no,COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim"
+        returnee_info_q = "select COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim"
         returnee_info_df = pd.read_sql(returnee_info_q,connection)
 
 
