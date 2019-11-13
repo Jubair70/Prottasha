@@ -63,7 +63,8 @@
                 <tr>
                             <th>SL</th>
                             <th>Name of Event</th>
-                            <th>Date</th>
+                            <th>Event Start Date</th>
+                            <th>Event End Date</th>
                             <th>District</th>
                             <th>Upazila</th>
                     <th></th>
@@ -178,7 +179,7 @@
                                 del_html = '<a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a>'
                             if(list[idx].can_edit == 1)
                                 edit_html = '<a class="tooltips" data-container="body" data-placement="top" data-original-title="Edit" href="/asf/event_form/?instance_id=' + list[idx].id + '"><i class="fa fa-2x fa-pencil-square"></i></a>'
-                            tbody += '<tr><td>' + list[idx].serial_no + '</td> <td>' + list[idx].event_name + '</td> <td>' + list[idx].event_date + '</td> <td>' +list[idx].district + '</td><td>' +list[idx].upazila + '</td><td class="td-center">'+edit_html+del_html+'</td></tr>';
+                            tbody += '<tr><td>' + list[idx].serial_no + '</td> <td>' + list[idx].event_name + '</td> <td>' + list[idx].event_start_date +'</td><td>' + list[idx].event_end_date +'</td> <td>' +list[idx].district + '</td><td>' +list[idx].upazila + '</td><td class="td-center">'+edit_html+del_html+'</td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();

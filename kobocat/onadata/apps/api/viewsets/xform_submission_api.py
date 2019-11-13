@@ -287,7 +287,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
     def get_preloaded_json(self, form_id, preset_data):
         json = {}
 
-        qry = "select form_id from forms_categories_relation where category_id = any('{1,2,10,20,30,40,50,60,70}')"
+        qry = "select form_id from forms_categories_relation where category_id = any('{1,2,10,20,30,40,50,60,70,80}')"
         df = pandas.read_sql(qry,connection)
         form_list_for_beneficiary = df.form_id.tolist()
 

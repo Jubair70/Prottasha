@@ -31,7 +31,8 @@
                 <tr>
                     <th>SL</th>
 
-                            <th>Date</th>
+                            <th>Event Start Date</th>
+                            <th>Event End Date</th>
                             <th>Submitted By</th>
                             <th>District</th>
                             <th>Upazila</th>
@@ -183,7 +184,7 @@ function start (e) {
                                 del_html = '<a class="btn btn-danger delete-item tooltips" style="margin-left:10px" data-placement="top" data-toggle="modal"  data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + case_list[idx].id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i>Delete</a>'
                             if(case_list[idx].can_edit == 1)
                                 edit_html = '<a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Edit" href="/asf/tea_stall_meeting_form/?instance_id=' + case_list[idx].id + '"><i class="fa fa-2x fa-pencil"></i>Edit</a>'
-                            tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].date_created +'</td><td>' + case_list[idx].username +'</td><td>' + case_list[idx].district +'</td><td>' +  case_list[idx].upazila + '</td><td>' + case_list[idx].union_name + '</td><td>' + case_list[idx].para_bazar_school + '</td><td class="td-center">' + (case_list[idx].observation == 0 ? '<i class="fa fa-2x fa-times" style="color:red"></i>' : '<i class="fa fa-2x fa-check" style="color:green"></i>')  + '</td><td class="td-center">' + (case_list[idx].review == 0 ? '<i class="fa fa-2x fa-times" style="color:red"></i>' : '<i class="fa fa-2x fa-check" style="color:green"></i>') + '</td><td class="td-center"><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Details" href="/asf/tea_stall_meeting_profile/' + case_list[idx].id + '/"><i class="fa fa-2x fa-envelope-open-o"></i>Details</a>'+edit_html+del_html+'</td></tr>';
+                            tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].event_start_date +'</td><td>' + case_list[idx].event_end_date +'</td><td>' + case_list[idx].username +'</td><td>' + case_list[idx].district +'</td><td>' +  case_list[idx].upazila + '</td><td>' + case_list[idx].union_name + '</td><td>' + case_list[idx].para_bazar_school + '</td><td class="td-center">' + (case_list[idx].observation == 0 ? '<i class="fa fa-2x fa-times" style="color:red"></i>' : '<i class="fa fa-2x fa-check" style="color:green"></i>')  + '</td><td class="td-center">' + (case_list[idx].review == 0 ? '<i class="fa fa-2x fa-times" style="color:red"></i>' : '<i class="fa fa-2x fa-check" style="color:green"></i>') + '</td><td class="td-center"><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Details" href="/asf/tea_stall_meeting_profile/' + case_list[idx].id + '/"><i class="fa fa-2x fa-envelope-open-o"></i>Details</a>'+edit_html+del_html+'</td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
