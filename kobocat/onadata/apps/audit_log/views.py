@@ -70,7 +70,7 @@ def audit_log_main(request):
 
     print 'audit_log_view_json::----'
     # print audit_log_view_json
-    form_id_query = "select distinct form_id,(select id_string from logger_xform where id = form_id) form_name from audit_logger_instance where form_id in (select id from logger_xform)"
+    form_id_query = "select distinct form_id,(select title from logger_xform where id = form_id) form_name from audit_logger_instance where form_id in (select id from logger_xform)"
     df = pandas.DataFrame()
     df = pandas.read_sql(form_id_query,connection)
     form_id = []

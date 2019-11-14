@@ -1747,12 +1747,12 @@ def upload_shared_file(file,title):
 @login_required
 def getSharedFileList(request):
     cntrl_remove_btn = request.POST.get('cntrl_remove_btn')
-    data_query = "select *,(select first_name || ' ' || last_name from auth_user where id= user_id limit 1)  as username from file_shared order by id desc "
+    data_query = "select *,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,(select first_name || ' ' || last_name from auth_user where id= user_id limit 1)  as username from file_shared order by id desc "
     data = __db_fetch_values_dict(data_query)
     data_list = []
     data_dict = {}
     for tmp in data:
-        data_dict['id'] = tmp['id']
+        data_dict['id'] = tmp['serial_no']
         data_dict['title'] = tmp['title']
         data_dict['created_date'] = tmp['created_date']
         data_dict['document_type'] = tmp['document_type']

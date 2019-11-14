@@ -148,7 +148,7 @@
                             <div class="form-group">
                                 <label >Quantity : </label>
 
-                                <input type="number" id="p_qty" class="form-control" required name="p_qty">
+                                <input type="number" min="1" id="p_qty" class="form-control" required name="p_qty">
                             </div>
                         </div>
                     </div>
@@ -216,7 +216,7 @@
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label >Quantity : </label>
-                                <input onblur="check_stockout_qty(this.value)" type="number" id="pout_qty" class="form-control" required name="pout_qty">
+                                <input onblur="check_stockout_qty(this.value)" min="1" type="number" id="pout_qty" class="form-control" required name="pout_qty">
                             </div>
                         </div>
                     </div>
