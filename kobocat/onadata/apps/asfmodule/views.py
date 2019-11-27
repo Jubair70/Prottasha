@@ -742,7 +742,7 @@ def send_push_notification(user_id,incident_id):
         firebase_token = df.firebase_token.tolist()[0]
         registration_id = []
         registration_id.append(firebase_token)
-        full_name = __db_fetch_single_value("select first_name || '' || last_name from auth_user where id = "+str(user_id))
+        full_name = __db_fetch_single_value("select first_name || ' ' || last_name from auth_user where id = "+str(user_id))
         message_title = 'IOM-BD'
         message_body = 'Hi, '+full_name+'.<br>You are requested to complete Case ID '+ incident_id +' Beneficiary profiling'
         data_message = {
