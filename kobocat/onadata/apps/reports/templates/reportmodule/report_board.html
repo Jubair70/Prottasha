@@ -133,12 +133,23 @@
 
                                 </option>
                             </select>
+                            <label>Upazila</label>
+                            <select multiple="multiple" id="upazila" name="upazila" onchange="">
+                                <option>
+
+                                </option>
+                            </select>
 
                         </div>
                         <button type="submit" id="submitBtn" style="display:none;" data-validate="contact-form">Hidden
                             Button
                         </button>
+
                         <div class="form-actions" style="-webkit-border-radius: 0px !important;">
+                             <input type="button" id="reset_filter"
+                                   class="btn pull-right" style="-webkit-border-radius: 0px !important; margin-left: 10px;"
+                                   onclick="reset_elements();"
+                                   value="Reset"/>
                             <input type="button" id="generate_report"
                                    class="btn pull-right" style="-webkit-border-radius: 0px !important;"
                                    onclick="get_elements();"
@@ -179,7 +190,7 @@
         var submodule = '{{ submodule|safe }}';
 
         $(document).ready(function () {
-            generate_filter();
+{#            generate_filter();#}
 
             $('#from_date').datepicker({
                 endDate: '0d',
@@ -200,6 +211,7 @@
             $("#rsc").multiselect({
                 enableFiltering: true,
                 //filterBehavior: 'value',
+                enableCaseInsensitiveFiltering: true,
                 maxHeight: 200,
                 numberDisplayed: 1,
                 includeSelectAllOption: true,
@@ -209,17 +221,82 @@
             $("#district").multiselect({
                 enableFiltering: true,
                 //filterBehavior: 'value',
+                enableCaseInsensitiveFiltering: true,
                 maxHeight: 200,
                 numberDisplayed: 1,
                 includeSelectAllOption: true,
                 buttonWidth: '100%',
                 allSelectedText: 'All Selected'
             });
+            $("#upazila").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                enableCaseInsensitiveFiltering: true,
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+            });
+            jsondata = {{ jsondata | safe }};
+            var dateObj = moment();
+            var prevDateObj = moment().subtract(180, 'd');
+            $('#from_date').val(prevDateObj.format('YYYY-MM-DD'));
+            $('#to_date').val(dateObj.format('YYYY-MM-DD'));
+            get_filter(jsondata);
+            $('#generate_report').trigger('click')
 
-            get_elements();
+{#            get_elements();#}
 
 
         });
+        var dateObj = moment();
+        var prevDateObj = moment().subtract(180, 'd');
+
+        function reset_elements() {
+            $('#from_date').val(prevDateObj.format('YYYY-MM-DD'));
+            $('#to_date').val(dateObj.format('YYYY-MM-DD'));
+            $('#rsc').val([]).multiselect('refresh');
+            $('#district').val([]).multiselect('refresh');
+            $('#upazila').val([]).multiselect('refresh');
+
+        }
+                
+        function get_filter(result) {
+            console.log(result);
+                    try {
+                        console.log("JSON");
+                        jsondata = JSON.parse(result);
+                        console.log(jsondata);
+                    } catch (e) {
+                        jsondata = result;
+                    }
+                    if (jsondata) {
+                        var keys = Object.keys(jsondata);
+                        for (var i = 0; i < keys.length; i++) {
+                            console.log(keys[i]);
+                            var data = jsondata[keys[i]];
+                            $('#' + keys[i] + "  option").remove();
+                            var multiple_select_html = '';
+                            temp_id = []
+                            if (data) {
+                                for (var j = 0; j < data.length; j++) {
+                                    multiple_select_html += '<option value="' + data[j].id + '">' + data[j].name + '</option>';
+                                    temp_id.push(data[j].id);
+                                }
+                            }
+
+                            console.log(temp_id)
+                            $('#' + keys[i]).append(multiple_select_html);
+                            $('#' + keys[i]).multiselect('rebuild');
+                            $('#' + keys[i]).val(temp_id);
+                            $('#' + keys[i]).multiselect("refresh");
+
+
+                        }
+                    }
+        }
+
 
         function get_excel(filename) {
             console.log(" data " + "/dashboard/getExcel?" + filename);
@@ -229,11 +306,24 @@
 
         }
 
+
+
         function get_elements() {
             console.log(event);
             event.preventDefault();
 
             var parameters = $('#filter_form').serializeArray();
+
+            console.log("parameters")
+            console.log(parameters)
+            from_date = $('#from_date').val();
+            to_date = $('#to_date').val();
+            rsc = $('#rsc').val();
+            district = $('#district').val();
+            upazila = $('#upazila').val();
+            console.log(rsc,district,upazila);
+            if(rsc === null && district === null && upazila === null)
+                return
 
             $.ajax({
                 url: '/reports/get_report_elements/' + submodule + '/',
@@ -297,7 +387,13 @@
                                     var datasum = chart_data[key][0].datasum;
                                 } else {
                                     var sd = chart_data[key][0].series[0].data;
-                                    var datasum = sd.sum('y');
+                                    var datasum;
+                                    try {
+                                        datasum = sd.sum('y');
+                                    }
+                                    catch (e){
+                                        datasum = 0
+                                    }
                                 }
                                 //column fd_type value is equal 'color'
                                 if (chart_data[key][3] == 'color') {
@@ -366,7 +462,7 @@
 
         function onChangeMultipleSelect(control_id, changed_val) {
             var filtered_data = {'rsc': changed_val};
-            filter_ajax(filtered_data, 'POST')
+{#            filter_ajax(filtered_data, 'POST')#}
         }
 
         $('#filter_box').BootSideMenu({
@@ -455,14 +551,21 @@
                             console.log(keys[i]);
                             var data = jsondata[keys[i]];
                             $('#' + keys[i] + "  option").remove();
-                            var multiple_select_html = ''
+                            var multiple_select_html = '';
+                            temp_id = []
                             if (data) {
                                 for (var j = 0; j < data.length; j++) {
                                     multiple_select_html += '<option value="' + data[j].id + '">' + data[j].name + '</option>';
+                                    temp_id.push(data[j].id);
                                 }
                             }
+
+                            console.log(temp_id)
                             $('#' + keys[i]).append(multiple_select_html);
                             $('#' + keys[i]).multiselect('rebuild');
+                            $('#' + keys[i]).val(temp_id);
+                            $('#' + keys[i]).multiselect("refresh");
+
 
                         }
                     }
@@ -475,30 +578,30 @@
             filter_ajax({}, 'GET');
         }
 
-        $('#generate_report').on('click', function () {
-            var from_date = $('#from_date').val();
-            var to_date = $('#to_date').val();
-
-            if (from_date == '' || to_date == '')
-                return false;
-
-            $.ajax({
-                url: '/reports/get_post_arrival_immediate_assistance/',
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    'from_date': from_date, 'to_date': to_date
-                },
-                beforeSend: function () {
-
-                },
-                success: function (result) {
-                    console.log(result.cat)
-                    console.log(result.dataset);
-                    get_post_arrival_immediate_asst_report(result.cat, result.dataset)
-                }
-            });
-        });
+{#        $('#generate_report').on('click', function () {#}
+{#            var from_date = $('#from_date').val();#}
+{#            var to_date = $('#to_date').val();#}
+{##}
+{#            if (from_date == '' || to_date == '')#}
+{#                return false;#}
+{##}
+{#            $.ajax({#}
+{#                url: '/reports/get_post_arrival_immediate_assistance/',#}
+{#                type: 'POST',#}
+{#                dataType: 'json',#}
+{#                data: {#}
+{#                    'from_date': from_date, 'to_date': to_date#}
+{#                },#}
+{#                beforeSend: function () {#}
+{##}
+{#                },#}
+{#                success: function (result) {#}
+{#                    console.log(result.cat)#}
+{#                    console.log(result.dataset);#}
+{#                    get_post_arrival_immediate_asst_report(result.cat, result.dataset)#}
+{#                }#}
+{#            });#}
+{#        });#}
 
 
         function generateCard(element, chart_object, data,icon_class) {
@@ -593,11 +696,11 @@
                     bPaginate: paging,
                     columns: query_column,
                     dom: 'Bfrtip',
-                    buttons: export_buttons
-
-                }).fnAdjustColumnSizing(false);;
+                    buttons: export_buttons,
+                    bAutoWidth:false
+                });
                 $('.dataTables_scrollHeadInner').css('width', 'auto');
-                $('#' + tableID).columns.adjust().draw();
+{#                $('#' + tableID).columns.adjust().draw();#}
                 ;
             }
             $('#' + tableID + '_wrapper .dataTables_filter input').addClass("form-control input-medium"); // modify table search input

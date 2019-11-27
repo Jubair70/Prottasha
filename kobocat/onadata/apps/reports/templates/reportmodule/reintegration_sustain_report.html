@@ -97,7 +97,69 @@
                             <div class="caption pull-right"><i class="fa fa-filter"></i>Filters</div>
                         </div>
                         <div class="portlet-body" id="right_6">
+                            <div class="panel-group accordion" id="accordion1"
+                             style="-webkit-border-radius: 0px !important;">
+                            <div class="panel panel-default" style="-webkit-border-radius: 0px !important;">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title" style="-webkit-border-radius: 0px !important;">
+                                        <a class="accordion-toggle" data-toggle="collapse"
+                                           data-parent="#accordion1"
+                                           href="#collapse_1">
+                                            Date
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="collapse_1" class="panel-collapse in">
+                                    <div class="panel-body" style="-webkit-border-radius: 0px !important; ">
+                                        <label>From</label>
+                                        <input type="text" class="datepicker form-control" name="from_date"
+                                               id="from_date"
+                                               style="border: 1px solid #e5e5e5 !important; cursor: pointer"
+                                               autocomplete="off"
+                                               readonly>
 
+                                        <label>To</label>
+                                        <input type="text" class="datepicker form-control" name="to_date" id="to_date"
+                                               style="border: 1px solid #e5e5e5 !important; cursor: pointer"
+                                               autocomplete="off"
+                                               readonly>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-body" style="-webkit-border-radius: 0px !important; ">
+                            <label>RSC</label>
+                            <select multiple="multiple" id="rsc" name="rsc"
+                                    onchange="">
+                                <option>
+
+                                </option>
+                            </select>
+
+                            <label>Disrict</label>
+                            <select multiple="multiple" id="district" name="district" onchange="">
+                                <option>
+
+                                </option>
+                            </select>
+                            <label>Upazila</label>
+                            <select multiple="multiple" id="upazila" name="upazila" onchange="">
+                                <option>
+
+                                </option>
+                            </select>
+
+                        </div>
+                        </div>
+                        <div class="form-actions" style="-webkit-border-radius: 0px !important;">
+                             <input type="button" id="reset_filter"
+                                   class="btn pull-right" style="-webkit-border-radius: 0px !important; margin-left: 10px;"
+                                   onclick="reset_elements();"
+                                   value="Reset"/>
+                            <input type="submit" id="filter_61"
+                                   class="btn pull-right" style="-webkit-border-radius: 0px !important;"
+                                   value="Apply"/>
                         </div>
                     </div>
 
@@ -142,7 +204,7 @@
             src="{{ STATIC_URL }}assets/plugins/bootstrap-multiselect/bootstrap-multiselect.js"></script>
     <script src="{{ STATIC_URL }}js/main.js"></script>
     <script src="{{ STATIC_URL }}js/report_module/chart_lib.js"></script>
-    <script src="{{ STATIC_URL }}js/BootSideMenu.js" type="text/javascript"></script>
+        <script src="{{ STATIC_URL }}js/BootSideMenu.js" type="text/javascript"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/mpower.dashbaord.js"></script>
     <script>
         var submodule = '{{ submodule|safe }}';
@@ -151,11 +213,111 @@
 
         $(document).ready(function () {
             init_tab_6();
+            $('#from_date').datepicker({
+                endDate: '0d',
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            }).on('changeDate', function () {
+                $(this).datepicker('hide');
+            });
+
+            $('#to_date').datepicker({
+                endDate: '0d',
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            }).on('changeDate', function () {
+                $(this).datepicker('hide');
+            });
+
+            $("#rsc").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                enableCaseInsensitiveFiltering: true,
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+            });
+            $("#district").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                enableCaseInsensitiveFiltering: true,
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+            });
+            $("#upazila").multiselect({
+                enableFiltering: true,
+                //filterBehavior: 'value',
+                enableCaseInsensitiveFiltering: true,
+                maxHeight: 200,
+                numberDisplayed: 1,
+                includeSelectAllOption: true,
+                buttonWidth: '100%',
+                allSelectedText: 'All Selected'
+            });
+            jsondata = {{ jsondata | safe }};
+            var dateObj = moment();
+            var prevDateObj = moment().subtract(180, 'd');
+            $('#from_date').val(prevDateObj.format('YYYY-MM-DD'));
+            $('#to_date').val(dateObj.format('YYYY-MM-DD'));
+            get_filter(jsondata);
+            $('#filter_61').trigger('click')
 {#            refresh_filter_6();#}
 {#            get_elements();#}
 
 
         });
+
+        var dateObj = moment();
+        var prevDateObj = moment().subtract(180, 'd');
+
+        function reset_elements() {
+            $('#from_date').val(prevDateObj.format('YYYY-MM-DD'));
+            $('#to_date').val(dateObj.format('YYYY-MM-DD'));
+            $('#rsc').val([]).multiselect('refresh');
+            $('#district').val([]).multiselect('refresh');
+            $('#upazila').val([]).multiselect('refresh');
+
+        }
+
+        function get_filter(result) {
+            console.log(result);
+                    try {
+                        console.log("JSON");
+                        jsondata = JSON.parse(result);
+                        console.log(jsondata);
+                    } catch (e) {
+                        jsondata = result;
+                    }
+                    if (jsondata) {
+                        var keys = Object.keys(jsondata);
+                        for (var i = 0; i < keys.length; i++) {
+                            console.log(keys[i]);
+                            var data = jsondata[keys[i]];
+                            $('#' + keys[i] + "  option").remove();
+                            var multiple_select_html = '';
+                            temp_id = []
+                            if (data) {
+                                for (var j = 0; j < data.length; j++) {
+                                    multiple_select_html += '<option value="' + data[j].id + '">' + data[j].name + '</option>';
+                                    temp_id.push(data[j].id);
+                                }
+                            }
+
+                            console.log(temp_id)
+                            $('#' + keys[i]).append(multiple_select_html);
+                            $('#' + keys[i]).multiselect('rebuild');
+                            $('#' + keys[i]).val(temp_id);
+                            $('#' + keys[i]).multiselect("refresh");
+
+
+                        }
+                    }
+        }
 
 
         function get_elements() {

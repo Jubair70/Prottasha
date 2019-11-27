@@ -124,8 +124,29 @@ def sustainability_report(request):
 
     # # json_output = {, 'username': username,'user_id': user_id}
     # print json_output
-
-    return render(request, 'reportmodule/reintegration_sustain_report.html', {'js_code': js_code,'submodule': "reintegration_sustainability", 'report_header': "Reintegration Sustainability Report"})
+    user_id = request.user.id
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
+        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc where id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id =" + str(
+            user_id) + ")) select array_to_json(array_agg(t)) from t"
+        district_query = "with t as (select distinct geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and geo_tbl_id = any(select id from geo_data where id =any(select geoid from usermodule_catchment_area where user_id = " + str(
+            user_id) + ") and field_type_id = 86 union select id from geo_data where field_type_id = 86 and id = any( select field_parent_id from geo_data where id = any(select geoid from usermodule_catchment_area where user_id = " + str(
+            user_id) + ")))) select array_to_json(array_agg(t)) from t"
+        upazila_query = "with t as( SELECT distinct geocode id, field_name as name FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = " + str(
+            user_id) + ") AND field_type_id = 88 UNION SELECT geocode as id,field_name as name FROM geo_data WHERE field_type_id = 88 AND field_parent_id = ANY (SELECT id FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = " + str(
+            user_id) + ")))select array_to_json(array_agg(t)) from t"
+    except Exception:
+        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc) select array_to_json(array_agg(t)) from t"
+        district_query = "with t as (select distinct  geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86) select array_to_json(array_agg(t)) from t"
+        upazila_query = "with t as (select distinct upz_geocode as id, upz_name as name from vw_rsc_geo_data) select array_to_json(array_agg(t)) from t"
+    print(rsc_query)
+    print(district_query)
+    print(upazila_query)
+    rsc_data = __db_fetch_single_value(rsc_query)
+    district_data = __db_fetch_single_value(district_query)
+    upazila_data = __db_fetch_single_value(upazila_query)
+    jsondata = {'rsc': rsc_data, 'district': district_data, 'upazila': upazila_data}
+    return render(request, 'reportmodule/reintegration_sustain_report.html', {'js_code': js_code,'submodule': "reintegration_sustainability", 'report_header': "Reintegration Sustainability Report",'jsondata':json.dumps(jsondata)})
 
 
 
@@ -321,8 +342,17 @@ def get_filtered_query(post_dict, query):
 @csrf_exempt
 def get_filters(request):
     cursor = connection.cursor()
-    rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc) select array_to_json(array_agg(t)) from t"
-    district_query = "with t as (select geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and  id::text = any (@rsc)  or (@rsc is null)) select array_to_json(array_agg(t)) from t"
+    # catchment area
+    user_id = request.user.id
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
+        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc where id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+")) select array_to_json(array_agg(t)) from t"
+        district_query = "with t as (select geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and geo_tbl_id = any(select field_parent_id from geo_data where id = (select geoid from usermodule_catchment_area where user_id = "+str(user_id)+"))) select array_to_json(array_agg(t)) from t"
+    except Exception:
+        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc) select array_to_json(array_agg(t)) from t"
+        district_query = "with t as (select geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and  id::text = any (@rsc)  or (@rsc is null)) select array_to_json(array_agg(t)) from t"
+    print(rsc_query)
+    print(district_query)
 
     if request.method == 'POST':
         post_data = request.POST
@@ -331,6 +361,7 @@ def get_filters(request):
         row = cursor.fetchone()
         district_data = row[0]
         jsondata = {'district': district_data}
+        print jsondata
         return HttpResponse(json.dumps(jsondata), content_type="application/json")
     else:
         post_data = {}
@@ -346,11 +377,29 @@ def get_filters(request):
     return HttpResponse(json.dumps(jsondata), content_type="application/json")
 
 @login_required
+@csrf_exempt
 def report_initial(request,sub_module):
-
     query = "select main_module from chart_list where sub_module = '"+sub_module+"'"
     report_header = __db_fetch_single_value(query)
-    return render(request, 'reportmodule/report_board.html',{'submodule':sub_module,'report_header':report_header})
+    user_id = request.user.id
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
+        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc where id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+")) select array_to_json(array_agg(t)) from t"
+        district_query = "with t as (select distinct geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and geo_tbl_id = any(select id from geo_data where id =any(select geoid from usermodule_catchment_area where user_id = "+str(user_id)+") and field_type_id = 86 union select id from geo_data where field_type_id = 86 and id = any( select field_parent_id from geo_data where id = any(select geoid from usermodule_catchment_area where user_id = "+str(user_id)+")))) select array_to_json(array_agg(t)) from t"
+        upazila_query = "with t as( SELECT distinct geocode id, field_name as name FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88 UNION SELECT geocode as id,field_name as name FROM geo_data WHERE field_type_id = 88 AND field_parent_id = ANY (SELECT id FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+")))select array_to_json(array_agg(t)) from t"
+    except Exception:
+        rsc_query      =    "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc) select array_to_json(array_agg(t)) from t"
+        district_query =    "with t as (select distinct  geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86) select array_to_json(array_agg(t)) from t"
+        upazila_query  =    "with t as (select distinct upz_geocode as id, upz_name as name from vw_rsc_geo_data) select array_to_json(array_agg(t)) from t"
+    print(rsc_query)
+    print(district_query)
+    print(upazila_query)
+    rsc_data = __db_fetch_single_value(rsc_query)
+    district_data = __db_fetch_single_value(district_query)
+    upazila_data = __db_fetch_single_value(upazila_query)
+    jsondata = {'rsc': rsc_data, 'district': district_data,'upazila':upazila_data}
+
+    return render(request, 'reportmodule/report_board.html',{'submodule':sub_module,'report_header':report_header,'jsondata':json.dumps(jsondata)})
 
 
 @csrf_exempt
@@ -364,7 +413,7 @@ def generate_report(request, sub_module):
     report_header = ""
     chart_query = "select cheight,divlength,query,ctype,sl_no,chart_title,xindicator,fd_type,cat_order,chart_object,main_module from chart_list where  query is not null  and sub_module = '" + str(
             sub_module) + "' order by sl_no asc"
-    print chart_query
+    # print chart_query
     chart_list = __db_fetch_values_dict(chart_query)
     # print chart_list
 
@@ -387,12 +436,12 @@ def generate_report(request, sub_module):
             report_header = str(cl['main_module'])
         elif cl['ctype'] == 'column' or cl['ctype'] == 'bar':
             query = get_filtered_query(post_data, cl['query'])
-            print query
+            # print query
             try:
                 column_data_df = pandas.read_sql(query, connection)
-                print column_data_df
+                # print column_data_df
             except Exception, e:
-                print cl['chart_title']
+                # print cl['chart_title']
                 continue
             headers = list(column_data_df)
             cat_col = headers[0]
@@ -455,7 +504,7 @@ def generate_report(request, sub_module):
         elif cl['ctype'] =='table':
             df = pandas.read_sql(get_filtered_query(post_data,cl['query']), connection,index_col=None,)
             table_data = getDashboardDatatable(df)
-            print table_data
+            # print table_data
             chart_data[cl['sl_no']] = [table_data, str(cl['ctype']), str(cl['chart_title']),str(cl['divlength']), str(cl['chart_object'])]
             report_header = str(cl['main_module'])
     return HttpResponse(json.dumps(chart_data), content_type="application/json")

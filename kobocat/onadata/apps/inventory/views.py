@@ -146,7 +146,7 @@ def add_product(request):
 
         __db_commit_query(q)
 
-    return HttpResponse("ok")
+    return HttpResponseRedirect("/inventory/")
 
 
 @csrf_exempt

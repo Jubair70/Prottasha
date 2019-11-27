@@ -244,12 +244,12 @@
     </div>
 
 
-<div>
+<div id="report_div">
     <div class="panel-group" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default" style="margin-bottom: 10px;">
             <div style="height: 48px; background-color: rgba(10, 174, 176, 0.35)" class="panel-heading" role="tab" id="heading100">
                 <h4 class="panel-title">
-                    <a style="font-weight: bold;" class="collapsed" onclick="" role="button" data-toggle="collapse" href="#collapse100" aria-expanded="false" aria-controls="collapse50"> Progress Status
+                    <a style="font-weight: bold;" class="collapsed" onclick="" role="button" data-toggle="collapse" href="#collapse100" aria-expanded="false" aria-controls="collapse50"> Beneficiary Progress Dashboard
                     </a>
                 </h4>
             </div>
@@ -407,6 +407,9 @@
 
         function intialize() {
         click_all_collapse();
+        var report_check = '{{ report_check | safe }}';
+        if(report_check === 'no')
+            $('#report_div').hide();
      setTimeout(function () {
          var useWidth = $('.page-container').outerWidth();
          var useHeight = $('.page-container').outerHeight();
@@ -421,7 +424,7 @@
 
             console.log(canvas.width,canvas.height);
             var img = canvas.toDataURL('image/jpeg');
-            var paperFormatInMm = [useWidth-260, useHeight];
+            var paperFormatInMm = [useWidth-260, Math.max(useHeight,1900)];
             var doc = new jsPDF('p', 'pt', paperFormatInMm);
             doc.addImage(img, 'JPEG', 25, 10);
             doc.save('{{ victim_id }}.pdf');

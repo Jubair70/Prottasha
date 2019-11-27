@@ -51,6 +51,11 @@
                             $('#' + pField).append(tr);
                         }
                         else {
+                            if(form_data[i]._field_name != '_submitted_by' && form_data[i]._field_name != '_submission_time' && form_data[i]._field_name != '_geolocation' && form_data[i]._q_title == null)
+                            {
+{#                                console.log("what")#}
+                                continue
+                            }
 
                             var tr = document.createElement('tr');
                             tr.id = mainField;
@@ -125,6 +130,7 @@
             } else if (row_data._field_name == '_geolocation') {
                 return 'Geo Location';
             } else {
+                console.log(row_data,row_data._q_title)
                 if (row_data._q_title.startsWith('{')) {
                     return JSON.parse(row_data._q_title)[selected_lang];
                 } else {
@@ -170,7 +176,7 @@
                             return row_data._a_title;
                         }
                     } else {
-                        return '';
+                        return row_data._field_value;
                     }
                 } else {
                     satitle = JSON.parse(row_data._a_title);
@@ -178,12 +184,12 @@
                     satitle.forEach(function (elm, vdx) {
                         if (elm.value_label != null) {
                             if (elm.value_label.startsWith('{')) {
-                                sa_title_label += (vdx + 1) + ') ' + JSON.parse(elm.value_label)[selected_lang] + '  ';
+                                sa_title_label += (vdx + 1) + ') ' + JSON.parse(elm.value_label)[selected_lang] + '<br>';
                             } else {
-                                sa_title_label += (vdx + 1) + ') ' + elm.value_label + '  ';
+                                sa_title_label += (vdx + 1) + ') ' + elm.value_label + '<br>';
                             }
                         } else {
-                            sa_title_label = '';
+                            sa_title_label += '';
                         }
                     });
                     return sa_title_label;

@@ -190,7 +190,7 @@ iframe
 
                     </div>
 
-{#                    <div class="modal-footer"></div>#}
+                    <div class="modal-footer"></div>
                 </div>
             </div>
         </div>
@@ -230,7 +230,7 @@ event_id = {{ event_id | safe }};
 
     function load_forms(category_id, div_id) {
 
-
+$('.modal-footer').html('')
         if (opened.indexOf(category_id) > -1)
             return
         else
@@ -256,7 +256,7 @@ event_id = {{ event_id | safe }};
 
 
     function load_forms_list(category_id) {
-
+$('.modal-footer').html('');
 {#        $('#form' + category_id).popover();#}
 {##}
 {#        if (opened.indexOf('#form' + category_id) > -1)#}
@@ -265,10 +265,10 @@ event_id = {{ event_id | safe }};
 
 
         $.ajax({
-            url: '/asf/get_forms_list/',
+            url: '/asf/get_events_forms_list/',
             type: 'POST',
             dataType: 'json',
-            data: {'category_id': category_id},
+            data: {'category_id': category_id,'event_id':event_id},
             beforeSend: function () {
             },
             success: function (result) {
@@ -304,6 +304,7 @@ var imgs = $(".img-responsive");
 
 
     function load_forms_data(logger_id, div_id) {
+        $('.modal-footer').html('');
         console.log(logger_id);
 
         if (opened.indexOf(logger_id) > -1)
@@ -366,6 +367,7 @@ function get_all_img() {
     }
 
 function load_forms_html(form_id) {
+    $('.modal-footer').html('')
     server_address = '{{ server_address | safe }}'
     username = '{{ username | safe }}'
     form_builder_server = '{{ form_builder_server | safe }}'
@@ -378,6 +380,7 @@ function load_forms_html(form_id) {
     }
 
 function load_forms_edit_mode(form_id,instance_id) {
+    $('.modal-footer').html('')
     server_address = '{{ server_address | safe }}'
     username = '{{ username | safe }}'
     form_builder_server = '{{ form_builder_server | safe }}'
@@ -395,5 +398,18 @@ function load_forms_edit_mode(form_id,instance_id) {
             }
         };
 
+function delete_forms_data(form_id,log_ins_id) {
+    console.log(form_id,log_ins_id);
+    redirect_url = window.location.pathname
+    $('.modal-body').html('<p>You are about to delete a data, this procedure is irreversible.</p><p>Do you want to proceed?</p>');
+    $('.modal-footer').html('<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button><a href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id='+ log_ins_id +'&redirect_url=' + redirect_url + '" class="btn btn-danger btn-ok">Delete</a>');
+}
+if ($('.alert-block').is(':visible')) {
+            window.setTimeout(function () {
+                    $(".alert-success").fadeTo(1500, 0).slideUp(500, function () {
+                        $(this).remove();
+                    });
+                }, 5000);
+            }
     </script>
 {% endblock %}

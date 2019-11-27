@@ -169,13 +169,23 @@ def profile_view(request,victim_id):
     return render(request, 'asfmodule/profile_view_test.html',{'main_str':main_str, 'victim_id':victim_id,'id_string': id_string, 'xform_id': xform_id,
                    'form_uuid': form_uuid, 'username': username})
 
+@login_required
+def delete_data(request):
+    form_id = request.GET.get('form_id')
+    log_ins_id = request.GET.get('log_ins_id')
+    redirect_url = request.GET.get('redirect_url')
+    query = "update logger_instance set deleted_at = now() where id = "+str(log_ins_id)
+    __db_commit_query(query)
+    messages.success(request, '<i class="fa fa-check-circle"></i> Data has been deleted successfully!',extra_tags='alert-success crop-both-side')
+    return HttpResponseRedirect(redirect_url)
+
 @csrf_exempt
 def get_forms_data(request):
     category_id = request.POST.get('category_id')
     victim_id = request.POST.get('victim_id')
     user_id = request.user.id
     query = """ WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id,rf.can_edit,rf.can_delete FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS (SELECT logger_instance.id log_ins_id, json ->> 'victim_tbl_id' :: text victim_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id and deleted_at is null ORDER BY date_created DESC) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a id="data_id_' ||log_ins_id ||'" class="collapsed" onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''',1)" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || To_char(date_created :: DATE, 'DD/MM/YYYY') ||'</a><span style="margin-left:30%">' || Replace(Greatest(title, Rpad(title, 32, ' ')) :: text, ' ', '&nbsp;') ||'</span>' || case when can_edit = 1 then '<a onclick="load_forms_edit_mode(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer;margin-right: -5px;margin-left: 11px;" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a>' else '' end || case when can_delete = 1 then '<a onclick="delete_forms_data(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-trash"></i></a>' else '' end || '</h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE victim_id LIKE '%""" + str(victim_id) + """%' """
-    print(query)
+    # print(query)
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -198,7 +208,7 @@ def get_data_view(request):
         'root':root
     })
     rendered = json.dumps(rendered)
-    print(rendered)
+    # print(rendered)
     return HttpResponse(rendered)
 
 
@@ -208,9 +218,28 @@ def get_forms_list(request):
     category_id = request.POST.get('category_id')
     victim_id = request.POST.get('victim_id')
     user_id = request.user.id
-    query = """ WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id,category_id,orders FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """+str(user_id)+"""),t1 as(SELECT '<a class="btn btn-outline form-group form-control" onclick="load_forms_html('|| form_id ||')" >'|| title ||'</a><br>' AS popup_str FROM t ORDER  BY category_id,orders)select * from t1"""
+    query = """  WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id, category_id, orders, submission_times FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ +str(user_id)+ """), fre as (select xform_id,count(id) frequency from logger_instance where (json->>'victim_tbl_id')::int = """ +str(victim_id)+ """ and deleted_at is null and xform_id = any(select form_id from t) group by xform_id ), t1 AS (select case when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) < submission_times then '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) >= submission_times then '' else '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' end AS popup_str FROM t left join fre on t.form_id = fre.xform_id ORDER BY category_id, orders) SELECT * FROM t1 """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
+    # main_str = """ <ul class="list-group"> """
+    # for each in df['popup_str']:
+    #     main_str += """ <li class="list-group-item"> """ + str(each) + """ </li> """
+    # main_str += """ </ul> """
+    main_str = ""
+    for each in df['popup_str']:
+        main_str += str(each)
+    main_str = json.dumps(main_str)
+    return HttpResponse(main_str)
+
+@csrf_exempt
+def get_events_forms_list(request):
+    category_id = request.POST.get('category_id')
+    event_id = request.POST.get('event_id')
+    user_id = request.user.id
+    query = """  WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id, category_id, orders, submission_times FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ +str(user_id)+ """), fre as (select xform_id,count(id) frequency from logger_instance where (json->>'event_id')::int = """ +str(event_id)+ """ and deleted_at is null and xform_id = any(select form_id from t) group by xform_id ), t1 AS (select case when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) < submission_times then '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) >= submission_times then '' else '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' end AS popup_str FROM t left join fre on t.form_id = fre.xform_id ORDER BY category_id, orders) SELECT * FROM t1 """
+    df = pandas.DataFrame()
+    df = pandas.read_sql(query, connection)
+    # print(query)
     # main_str = """ <ul class="list-group"> """
     # for each in df['popup_str']:
     #     main_str += """ <li class="list-group-item"> """ + str(each) + """ </li> """
@@ -244,7 +273,7 @@ def get_forms_html(request):
 @csrf_exempt
 def get_districts(request):
     field_parent_id = request.POST.get('div')
-    query = "select id,field_name from geo_data where field_type_id = 86 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 86 and field_parent_id = (select id from geo_data where geocode = '"+str(field_parent_id)+"')"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
@@ -252,21 +281,21 @@ def get_districts(request):
 @csrf_exempt
 def get_upazilas(request):
     field_parent_id = request.POST.get('dist')
-    query = "select id,field_name from geo_data where field_type_id = 88 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 88 and field_parent_id = (select id from geo_data where geocode = '"+str(field_parent_id)+"')"
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
 
 @csrf_exempt
 def get_unions(request):
     field_parent_id = request.POST.get('upz')
-    query = "select id,field_name from geo_data where field_type_id = 89 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 89 and field_parent_id = (select id from geo_data where geocode = '"+str(field_parent_id)+"')"
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
 
 @csrf_exempt
 def get_wards(request):
     field_parent_id = request.POST.get('uni')
-    query = "select id,field_name from geo_data where field_type_id = 92 and field_parent_id = "+str(field_parent_id)
+    query = "select id,geocode,field_name from geo_data where field_type_id = 92 and field_parent_id = "+str(field_parent_id)
     data = json.dumps(__db_fetch_values_dict(query))
     return HttpResponse(data)
 
@@ -284,13 +313,20 @@ def incident_id_generator():
 
 @login_required
 def case_list(request):
-    query = "select id,field_name from geo_data where field_type_id = 85"
+    query = "select geocode as id ,field_name from geo_data where field_type_id = 85 order by geocode"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
     query = "select id,status from iom_status"
     df = pandas.read_sql(query, connection)
     status_list = zip(df.id.tolist(), df.status.tolist())
     return render(request, 'asfmodule/case_list.html', {'divisions':divisions,'status_list':status_list})
+
+@login_required
+def delete_case(request, victim_tbl_id):
+    qry = "select update_deleted_at_case("+str(victim_tbl_id)+")"
+    __db_fetch_single_value(qry)
+    messages.success(request, '<i class="fa fa-check-circle"></i> Data has been deleted successfully!',extra_tags='alert-success crop-both-side')
+    return HttpResponseRedirect('/asf/case_list/')
 
 @csrf_exempt
 def get_case_list(request):
@@ -299,13 +335,15 @@ def get_case_list(request):
     upazila = request.POST.get('upazila')
     gender = request.POST.get('gender')
     status = request.POST.get('status')
+    from_date = request.POST.get('from_date')
+    to_date = request.POST.get('to_date')
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = "+str(user_id))
-        query = "SELECT( SELECT ( SELECT role FROM PUBLIC.usermodule_organizationrole WHERE id = role_id limit 1)role_name FROM usermodule_userrolemap WHERE user_id = ( SELECT id FROM usermodule_usermoduleprofile WHERE user_id= "+ str(user_id) +")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference, COALESCE( ( SELECT assaign_to FROM asf_case WHERE id = case_id::int limit 1)::int,0) assaign_to FROM asf_victim WHERE sex LIKE '"+ str(gender) +"' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' AND status LIKE '"+ str(status) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+ str(user_id) +") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+ str(user_id) +") and field_type_id = 88)))"
+        query = "SELECT COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = 703 limit 1),0) can_delete,( SELECT ( SELECT role FROM PUBLIC.usermodule_organizationrole WHERE id = role_id limit 1)role_name FROM usermodule_userrolemap WHERE user_id = ( SELECT id FROM usermodule_usermoduleprofile WHERE user_id= "+ str(user_id) +")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency FROM asf_victim WHERE created_at:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND deleted_at is null and sex LIKE '"+ str(gender) +"' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' AND status LIKE '"+ str(status) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+ str(user_id) +") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+ str(user_id) +") and field_type_id = 88)))"
     except Exception:
-        query = "select (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
-            user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,COALESCE((select assaign_to from asf_case where id = case_id::int limit 1)::int,0) assaign_to from asf_victim where sex like '" + str(
+        query = "select COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = 703 limit 1),0) can_delete, (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
+            user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency from asf_victim where created_at:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND  deleted_at is null and  sex like '" + str(
             gender) + "' and case_id::int = any(select id from asf_case where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
             upazila) + "' and status like '" + str(status) + "')"
@@ -704,7 +742,7 @@ def send_push_notification(user_id,incident_id):
         firebase_token = df.firebase_token.tolist()[0]
         registration_id = []
         registration_id.append(firebase_token)
-        full_name = __db_fetch_single_value("select first_name || '' || last_name from auth_user where id = "+str(user_id))
+        full_name = __db_fetch_single_value("select first_name || ' ' || last_name from auth_user where id = "+str(user_id))
         message_title = 'IOM-BD'
         message_body = 'Hi, '+full_name+'.<br>You are requested to complete Case ID '+ incident_id +' Beneficiary profiling'
         data_message = {
@@ -813,11 +851,11 @@ def victim_profile(request,victim_tbl_id):
     print(permanent_district,df.permanent_district.values[0][1])
     contact_self = df.contact_self.tolist()[0] if len(df.contact_self.tolist()) and df.contact_self.tolist()[0] is not None  else ''
     contact_emergency = df.contact_emergency.tolist()[0] if len(df.contact_emergency.tolist()) and df.contact_self.tolist()[0] is not None  else ''
-    occupation_in_host_country = df.occupation_in_host_country.values[0][1] if len(df.occupation_in_host_country.values) and df.occupation_in_host_country.values[0][1] is not None  else ''
+    occupation_in_host_country = df.occupation_in_host_country.tolist()[0] if len(df.occupation_in_host_country.tolist()) and df.occupation_in_host_country.tolist()[0] is not None  else ''
     beneficiary_picture = '/media/iom_admin/attachments/'+df.beneficiary_picture.tolist()[0] if len(df.beneficiary_picture.tolist()) and df.beneficiary_picture.tolist()[0] is not None  else '/static/images/profile.jpg'
 
     user_id = request.user.id
-    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60,70}') AND user_id = """ + str(user_id) + """ order by category_id asc """
+    query = """ SELECT distinct category_id,'<div class="row"><div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><input type="checkbox" id="'||category_id||'"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and case when( select Count(*) FROM logger_instance WHERE ( json ->> 'victim_tbl_id') :: INT = """ + str(victim_tbl_id)+ """ AND deleted_at IS NULL AND xform_id = ANY (select id from logger_xform where id_string = any('{beneficiary_profiling,socio_economic_support,support_history}')))>= 3 then fc.category_id = ANY ( '{1,2,10,20,30,40,50,60,70,80}' ) else fc.category_id = ANY ( '{1}' ) end AND user_id = """ + str(user_id) + """ order by category_id asc """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -897,6 +935,9 @@ def victim_profile(request,victim_tbl_id):
 
 @csrf_exempt
 def generate_pdf(request):
+    checked_id_list = request.POST.getlist('checked_id')
+    checked_id_list = str([int(i) for i in checked_id_list]).replace('[','{').replace(']','}')
+    report_check = request.POST.get('checked_report_id','no')
     victim_tbl_id = request.POST.get('victim_tbl_id')
     qry = "select *,(select label_text return_from from vw_country where value_text = return_from limit 1),case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,birth_date::date,date_return::date,(select field_name from geo_data where geocode = division limit 1) division,(select field_name from geo_data where geocode = district limit 1) district,(select field_name from geo_data where geocode = upazila limit 1) upazila,(select field_name from geo_data where geocode = union_id limit 1) union_id, ward ,(select field_name from geo_data where geocode = asf_victim.permanent_division limit 1) permanent_division,(select field_name from geo_data where geocode = asf_victim.permanent_district limit 1) permanent_district,(select field_name from geo_data where geocode = asf_victim.permanent_upazila limit 1) permanent_upazila,(select field_name from geo_data where geocode = asf_victim.permanent_union limit 1) permanent_union, permanent_ward from asf_case,asf_victim where asf_case.id = case_id::int and asf_victim.id =" + str(
         victim_tbl_id)
@@ -959,20 +1000,18 @@ def generate_pdf(request):
     permanent_post_office = df.permanent_post_office.tolist()[0] if len(df.permanent_post_office.tolist()) and \
                                                                     df.permanent_post_office.tolist()[
                                                                         0] is not None  else ''
-    print(permanent_district, df.permanent_district.values[0][1])
+    # print(permanent_district, df.permanent_district.values[0][1])
     contact_self = df.contact_self.tolist()[0] if len(df.contact_self.tolist()) and df.contact_self.tolist()[
                                                                                         0] is not None  else ''
     contact_emergency = df.contact_emergency.tolist()[0] if len(df.contact_emergency.tolist()) and \
                                                             df.contact_self.tolist()[0] is not None  else ''
-    occupation_in_host_country = df.occupation_in_host_country.values[0][1] if len(
-        df.occupation_in_host_country.values) and df.occupation_in_host_country.values[0][1] is not None  else ''
+    occupation_in_host_country = ''
     beneficiary_picture = '/media/iom_admin/attachments/' + df.beneficiary_picture.tolist()[0] if len(
         df.beneficiary_picture.tolist()) and df.beneficiary_picture.tolist()[
                                                  0] is not None  else '/static/images/profile.jpg'
 
     user_id = request.user.id
-    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{1,2,10,20,30,40,50,60}') AND user_id = """ + str(
-        user_id) + """ order by category_id asc """
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('"""+str(checked_id_list)+"""') AND user_id = """ + str(user_id) + """ order by category_id asc """
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     main_str = ""
@@ -1003,6 +1042,7 @@ def generate_pdf(request):
     df = pandas.read_sql(qery, connection)
     instance_id_list = df.id.tolist()
     data = {
+        'report_check':report_check,
         'main_str': main_str,
         'instance_id_list':instance_id_list,
         'username': username,
@@ -1099,7 +1139,8 @@ def services_to_other_institutes_form(request):
 # Capacity Building
 @login_required
 def capacity_building_list(request):
-    return render(request, 'asfmodule/capacity_building_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='capacity_building'")
+    return render(request, 'asfmodule/capacity_building_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_capacity_building_list(request):
@@ -1108,9 +1149,9 @@ def get_capacity_building_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "select instance_id,case when training_name::int = 1 then 'Aspirant Migrants' when training_name::int = 2 then 'Returnee' when training_name::int = 3 then 'Community Members' when training_name::int = 4 then 'Local Governments' when training_name::int = 5 then 'National Government' when training_name::int = 6 then 'Service Provider' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND upazila IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Aspirant Migrants' when training_name::int = 2 then 'Returnee' when training_name::int = 3 then 'Community Members' when training_name::int = 4 then 'Local Governments' when training_name::int = 5 then 'National Government' when training_name::int = 6 then 'Service Provider' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND upazila IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))"
     except Exception:
-        query = "select instance_id,case when training_name::int = 1 then 'Aspirant Migrants' when training_name::int = 2 then 'Returnee' when training_name::int = 3 then 'Community Members' when training_name::int = 4 then 'Local Governments' when training_name::int = 5 then 'National Government' when training_name::int = 6 then 'Service Provider' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Aspirant Migrants' when training_name::int = 2 then 'Returnee' when training_name::int = 3 then 'Community Members' when training_name::int = 4 then 'Local Governments' when training_name::int = 5 then 'National Government' when training_name::int = 6 then 'Service Provider' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1136,7 +1177,8 @@ def capacity_building_form(request):
 # Case Study
 @login_required
 def case_study_list(request):
-    return render(request, 'asfmodule/case_study_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='case_study'")
+    return render(request, 'asfmodule/case_study_list.html',{'form_id':form_id})
 
 
 @csrf_exempt
@@ -1146,11 +1188,11 @@ def get_case_study_list(request):
     user_id = request.user.id
     role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
     if role == 'Field Officer':
-        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id="+str(user_id)
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id="+str(user_id)
     elif role == 'Admin':
-        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
     else:
-        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1172,7 +1214,8 @@ def case_study_form(request):
 # MSC story
 @login_required
 def msc_story_list(request):
-    return render(request, 'asfmodule/msc_story_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='msc_story'")
+    return render(request, 'asfmodule/msc_story_list.html',{'form_id':form_id})
 
 
 @csrf_exempt
@@ -1182,11 +1225,11 @@ def get_msc_story_list(request):
     user_id = request.user.id
     role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
     if role == 'Field Officer':
-        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id="+str(user_id)
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id="+str(user_id)
     elif role == 'Admin':
-        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
     else:
-        query = "select organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1208,16 +1251,17 @@ def msc_story_form(request):
 # Event
 @login_required
 def event_list(request):
-    return render(request, 'asfmodule/event_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_workshop'")
+    return render(request, 'asfmodule/event_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_event_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        q = "select ROW_NUMBER() OVER(ORDER BY id) AS serial_no,id,json->>'participant/total_participant' total_participant, date(json->>'event/event_start_time') event_date , (select field_name from geo_data where geocode = (json->>'geo/district')) district, (select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila from vw_groupevent where (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))"
+        q = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_workshop') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_workshop') limit 1),0) can_delete,ROW_NUMBER() OVER(ORDER BY id) AS serial_no,id,json->>'participant/total_participant' total_participant, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, (select field_name from geo_data where geocode = (json->>'geo/district')) district, (select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila from vw_groupevent where (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))"
     except Exception:
-        q = "select ROW_NUMBER() OVER(ORDER BY id) AS serial_no,id,json->>'participant/total_participant' total_participant, date(json->>'event/event_start_time') event_date , (select field_name from geo_data where geocode = (json->>'geo/district')) district, (select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila from vw_groupevent"
+        q = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_workshop') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_workshop') limit 1),0) can_delete,ROW_NUMBER() OVER(ORDER BY id) AS serial_no,id,json->>'participant/total_participant' total_participant, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, (select field_name from geo_data where geocode = (json->>'geo/district')) district, (select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila from vw_groupevent"
 
     main_df = pd.read_sql(q, connection)
 
@@ -1251,16 +1295,19 @@ def event_form(request):
 #IPT show List
 @login_required
 def ipt_show_list(request):
-    return render(request, 'asfmodule/ipt_show_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_ipt_show'")
+    return render(request, 'asfmodule/ipt_show_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_ipt_show_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null and (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)) )select * from t"
+        # query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null and (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)) )select * from t"
+        query = "with t as( select coalesce((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id =(select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_edit, coalesce((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_delete, row_number() over ( order by id) as serial_no, id, to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( select username from auth_user where id = user_id limit 1) username , ( select field_name from geo_data where geocode = district) district , ( select field_name from geo_data where geocode = upazila) upazila , coalesce((select field_name from geo_data where geocode = union_name), '') union_name , para_bazar_school ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end observation ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from vw_event_ipt_show st where upazila IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = 461) AND field_type_id = 88)) )select * from t"
     except Exception:
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null)select * from t"
+        # query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null)select * from t"
+        query = "with t as( select coalesce((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id =(select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_edit, coalesce((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_delete, row_number() over ( order by id) as serial_no, id, to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( select username from auth_user where id = user_id limit 1) username , ( select field_name from geo_data where geocode = district) district , ( select field_name from geo_data where geocode = upazila) upazila , coalesce((select field_name from geo_data where geocode = union_name), '') union_name , para_bazar_school ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end observation ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from vw_event_ipt_show st )select * from t"
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1342,7 +1389,7 @@ def get_events_forms_data(request):
     category_id = request.POST.get('category_id')
     event_id = request.POST.get('event_id')
     user_id = request.user.id
-    query = """ WITH t AS( SELECT ( SELECT title FROM logger_xform WHERE id = form_id), form_id FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS ( SELECT logger_instance.id log_ins_id, json->>'event_id'::text event_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id order by date_created desc) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''')" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || to_char(date_created::date,'DD/MM/YYYY') ||'</a><span style="margin-left:30%">'|| replace(greatest(title,rpad(title, 32,' '))::text,' ','&nbsp;') ||'</span><a onclick="load_forms_edit_mode('|| xform_id ||','|| log_ins_id ||')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a></h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE event_id LIKE '%""" + str(event_id) + """%' """
+    query = """ WITH t AS( SELECT ( SELECT title FROM logger_xform WHERE id = form_id), form_id,rf.can_edit,rf.can_delete FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND category_id = """ + str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ + str(user_id)+ """) , t1 AS ( SELECT logger_instance.id log_ins_id, json->>'event_id'::text event_id, * FROM t, logger_instance WHERE t.form_id = logger_instance.xform_id and deleted_at is null order by date_created desc) SELECT '<div class="panel panel-default" ><div class="panel-heading forms_data_panel_heading" role="tab" id="heading' ||log_ins_id ||'"><h4 class="panel-title forms_data_panel_title"><a id="data_id_' ||log_ins_id ||'" class="collapsed" onclick="load_forms_data(' ||log_ins_id ||',''data_view' || log_ins_id ||''',1)" role="button" data-toggle="collapse" href="#collapse' || log_ins_id ||'" aria-expanded="false" aria-controls="collapse' ||log_ins_id ||'">' || To_char(date_created :: DATE, 'DD/MM/YYYY') ||'</a><span style="margin-left:30%">' || Replace(Greatest(title, Rpad(title, 32, ' ')) :: text, ' ', '&nbsp;') ||'</span>' || case when can_edit = 1 then '<a onclick="load_forms_edit_mode(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer;margin-right: -5px;margin-left: 11px;" data-toggle="modal" data-target="#myModal"><i class="fa fa-pencil"></i></a>' else '' end || case when can_delete = 1 then '<a onclick="delete_forms_data(' || xform_id ||',' || log_ins_id || ')" class="pull-right" style="cursor:pointer" data-toggle="modal" data-target="#myModal"><i class="fa fa-trash"></i></a>' else '' end || '</h4></div><div id="collapse' || log_ins_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' || log_ins_id ||'"><div class="panel-body"><div class="ribbon" id="data_view' || log_ins_id ||'"></div></div></div></div>' AS form_str FROM t1 WHERE event_id LIKE '%""" + str(event_id) + """%' """
     print(query)
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
@@ -1355,16 +1402,17 @@ def get_events_forms_data(request):
 #Video Show List
 @login_required
 def video_show_list(request):
-    return render(request, 'asfmodule/video_show_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_video_show'")
+    return render(request, 'asfmodule/video_show_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_video_show_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'video_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_video_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_video_show') and deleted_at is null and (json ->> 'geo/upazila') IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)))select * from t"
+        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'video_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_video_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_video_show') and deleted_at is null and (json ->> 'geo/upazila') IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)))select * from t"
     except Exception:
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'video_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_video_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_video_show') and deleted_at is null)select * from t"
+        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'video_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_video_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_video_show') and deleted_at is null)select * from t"
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1445,16 +1493,17 @@ def video_show_profile(request,event_id):
 #School Quiz List
 @login_required
 def school_quiz_list(request):
-    return render(request, 'asfmodule/school_quiz_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_school_quiz'")
+    return render(request, 'asfmodule/school_quiz_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_school_quiz_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'school_quiz_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_school_quiz_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_school_quiz') and deleted_at is null and  (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)) )select * from t"
+        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'school_quiz_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_school_quiz_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_school_quiz') and deleted_at is null and  (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)) )select * from t"
     except Exception:
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'school_quiz_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_school_quiz_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_school_quiz') and deleted_at is null)select * from t"
+        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'school_quiz_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_school_quiz_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_school_quiz') and deleted_at is null)select * from t"
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1534,16 +1583,17 @@ def school_quiz_profile(request,event_id):
 #Tea Stall Meeting List
 @login_required
 def tea_stall_meeting_list(request):
-    return render(request, 'asfmodule/tea_stall_meeting_list.html')
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_tea_stall_meeting'")
+    return render(request, 'asfmodule/tea_stall_meeting_list.html',{'form_id':form_id})
 
 @csrf_exempt
 def get_tea_stall_meeting_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting') and deleted_at is null and (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)))select * from t"
+        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting') and deleted_at is null and (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)))select * from t"
     except Exception:
-        query = "with t as( select ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting') and deleted_at is null)select * from t"
+        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting') and deleted_at is null)select * from t"
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -2261,7 +2311,7 @@ def get_psychotherapy_patient_report(request):
 
 @login_required
 def referral_list(request):
-    query = "select id,field_name from geo_data where field_type_id = 85"
+    query = "select geocode as id,field_name from geo_data where field_type_id = 85"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
 
@@ -2273,58 +2323,14 @@ def get_referral_list(request):
     district = request.POST.get('district')
     upazila = request.POST.get('upazila')
     status = request.POST.get('status')
-    name = request.POST.get('name')
-    ben_id = request.POST.get('ben_id')
     user_id = request.user.id
-    role = __db_fetch_single_value("select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(user_id) + ")")
-    if role == 'Field Officer':
-        q = "select id, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral where user_id="+str(user_id)
-        main_df = pd.read_sql(q, connection)
-
-        ref_service_q = "select id , get_form_option_label(714,'referral/referral_services_for',json->>'referral/referral_services_for') referral_services from  vw_referral where user_id="+str(user_id)
-        ref_service_df = pd.read_sql(ref_service_q, connection)
-
-        ref_org_q = "select id , get_form_option_label(714,'referral/referral_organization_name',json->>'referral/referral_organization_name') referral_organization from  vw_referral where user_id="+str(user_id)
-        ref_org_df = pd.read_sql(ref_org_q, connection)
-
-        returnee_info_q = "select  COALESCE ((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_no,COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where created_by::int="+str(user_id)
-        returnee_info_df = pd.read_sql(returnee_info_q, connection)
-    elif role == 'RSC Manager':
-        q = "select id, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
-        main_df = pd.read_sql(q, connection)
-
-        ref_service_q = "select id , get_form_option_label(714,'referral/referral_services_for',json->>'referral/referral_services_for') referral_services from  vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
-        ref_service_df = pd.read_sql(ref_service_q, connection)
-
-        ref_org_q = "select id , get_form_option_label(714,'referral/referral_organization_name',json->>'referral/referral_organization_name') referral_organization from  vw_referral where user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
-        ref_org_df = pd.read_sql(ref_org_q, connection)
-
-        returnee_info_q = "select  COALESCE ((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_no,COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim where created_by::int=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
-        returnee_info_df = pd.read_sql(returnee_info_q, connection)
-    else:
-        q = "select id, json->>'beneficiary_id' beneficiary_id,date(json->>'referral/referral_date') referral_date from vw_referral"
-        main_df = pd.read_sql(q, connection)
-
-        ref_service_q = "select id , get_form_option_label(714,'referral/referral_services_for',json->>'referral/referral_services_for') referral_services from  vw_referral"
-        ref_service_df = pd.read_sql(ref_service_q, connection)
-
-        ref_org_q = "select id , get_form_option_label(714,'referral/referral_organization_name',json->>'referral/referral_organization_name') referral_organization from  vw_referral"
-        ref_org_df = pd.read_sql( ref_org_q, connection)
-
-        returnee_info_q = "select  COALESCE ((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_no,COALESCE (victim_name,'') victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' end sex, victim_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status from asf_victim"
-        returnee_info_df = pd.read_sql(returnee_info_q,connection)
-
-
-    main_df = main_df.merge(returnee_info_df,on=['beneficiary_id'],how='left')
-    main_df = main_df.merge(ref_service_df, on=['id'], how='left', )
-    main_df = main_df.merge(ref_org_df, on=['id'], how='left', )
-
-    main_df = main_df.fillna('')
-
-    data =  main_df.to_dict('records')
-    data = json.dumps(data, default=decimal_date_default)
-
-    return HttpResponse(data, content_type='application/json')
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = "+str(user_id))
+        query = "with t as( select id from asf_victim where referral_followup_status like '" + str(status) + "' and case_id::int = any( select id from asf_case where division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+str(user_id)+") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+str(user_id)+") and field_type_id = 88))) )select instance_id::int id, victim_tbl_id, referral_organization_name referral_organization, beneficiary_id, coalesce (( select case when sex = '1' then 'Male' when sex = '2' then 'Female' end from asf_victim where id::text = victim_tbl_id limit 1),'') sex, coalesce (( select victim_name from asf_victim where id::text =victim_tbl_id limit 1), '') victim_name, coalesce (( select victim_age from asf_victim where id::text =victim_tbl_id limit 1), '') victim_age, coalesce (( select incident_id from asf_case where id = ( select case_id::int from asf_victim where id::text =victim_tbl_id ) limit 1), '') iom_case_no, date(referral_date) referral_date, referral_services from vw_iom_referral where victim_tbl_id = any(select id::text from t)"
+    except Exception:
+        query = "with t as( select id from asf_victim where referral_followup_status like '" + str(status) + "' and case_id::int = any( select id from asf_case where division LIKE '" + str(division) + "' AND district LIKE '"+ str(district) +"' AND upazila LIKE '" + str(upazila) +"') )select instance_id::int id, victim_tbl_id, referral_organization_name referral_organization, beneficiary_id, coalesce (( select case when sex = '1' then 'Male' when sex = '2' then 'Female' end from asf_victim where id::text = victim_tbl_id limit 1),'') sex, coalesce (( select victim_name from asf_victim where id::text =victim_tbl_id limit 1), '') victim_name, coalesce (( select victim_age from asf_victim where id::text =victim_tbl_id limit 1), '') victim_age, coalesce (( select incident_id from asf_case where id = ( select case_id::int from asf_victim where id::text =victim_tbl_id ) limit 1), '') iom_case_no, date(referral_date) referral_date, referral_services from vw_iom_referral where victim_tbl_id = any(select id::text from t)"
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
 
 
 #   Call Center
@@ -2334,7 +2340,8 @@ def call_center_report(request):
     query = "select id,field_name from geo_data where field_type_id = 85"
     df = pandas.read_sql(query, connection)
     divisions = zip(df.id.tolist(), df.field_name.tolist())
-    return render(request, 'asfmodule/call_center_report.html', {'divisions':divisions})
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='call_center_support'")
+    return render(request, 'asfmodule/call_center_report.html', {'divisions':divisions,'form_id':form_id})
 
 @csrf_exempt
 def get_call_center_report(request):
@@ -2380,6 +2387,7 @@ def call_center_form(request):
 def consultancy_matrix(request):
 
     status_list = __db_fetch_values_dict("select status from cm_status")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='consultation_matrix'")
 
     # Status Update form
 
@@ -2408,7 +2416,7 @@ def consultancy_matrix(request):
         messages.success(request, '<i class="fa fa-check-circle"></i> Status updated successfully!',
                          extra_tags='alert-success crop-both-side')
 
-    return render(request, 'asfmodule/consultancy_matrix.html',{'status_list' : status_list})
+    return render(request, 'asfmodule/consultancy_matrix.html',{'status_list' : status_list,'form_id':form_id})
 
 
 @csrf_exempt

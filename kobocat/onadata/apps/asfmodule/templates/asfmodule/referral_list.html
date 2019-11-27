@@ -51,13 +51,10 @@
                         <label >Status: </label>
                                <select class="form-control" name="status" id="status" onclick="">
                                    <option value="%">Select One</option>
-                                   <option value="Adopted">Adopted</option>
-                                   <option value="Not Adopted">Not Adopted</option>
-                                   <option value="Not interested anymore">Not interested anymore</option>
-                                   <option value="Migrated">Migrated</option>
-                                   <option value="can not be found">can not be found</option>
-                                   <option value="Dead">Dead</option>
-                                   <option value="Completed">Completed</option>
+                                   <option value="1">Referral Received</option>
+                                   <option value="2">Referral not Received</option>
+                                   <option value="3">In Process</option>
+                                   <option value="4">Cancelled</option>
                                </select>
                     </div>
                 </div>
@@ -241,7 +238,7 @@
                         var html_code = "<option value=\"%\">Select One</option>";
 
                         for (i = 0; i < result.length; i++) {
-                            html_code += "<option value=\"" + result[i].id + "\"> " + result[i].field_name + "</option>";
+                            html_code += "<option value=\"" + result[i].geocode + "\"> " + result[i].field_name + "</option>";
                         }
                         $('#district').html(html_code);
 
@@ -270,7 +267,7 @@
                         var html_code = "<option value=\"%\">Select One</option>";
 
                         for (i = 0; i < result.length; i++) {
-                            html_code += "<option value=\"" + result[i].id + "\"> " + result[i].field_name + "</option>";
+                            html_code += "<option value=\"" + result[i].geocode + "\"> " + result[i].field_name + "</option>";
                         }
                         $('#upazila').html(html_code);
 

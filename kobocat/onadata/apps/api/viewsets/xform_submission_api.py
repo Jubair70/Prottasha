@@ -264,7 +264,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
                 if len(data_ins) > 0:
                     data_json = data_ins[0]['json']
                     print(data_json)
-                    data['data_json'] = self.kobo_to_formBuilder_json(data_json)
+                    data['data_json'] = self.kobo_to_formBuilder_json(data_json,{},"")
             else:
                 # get_preloaded_json(form_id,returnee_id)
                 # data['data_json']={"beneficiary_id": "JhaRaj001","medical_support": {"disease": "1"}}
@@ -287,7 +287,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
     def get_preloaded_json(self, form_id, preset_data):
         json = {}
 
-        qry = "select form_id from forms_categories_relation where category_id = any('{1,2,10,20,30,40,50,60,70}')"
+        qry = "select form_id from forms_categories_relation where category_id = any('{1,2,10,20,30,40,50,60,70,80}')"
         df = pandas.read_sql(qry,connection)
         form_list_for_beneficiary = df.form_id.tolist()
 
@@ -322,6 +322,11 @@ Here is some example JSON, it would replace `[the JSON]` above:
         user_path_filename = os.path.join(settings.MEDIA_ROOT, 'formid-media')
         if not os.path.isdir(user_path_filename):
             os.makedirs(user_path_filename)
+        geo_q = "select division_geocode division_code,division_name,district_geocode district_code,district_name,upazila_geocode upazila_code ,upazila_name,union_geocode union_code,union_name from vwunion"
+        geo_df = pandas.read_sql(geo_q, connection)
+        final_path_event = user_path_filename + '/geo.csv'
+        geo_df.to_csv(final_path_event, encoding='utf-8', index=False)
+
         event_q = "select event_name as event_label, code as event_name from iom_event"
         event_df = pandas.read_sql(event_q, connection)
         final_path_event = user_path_filename + '/event.csv'

@@ -128,8 +128,26 @@
 
 
         $(document).ready(function () {
-
+                $('#div_id_rpt_img_file').hide();
+{#                $('#id_rpt_img_file').attr('required',false);#}
                 getSharedFileTable();
+
+        });
+
+        $('#id_document_type').on('click',function () {
+            var doc_typ = $('#id_document_type').val();
+            if(doc_typ=='Weekly Flash Report' || doc_typ=='SDG INDICATOR')
+            {
+{#                $('#id_rpt_img_file').attr('required',true);#}
+                $('#div_id_rpt_img_file').show();
+            }
+
+            else
+            {
+{#                $('#id_rpt_img_file').attr('required',false);#}
+                $('#div_id_rpt_img_file').hide();
+            }
+
 
         });
 
@@ -144,7 +162,11 @@
                     },
             success: function (data) {
                 $('#id_title').val('');
+                $('#id_document_type').val('');
                 $('#id_shared_file').val('');
+                $('#id_rpt_img_file').val('');
+                $('#div_id_rpt_img_file').hide();
+                $('#load').html('');
                 $("#shared_file_table_block").html(data);
                 $('#shared_file_table_id').dataTable({
                             "retrieve": true,
@@ -198,6 +220,7 @@ $('#load').append('<img style="height: 100px;width: 156px;" src="/static/images/
                 },
                 error: function (xhr, status, error) {
                     $("#add_report_form_div").html(xhr.responseText);
+                    $('#load').html('');
                     //load_OneToManyRelation();
                 }
             }); //ajax end
