@@ -265,24 +265,10 @@ def get_user_schedule(request):
 @csrf_exempt
 def get_event_data(request):
     username = request.GET.get('username')
-    user_id = __db_fetch_single_value("select id from auth_user where username = '" + str(username) + "'")
-    role = __db_fetch_single_value(
-        "select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
-            user_id) + ")")
-    query_part = ""
-    if role == 'Field Officer':
-        query_part = " where user_id = "+str(user_id)
-
-    elif role == 'RSC Manager':
-        query_part = " where user_id = any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+"))"
-    else:
-        query_part = ""
-
-    q = "select * from get_event_data('"+username+"','"+query_part+"')"
-    print q
-
+    user = get_object_or_404(User, username__iexact=str(username))
+    user_id = user.id
+    q = "select * from get_event_api_data(' where upazila = any(select upz_code from get_user_upazila("+str(user_id)+"))')"
     main_df = pandas.read_sql(q, connection)
-    print main_df
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
 
