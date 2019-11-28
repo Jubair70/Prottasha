@@ -176,9 +176,115 @@ def get_returnee_list(request):
         user_id = __db_fetch_single_value("select id from auth_user where username = '"+str(username)+"'")
         try:
             __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = "+str(user_id))
-            q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text =(select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id,(asf_victim.created_at)::text case_initiation_date from asf_victim where case_id::int = ANY ( SELECT id FROM asf_case WHERE upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = "+str(user_id)+") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = "+str(user_id)+") and field_type_id = 88)))"
+            q = """WITH t AS 
+            ( 
+                   SELECT incident_id, 
+                          return_from, 
+                          victim_name, 
+                          contact_self, 
+                          sex, 
+                          birth_date, 
+                          victim_id, 
+                          asf_victim.id id , 
+                          asf_victim.created_at, 
+                          asf_case.status , 
+                          division, 
+                          district, 
+                          upazila, 
+                          union_id 
+                   FROM   asf_case, 
+                          asf_victim 
+                   WHERE  asf_case.id = asf_victim.case_id::int 
+                   AND    upazila = ANY( 
+                          ( 
+                                 SELECT 
+                                        ( 
+                                               SELECT geocode 
+                                               FROM   geo_data 
+                                               WHERE  id = geoid limit 1) 
+                                 from   usermodule_catchment_area 
+                                 WHERE  user_id = """+str(user_id)+""") 
+                   UNION 
+                         ( 
+                                SELECT geocode 
+                                FROM   geo_data 
+                                WHERE  field_parent_id = ANY 
+                                       ( 
+                                              SELECT geoid 
+                                              FROM   usermodule_catchment_area 
+                                              WHERE  user_id = """+str(user_id)+""") 
+                                AND    field_type_id = 88)) ) 
+            SELECT COALESCE(incident_id,'') iom_case_id, 
+                   ( 
+                          SELECT label_text 
+                          FROM   vw_country 
+                          WHERE  value_text = return_from) return_country, 
+                   COALESCE (victim_name,'')               victim_name, 
+                   COALESCE(contact_self,'')               mobile_no, 
+                   CASE 
+                          WHEN sex = '1' THEN 'Male' 
+                          WHEN sex = '2' THEN 'Female' 
+                   END                                             gender, 
+                   (date_part('year',age(date(birth_date)))::text) returnee_age, 
+                   victim_id::text                                 beneficiary_id, 
+                   ( 
+                          SELECT status 
+                          FROM   iom_status 
+                          WHERE  id = t.status::int), 
+                   id                 AS victim_tbl_id, 
+                   (created_at)::text    case_initiation_date, 
+                   division              division_id, 
+                   district              district_id, 
+                   upazila               upazila_id, 
+                   union_id 
+            FROM   t
+                        
+            """
         except Exception:
-            q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id,(asf_victim.created_at)::text  case_initiation_date from asf_victim"
+            q = """WITH t AS 
+                ( 
+                       SELECT incident_id, 
+                              return_from, 
+                              victim_name, 
+                              contact_self, 
+                              sex, 
+                              birth_date, 
+                              victim_id, 
+                              asf_victim.id id , 
+                              asf_victim.created_at, 
+                              asf_case.status , 
+                              division, 
+                              district, 
+                              upazila, 
+                              union_id 
+                       FROM   asf_case, 
+                              asf_victim 
+                       WHERE  asf_case.id = asf_victim.case_id::int ) 
+                SELECT COALESCE(incident_id,'') iom_case_id, 
+                       ( 
+                              SELECT label_text 
+                              FROM   vw_country 
+                              WHERE  value_text = return_from) return_country, 
+                       COALESCE (victim_name,'')               victim_name, 
+                       COALESCE(contact_self,'')               mobile_no, 
+                       CASE 
+                              WHEN sex = '1' THEN 'Male' 
+                              WHEN sex = '2' THEN 'Female' 
+                       END                                             gender, 
+                       (Date_part('year',Age(Date(birth_date)))::text) returnee_age, 
+                       victim_id::text                                 beneficiary_id, 
+                       ( 
+                              SELECT status 
+                              FROM   iom_status 
+                              WHERE  id = t.status::int), 
+                       id                 AS victim_tbl_id, 
+                       (created_at)::text    case_initiation_date, 
+                       division              division_id, 
+                       district              district_id, 
+                       upazila               upazila_id, 
+                       union_id 
+                FROM   t
+             """
     else:
         q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id,(asf_victim.created_at)::text  case_initiation_date from asf_victim "
     main_df = pandas.read_sql(q, connection)
@@ -267,7 +373,11 @@ def get_event_data(request):
     username = request.GET.get('username')
     user = get_object_or_404(User, username__iexact=str(username))
     user_id = user.id
-    q = "select * from get_event_api_data(' where upazila = any(select upz_code from get_user_upazila("+str(user_id)+"))')"
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = "+str(user_id))
+        q = "select * from get_event_api_data(' and upazila = any(select upz_code from get_user_upazila("+str(user_id)+"))')"
+    except Exception:
+        q = "select * from get_event_api_data('')"
     main_df = pandas.read_sql(q, connection)
     j = main_df.to_json(orient='records')
     return HttpResponse(j)
