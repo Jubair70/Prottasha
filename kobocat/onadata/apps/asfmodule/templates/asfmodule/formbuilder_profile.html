@@ -136,7 +136,21 @@ iframe
                         <th>Female (Age 15 - 16)</th>
                         <td>{{ female_15_16 | safe }}</td>
                     </tr>
-                        {% else %}
+                        {% elif module == 'school_program_profile' %}
+                        <tr>
+                        <th>Male (Age 11 - 15)</th>
+                        <td>{{ male_11_15 | safe }}</td>
+                        <th>Male (Age > 15 )</th>
+                        <td>{{ male_greater_15 | safe }}</td>
+
+                    </tr>
+                    <tr>
+                        <th>Female (Age 11 - 15)</th>
+                        <td>{{ female_11_15 | safe }}</td>
+                        <th>Female (Age > 15)</th>
+                        <td>{{ female_greater_15 | safe }}</td>
+                    </tr>
+                    {% else %}
                         <tr>
                         <th>Male (Age >= 18 )</th>
                         <td>{{ male_greater_equal_18 | safe }}</td>

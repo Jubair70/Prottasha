@@ -2948,3 +2948,184 @@ def get_export_arguments(export_type):
 
 
 
+#Pot Song List
+@login_required
+def pot_song_list(request):
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_pot_song'")
+    return render(request, 'asfmodule/pot_song_list.html',{'form_id':form_id})
+
+@csrf_exempt
+def get_pot_song_list(request):
+    user_id = request.user.id
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
+        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song') AND deleted_at IS NULL AND ( json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))) SELECT * FROM t"
+    except Exception:
+        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song') AND deleted_at IS NULL) SELECT * FROM t"
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
+
+@login_required
+def pot_song_form(request):
+    username = request.user
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_pot_song'")
+    redirected_url = '/asf/pot_song_list/'
+    if request.GET:
+        instance_id = request.GET.get('instance_id')
+    else:
+        instance_id = -1
+    return render(request, 'asfmodule/formbuilder_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server' : form_builder_server,'redirected_url':redirected_url,'instance_id':instance_id})
+
+
+@login_required
+def pot_song_profile(request,event_id):
+    qry = "WITH t AS( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song') AND deleted_at IS NULL AND id = "+ str(event_id)+"), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_pot_song') AND deleted_at IS NULL AND ( json->>'event_id')::int = "+ str(event_id)+") SELECT t.event_id, t.date_created , t.username, t.district , t.upazila, t.union_name , t.para_bazar_school, t.village , t1.male_greater_equal_18, t1.male_less_18, t1.female_greater_equal_18, t1.female_less_18, t1.total_participant, t1.participant_category, t1.remarks FROM t LEFT JOIN t1 ON t.event_id = t1.event_id::int"
+    df = pandas.read_sql(qry,connection)
+    event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
+    date_created = df.date_created.tolist()[0] if len(df.date_created.tolist()) and df.date_created.tolist()[0] is not None  else ''
+    submitted_by = df.username.tolist()[0] if len(df.username.tolist()) and df.username.tolist()[0] is not None  else ''
+    district = df.district.tolist()[0] if len(df.district.tolist()) and df.district.tolist()[0] is not None  else ''
+    upazila = df.upazila.tolist()[0] if len(df.upazila.tolist()) and df.upazila.tolist()[0] is not None  else ''
+    union = df.union_name.tolist()[0] if len(df.union_name.tolist()) and df.union_name.tolist()[0] is not None  else ''
+    village = df.village.tolist()[0] if len(df.village.tolist()) and df.village.tolist()[0] is not None else ''
+    para_bazar_school = df.para_bazar_school.tolist()[0] if len(df.para_bazar_school.tolist()) and df.para_bazar_school.tolist()[0] is not None  else ''
+    male_greater_equal_18 = df.male_greater_equal_18.tolist()[0] if len(df.male_greater_equal_18.tolist()) and df.male_greater_equal_18.tolist()[0] is not None else ''
+    male_less_18 = df.male_less_18.tolist()[0] if len(df.male_less_18.tolist()) and df.male_less_18.tolist()[0] is not None  else ''
+    female_greater_equal_18 = df.female_greater_equal_18.tolist()[0] if len(df.female_greater_equal_18.tolist()) and df.female_greater_equal_18.tolist()[0] is not None  else ''
+    female_less_18 = df.female_less_18.tolist()[0] if len(df.female_less_18.tolist()) and df.female_less_18.tolist()[0] is not None  else ''
+    total_participant = df.total_participant.tolist()[0] if len(df.total_participant.tolist()) and df.total_participant.tolist()[0] is not None  else ''
+    participant_category = df.participant_category.tolist()[0] if len(df.participant_category.tolist()) and df.participant_category.tolist()[0] is not None  else ''
+
+
+    user_id = request.user.id
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{500,501,502}') AND user_id = """ + str(user_id) + """ order by category_id asc """
+    df = pandas.DataFrame()
+    df = pandas.read_sql(query, connection)
+    main_str = ""
+    for each in df['form_str']:
+        main_str += str(each)
+    main_str = json.dumps(main_str)
+    username = request.user
+    # if in local environment, you should use your ip instead of localhost
+    # server_address = request.META.get('ip')+':'+request.META.get('HTTP_HOST').split(':', 1)[1]
+    # when in developement/live/client server
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    module = 'pot_song_profile'
+    return render(request, "asfmodule/formbuilder_profile.html",{
+        'main_str': main_str,
+        'username':username,
+        'submitted_by':submitted_by,
+        'event_id':event_id,
+        'date_created':date_created,
+        'district':district,
+        'upazila':upazila,
+        'union':union,
+        'village':village,
+        'para_bazar_school':para_bazar_school,
+        'male_greater_equal_18':male_greater_equal_18,
+        'female_greater_equal_18':female_greater_equal_18,
+        'male_less_18':male_less_18,
+        'female_less_18':female_less_18,
+        'total_participant':total_participant,
+        'participant_category':participant_category,
+        'server_address':server_address,'form_builder_server':form_builder_server,'module':module
+
+    })
+
+
+
+#School Program List
+@login_required
+def school_program_list(request):
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_school_program'")
+    return render(request, 'asfmodule/school_program_list.html',{'form_id':form_id})
+
+@csrf_exempt
+def get_school_program_list(request):
+    user_id = request.user.id
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
+        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program') AND deleted_at IS NULL AND ( json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))) SELECT * FROM t"
+    except Exception:
+        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program') AND deleted_at IS NULL) SELECT * FROM t"
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
+
+@login_required
+def school_program_form(request):
+    username = request.user
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_school_program'")
+    redirected_url = '/asf/school_program_list/'
+    if request.GET:
+        instance_id = request.GET.get('instance_id')
+    else:
+        instance_id = -1
+    return render(request, 'asfmodule/formbuilder_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server' : form_builder_server,'redirected_url':redirected_url,'instance_id':instance_id})
+
+
+@login_required
+def school_program_profile(request,event_id):
+    qry = "WITH t AS( SELECT id event_id, to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program') AND deleted_at IS NULL AND id = "+ str(event_id)+"), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_15' male_greater_15 , json->>'participant/female_greater_15' female_greater_15 , json->>'participant/male_11_15' male_11_15 , json->>'participant/female_11_15' female_11_15 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_school_program') AND deleted_at IS NULL AND ( json->>'event_id')::int = "+ str(event_id)+") SELECT t.event_id, t.date_created , t.username, t.district , t.upazila, t.union_name , t.para_bazar_school, t.village , t1.male_greater_15, t1.female_greater_15, t1.male_11_15, t1.female_11_15, t1.total_participant, t1.participant_category, t1.remarks FROM t LEFT JOIN t1 ON t.event_id = t1.event_id::int"
+    df = pandas.read_sql(qry,connection)
+    event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
+    date_created = df.date_created.tolist()[0] if len(df.date_created.tolist()) and df.date_created.tolist()[0] is not None  else ''
+    submitted_by = df.username.tolist()[0] if len(df.username.tolist()) and df.username.tolist()[0] is not None  else ''
+    district = df.district.tolist()[0] if len(df.district.tolist()) and df.district.tolist()[0] is not None  else ''
+    upazila = df.upazila.tolist()[0] if len(df.upazila.tolist()) and df.upazila.tolist()[0] is not None  else ''
+    union = df.union_name.tolist()[0] if len(df.union_name.tolist()) and df.union_name.tolist()[0] is not None  else ''
+    village = df.village.tolist()[0] if len(df.village.tolist()) and df.village.tolist()[0] is not None else ''
+    para_bazar_school = df.para_bazar_school.tolist()[0] if len(df.para_bazar_school.tolist()) and df.para_bazar_school.tolist()[0] is not None  else ''
+    male_greater_15 = df.male_greater_15.tolist()[0] if len(df.male_greater_15.tolist()) and df.male_greater_15.tolist()[0] is not None else ''
+    female_greater_15 = df.female_greater_15.tolist()[0] if len(df.female_greater_15.tolist()) and df.female_greater_15.tolist()[0] is not None  else ''
+    male_11_15 = df.male_11_15.tolist()[0] if len(df.male_11_15.tolist()) and df.male_11_15.tolist()[0] is not None  else ''
+    female_11_15 = df.female_11_15.tolist()[0] if len(df.female_11_15.tolist()) and df.female_11_15.tolist()[0] is not None  else ''
+    total_participant = df.total_participant.tolist()[0] if len(df.total_participant.tolist()) and df.total_participant.tolist()[0] is not None  else ''
+    participant_category = df.participant_category.tolist()[0] if len(df.participant_category.tolist()) and df.participant_category.tolist()[0] is not None  else ''
+
+
+    user_id = request.user.id
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{600,601,602}') AND user_id = """ + str(user_id) + """ order by category_id asc """
+    df = pandas.DataFrame()
+    df = pandas.read_sql(query, connection)
+    main_str = ""
+    for each in df['form_str']:
+        main_str += str(each)
+    main_str = json.dumps(main_str)
+    username = request.user
+    # if in local environment, you should use your ip instead of localhost
+    # server_address = request.META.get('ip')+':'+request.META.get('HTTP_HOST').split(':', 1)[1]
+    # when in developement/live/client server
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    module = 'school_program_profile'
+    return render(request, "asfmodule/formbuilder_profile.html",{
+        'main_str': main_str,
+        'username':username,
+        'submitted_by':submitted_by,
+        'event_id':event_id,
+        'date_created':date_created,
+        'district':district,
+        'upazila':upazila,
+        'union':union,
+        'village':village,
+        'para_bazar_school':para_bazar_school,
+        'male_greater_15':male_greater_15,
+        'female_greater_15':female_greater_15,
+        'male_11_15':male_11_15,
+        'female_11_15':female_11_15,
+        'total_participant':total_participant,
+        'participant_category':participant_category,
+        'server_address':server_address,'form_builder_server':form_builder_server,'module':module
+
+    })

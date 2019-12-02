@@ -68,6 +68,16 @@ urlpatterns = patterns('',
     url(r'^school_quiz_form/$', views.school_quiz_form,name='school_quiz_form'),
     url(r'^school_quiz_profile/(?P<event_id>\d+)/$', views.school_quiz_profile, name='school_quiz_profile'),
 
+    url(r'^pot_song_list/$', views.pot_song_list,name='pot_song_list'),
+    url(r'^get_pot_song_list/$', views.get_pot_song_list,name='get_pot_song_list'),
+    url(r'^pot_song_form/$', views.pot_song_form,name='pot_song_form'),
+    url(r'^pot_song_profile/(?P<event_id>\d+)/$', views.pot_song_profile, name='pot_song_profile'),
+
+    url(r'^school_program_list/$', views.school_program_list,name='school_program_list'),
+    url(r'^get_school_program_list/$', views.get_school_program_list,name='get_school_program_list'),
+    url(r'^school_program_form/$', views.school_program_form,name='school_program_form'),
+    url(r'^school_program_profile/(?P<event_id>\d+)/$', views.school_program_profile, name='school_program_profile'),
+
     url(r'^paper_clipping_list/$', views.paper_clipping_list,name='paper_clipping_list'),
     url(r'^get_paper_clipping_list/$', views.get_paper_clipping_list,name='get_paper_clipping_list'),
     url(r'^paper_clipping_form/$', views.paper_clipping_form,name='paper_clipping_form'),

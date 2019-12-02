@@ -195,6 +195,7 @@ def get_returnee_list(request):
                    FROM   asf_case, 
                           asf_victim 
                    WHERE  asf_case.id = asf_victim.case_id::int 
+                   and asf_case.deleted_at is null and asf_victim.deleted_at is null
                    AND    upazila = ANY( 
                           ( 
                                  SELECT 
@@ -263,7 +264,7 @@ def get_returnee_list(request):
                               union_id 
                        FROM   asf_case, 
                               asf_victim 
-                       WHERE  asf_case.id = asf_victim.case_id::int ) 
+                       WHERE  asf_case.id = asf_victim.case_id::int and asf_case.deleted_at is null and asf_victim.deleted_at is null) 
                 SELECT COALESCE(incident_id,'') iom_case_id, 
                        ( 
                               SELECT label_text 
@@ -312,7 +313,7 @@ def get_returnee_list(request):
                                       union_id 
                                FROM   asf_case, 
                                       asf_victim 
-                               WHERE  asf_case.id = asf_victim.case_id::int ) 
+                               WHERE  asf_case.id = asf_victim.case_id::int and asf_case.deleted_at is null and asf_victim.deleted_at is null) 
                         SELECT COALESCE(incident_id,'') iom_case_id, 
                                ( 
                                       SELECT label_text 
