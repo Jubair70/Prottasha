@@ -99,5 +99,5 @@ urlpatterns = patterns('',
     url(r'^get_user_schedule/$', views_api.get_user_schedule, name='get_user_schedule'),
     url(r'^get_event_data/$', views_api.get_event_data, name='get_event_data'),
     url(r'^get_event_followup_form/$', views_api.get_event_followup_form, name='get_event_followup_form'),
-
+    url(r'^get_call_center_list/$', views_api.get_call_center_list, name='get_call_center_list'),
     )

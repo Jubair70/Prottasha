@@ -459,3 +459,10 @@ def get_event_followup_form(request):
             json_data_response.append(instance_data_json)
     cursor.close()
     return HttpResponse(json.dumps(json_data_response))
+
+
+@csrf_exempt
+def get_call_center_list(request):
+    query = "select to_char(date_call_received::date,'YYYY-MM-DD') date_call_received,caller_name,case when caller_gender='1' then 'Male' when caller_gender='2' then 'Female' end caller_gender,(select rsc_name from usermodule_rsc where id = vw_call_center_support_api.rsc_name::int ) rsc_name,caller_id,to_char(submission_time::timestamp,'YYYY-MM-DD HH24:MI:SS') submission_time from vw_call_center_support_api order by date_call_received::date desc"
+    data = json.dumps(__db_fetch_values_dict(query))
+    return HttpResponse(data)
