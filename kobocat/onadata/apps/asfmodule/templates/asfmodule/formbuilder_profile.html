@@ -124,30 +124,30 @@ iframe
 
                     {% if module == 'school_quiz_profile' %}
                     <tr>
-                        <th>Male (Age 11 - 14)</th>
+                        <th>Male (Age 11 - 15 )</th>
                         <td>{{ male_11_14 | safe }}</td>
-                        <th>Male (Age 15 - 16)</th>
+                        <th>Male (Age >= 15 )</th>
                         <td>{{ male_15_16 | safe }}</td>
 
                     </tr>
                     <tr>
-                        <th>Female (Age 11 - 14)</th>
+                        <th>Female (Age 11 - 15 )</th>
                         <td>{{ female_11_14 | safe }}</td>
-                        <th>Female (Age 15 - 16)</th>
+                        <th>Female (Age >= 15 )</th>
                         <td>{{ female_15_16 | safe }}</td>
                     </tr>
                         {% elif module == 'school_program_profile' %}
                         <tr>
                         <th>Male (Age 11 - 15)</th>
                         <td>{{ male_11_15 | safe }}</td>
-                        <th>Male (Age > 15 )</th>
+                        <th>Male (Age >= 15 )</th>
                         <td>{{ male_greater_15 | safe }}</td>
 
                     </tr>
                     <tr>
                         <th>Female (Age 11 - 15)</th>
                         <td>{{ female_11_15 | safe }}</td>
-                        <th>Female (Age > 15)</th>
+                        <th>Female (Age >= 15)</th>
                         <td>{{ female_greater_15 | safe }}</td>
                     </tr>
                     {% else %}
