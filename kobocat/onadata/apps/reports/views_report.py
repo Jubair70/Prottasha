@@ -112,6 +112,14 @@ def sustainability_report(request):
 
                     var parameters = $(this).serializeArray();
                     console.log(parameters);
+                    from_date = $('#from_date').val();
+                    to_date = $('#to_date').val();
+                    rsc = $('#rsc').val();
+                    district = $('#district').val();
+                    upazila = $('#upazila').val();
+                    console.log(rsc,district,upazila);
+                    if(rsc === null && district === null && upazila === null)
+                        return
                     //{js_chart_calling_function_with_param}
                     {control_js_after_form_submit}
 
@@ -127,18 +135,13 @@ def sustainability_report(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc where id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id =" + str(
-            user_id) + ")) select array_to_json(array_agg(t)) from t"
-        district_query = "with t as (select distinct geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and geo_tbl_id = any(select id from geo_data where id =any(select geoid from usermodule_catchment_area where user_id = " + str(
-            user_id) + ") and field_type_id = 86 union select id from geo_data where field_type_id = 86 and id = any( select field_parent_id from geo_data where id = any(select geoid from usermodule_catchment_area where user_id = " + str(
-            user_id) + ")))) select array_to_json(array_agg(t)) from t"
-        upazila_query = "with t as( SELECT distinct geocode id, field_name as name FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = " + str(
-            user_id) + ") AND field_type_id = 88 UNION SELECT geocode as id,field_name as name FROM geo_data WHERE field_type_id = 88 AND field_parent_id = ANY (SELECT id FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = " + str(
-            user_id) + ")))select array_to_json(array_agg(t)) from t"
+        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc where id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id ="+str(user_id)+")) select array_to_json(array_agg(t)) from t"
+        district_query = "with t as (select distinct geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86 and geo_tbl_id = any(select id from geo_data where id =any(select geoid from usermodule_catchment_area where user_id = "+str(user_id)+") and field_type_id = 86 union select id from geo_data where field_type_id = 86 and id = any( select field_parent_id from geo_data where id = any(select geoid from usermodule_catchment_area where user_id = "+str(user_id)+")))) select array_to_json(array_agg(t)) from t"
+        upazila_query = "with t as( SELECT distinct geocode id, field_name as name FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88 UNION SELECT geocode as id,field_name as name FROM geo_data WHERE field_type_id = 88 AND field_parent_id = ANY (SELECT id FROM geo_data WHERE id = any(SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+")))select array_to_json(array_agg(t)) from t"
     except Exception:
-        rsc_query = "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc) select array_to_json(array_agg(t)) from t"
-        district_query = "with t as (select distinct  geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86) select array_to_json(array_agg(t)) from t"
-        upazila_query = "with t as (select distinct upz_geocode as id, upz_name as name from vw_rsc_geo_data) select array_to_json(array_agg(t)) from t"
+        rsc_query      =    "with t as (SELECT id, rsc_name as name FROM public.usermodule_rsc) select array_to_json(array_agg(t)) from t"
+        district_query =    "with t as (select distinct  geo_id as id, field_name as name from vw_rsc_geo_data where field_type_id = 86) select array_to_json(array_agg(t)) from t"
+        upazila_query  =    "with t as (select distinct upz_geocode as id, upz_name as name from vw_rsc_geo_data) select array_to_json(array_agg(t)) from t"
     print(rsc_query)
     print(district_query)
     print(upazila_query)
@@ -556,6 +559,7 @@ def getCardData(query):
     return jsondata
 
 def generate_stacked_bar_chart_data(df, yaxis, xaxis):
+    print("okay")
     categories = []
     series = [{} for _ in range(len(xaxis))]
     for index, row in df.iterrows():

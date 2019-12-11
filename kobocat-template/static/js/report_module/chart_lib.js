@@ -3,8 +3,6 @@
  */
 function generateBarChart(container, type, title, subtitle, categories, data_series, cat_label, tooltip_sym, cbp, showlegend, stacking, rotation, dlf, datasum, tooltipData, showtooltip, height,colors,filename,multiple) {
     var  tooltip_text;
-
-
     if (multiple == 'group'){
       tooltip_text = {headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
         pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
@@ -55,7 +53,8 @@ function generateBarChart(container, type, title, subtitle, categories, data_ser
             reserveSpace: true
         },
         yAxis: {
-            min: 0,
+            floor: 0,
+        ceiling: datasum,
             title: {
                 text: cat_label,
                 align: 'high'
@@ -63,15 +62,19 @@ function generateBarChart(container, type, title, subtitle, categories, data_ser
             labels: {
                 overflow: 'justify',
                 formatter: function () {
-                    if (datasum) {
-                        return Math.round(this.value / datasum * 100) + "%";
-                    } else {
-                        return this.value + "";
-                    }
+                    // if (datasum) {
+                    //     console.log("datasum");
+                    //     console.log( this.value);
+                    //     // return Math.min(Math.round(this.value / datasum * 100),100) + "%";
+                    //     return Math.round(this.value / datasum * 100) + "%";
+                    // } else {
+                    //
+                    // }
+                    return Math.min(Math.round(this.value / datasum * 100),100) + "%";
                 }
             }
         },
-        tooltip: tooltip_text
+        tooltip: tooltip_text,
         // {
         //     enabled: showtooltip,
         //     formatter: function () {
@@ -93,7 +96,6 @@ function generateBarChart(container, type, title, subtitle, categories, data_ser
         //     shared: true,
         //     useHTML: true
         // }
-        ,
         plotOptions: {
             series: {
                 colorByPoint: cbp,
@@ -104,7 +106,7 @@ function generateBarChart(container, type, title, subtitle, categories, data_ser
                         if (dlf) {
                             return Highcharts.numberFormat(this.y / datasum * 100, 1) + '%';
                         } else {
-                            return this.y + tooltip_sym;
+                            return this.percentage  + '%';
                         }
                     },
                     allowOverlap: true,

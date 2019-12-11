@@ -218,7 +218,68 @@ def get_forms_list(request):
     category_id = request.POST.get('category_id')
     victim_id = request.POST.get('victim_id')
     user_id = request.user.id
-    query = """  WITH t AS(SELECT (SELECT title FROM logger_xform WHERE id = form_id), form_id, category_id, orders, submission_times FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_submit = 1) AND category_id = """ +str(category_id)+ """ AND fc.form_id = rf.xform_id AND user_id = """ +str(user_id)+ """), fre as (select xform_id,count(id) frequency from logger_instance where (json->>'victim_tbl_id')::int = """ +str(victim_id)+ """ and deleted_at is null and xform_id = any(select form_id from t) group by xform_id ), t1 AS (select case when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) < submission_times then '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' when t.form_id = any(select form_id from forms_categories_relation where submission_times = 1 ) and coalesce(frequency,0) >= submission_times then '' else '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' || form_id || ')" >' || title || '</a><br>' end AS popup_str FROM t left join fre on t.form_id = fre.xform_id ORDER BY category_id, orders) SELECT * FROM t1 """
+    query = """  WITH t 
+             AS (SELECT (SELECT title 
+                         FROM   logger_xform 
+                         WHERE  id = form_id), 
+                        form_id, 
+                        category_id, 
+                        orders, 
+                        submission_times 
+                 FROM   vwrolewiseformpermission rf, 
+                        forms_categories_relation fc 
+                 WHERE  ( rf.can_submit = 1 ) 
+                        AND category_id = """ +str(category_id)+ """ 
+                        AND fc.form_id = rf.xform_id 
+                        AND user_id = """ +str(user_id)+ """), 
+             fre 
+             AS (SELECT xform_id, 
+                        Count(id) frequency 
+                 FROM   logger_instance 
+                 WHERE  ( json ->> 'victim_tbl_id' ) :: INT = """ +str(victim_id)+ """ 
+                        AND deleted_at IS NULL 
+                        AND xform_id = ANY (SELECT form_id 
+                                            FROM   t) 
+                 GROUP  BY xform_id), 
+             t1 
+             AS (SELECT CASE 
+                          WHEN (t.form_id = ANY (SELECT form_id 
+                                                FROM   forms_categories_relation 
+                                                WHERE  submission_times = 1) 
+                               AND Coalesce(frequency, 0) < submission_times) 
+                                THEN 
+        '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' 
+        || form_id 
+        || ')" >' 
+        || title 
+        || '</a><br>' 
+        WHEN t.form_id = ANY (SELECT form_id 
+                              FROM   forms_categories_relation 
+                              WHERE  submission_times = 1) 
+             AND Coalesce(frequency, 0) >= submission_times THEN ''
+        when (t.form_id::int = (select id from logger_xform where id_string = 'referral_followup') and (select count(*) from vw_referral where  ("json"->>'victim_tbl_id')::int = """ +str(victim_id)+ """ limit 1 ) = 0) then '' 
+        when  (t.form_id = (select id from logger_xform where id_string = 'reintegration_sustainability') and (select count(*) from vw_reintegration_sustainability where report_month =  case 
+        when to_char(now(),'MM')::int between 1 and 3 then to_char(now(),'YYYY') || '-03-31'
+        when to_char(now(),'MM')::int between 4 and 6 then to_char(now(),'YYYY') || '-06-30'
+        when to_char(now(),'MM')::int between 7 and 9 then to_char(now(),'YYYY') || '-09-30'
+        when to_char(now(),'MM')::int between 10 and 12 then to_char(now(),'YYYY') || '-12-30'
+        end  and victim_tbl_id = """ +str(victim_id)+ """ limit 1 ) > 0)
+        then ''
+        ELSE 
+        '<a class="btn btn-outline form-group form-control" onclick="load_forms_html(' 
+        || form_id 
+        || ')" >' 
+        || title 
+        || '</a><br>' 
+        END AS popup_str 
+         FROM   t 
+                left join fre 
+                       ON t.form_id = fre.xform_id 
+         ORDER  BY category_id, 
+                   orders) 
+        SELECT * 
+        FROM   t1  """
+    print(query)
     df = pandas.DataFrame()
     df = pandas.read_sql(query, connection)
     # main_str = """ <ul class="list-group"> """
@@ -1178,7 +1239,8 @@ def capacity_building_form(request):
 @login_required
 def case_study_list(request):
     form_id = __db_fetch_single_value("select id from logger_xform where id_string='case_study'")
-    return render(request, 'asfmodule/case_study_list.html',{'form_id':form_id})
+    username = request.user
+    return render(request, 'asfmodule/case_study_list.html',{'form_id':form_id,'username':username})
 
 
 @csrf_exempt
@@ -1215,7 +1277,8 @@ def case_study_form(request):
 @login_required
 def msc_story_list(request):
     form_id = __db_fetch_single_value("select id from logger_xform where id_string='msc_story'")
-    return render(request, 'asfmodule/msc_story_list.html',{'form_id':form_id})
+    username = request.user
+    return render(request, 'asfmodule/msc_story_list.html',{'form_id':form_id,'username':username})
 
 
 @csrf_exempt

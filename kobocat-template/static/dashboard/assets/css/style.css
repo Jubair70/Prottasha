@@ -5535,7 +5535,7 @@ body {
     width: 110px;
   }
   .header-outer-wrap.hide-top-header .header-main {
-    background-color: #161409;
+    background-color: #0033a0;
   }
   .header-outer-wrap.hide-top-header .header-main .navbar-nav > li > a {
     padding: 16px 13px;
@@ -5626,7 +5626,7 @@ body {
 }
 .header-main {
   background-color: #fff;
-  background-color: rgba(20, 20, 9, 0.37);
+  background-color: rgba(7, 0, 138, 0.37);
   box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.004);
   -webkit-transition: background-color 0.4s;
   transition: background-color 0.4s;
@@ -5672,10 +5672,10 @@ body {
   transition: all .4s;
 }
 .header-main .navbar-nav > li > a:hover {
-  background-color: #eb1990;
+  background-color: #a73991;
 }
 .header-main .navbar-nav > li > a.active {
-  background-color: #173D8E;
+  background-color: #3e4245;
 }
 @media (min-width: 992px) {
   .header-main .navbar-nav > li > a {
@@ -5694,7 +5694,7 @@ body {
   }
 }
 .header-main .navbar-nav > li.active {
-  background-color: #173D8E;
+  background-color: #EB1990;
 }
 /*===============================
 =            btn css            =
@@ -5756,7 +5756,7 @@ body {
 .btn-arrow .custom-arrow svg path {
   fill: #ffffff;
 }
-/* 
+/*
  * 	Core Owl Carousel CSS File
  *	v1.3.3
  */
@@ -6586,6 +6586,47 @@ body {
     min-height: auto;
   }
 }
+
+/*======================================
+=            footer first section            =
+======================================*/
+.footer-first-section {
+  background-color: #c1c1c1;
+  /*background: url(../images/home/slide1.jpg) no-repeat; */
+}
+.footer-first-section .copy-right {
+  font-size: 12px;
+  padding: 26px 0;
+}
+@media (max-width: 767px) {
+  .footer-first-section .copy-right {
+    text-align: center;
+    padding-bottom: 0;
+  }
+}
+.footer-first-section .social {
+  margin-top: 25px;
+}
+@media (max-width: 767px) {
+  .footer-first-section .social {
+    text-align: center;
+  }
+}
+.footer-first-section .social li a {
+  padding: 0 6px;
+  display: inline-block;
+}
+.footer-first-section .social li .linkedin svg {
+  width: 20px;
+  height: 20px;
+}
+.footer-first-section .social svg {
+  width: 20px;
+  height: 20px;
+}
+/*=====  End of footer first section  ======*/
+
+
 /*======================================
 =            footer section            =
 ======================================*/
@@ -6888,3 +6929,8 @@ html{
 .july-top{ font-size: 12px; color: #14639e; font-weight: bold; }
 .cumulative{font-size: 20px; color: #e9078a; font-weight: bold; }
 .cumulative-top{font-size: 12px; color: #e9078a; font-weight: bold; }
+
+
+
+
+

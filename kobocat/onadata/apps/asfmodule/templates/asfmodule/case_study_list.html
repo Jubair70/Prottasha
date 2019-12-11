@@ -3,6 +3,17 @@
 {% block additional-headers %}
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
     <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
+    <style>
+       .DTFC_RightHeadWrapper, .DTFC_RightHeadBlocker,.DTFC_LeftHeadWrapper, .DTFC_LeftHeadBlocker
+        {
+                background-color: white !important;
+        }
+    .DTFC_RightBodyLiner
+    {
+        overflow-y: hidden !important;
+    }
+
+    </style>
 {% endblock %}
 
 
@@ -104,10 +115,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.3.0/js/dataTables.fixedColumns.min.js"></script>
 
 
     <script>
     var form_id = {{ form_id | safe }};
+    var username = '{{ username | safe }}'
     var redirect_url = window.location.pathname
         $(function () {
             $('#from_date').datepicker({
@@ -136,8 +149,25 @@
 
 
         var table = $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,
+                 "scrollX": true, "ordering": true,
                 deferRender: true,
+                paging:false,
+                scrollY:"300px",
+                "scrollCollapse": true,
+                fixedColumns:   {
+                       leftColumns:0,
+                    rightColumns: 1
+                },
+                dom: 'Bfrtip'
+                ,
+                buttons: [
+                    {
+                        filename: "Case Study",
+                        title: "",
+                        text: "<strong>Export</strong>",
+                        extend: 'excelHtml5'
+                    }
+                ]
         });
 
         $('.delete-item').on('click', function (e) {
@@ -182,11 +212,12 @@
                         for (var idx in list) {
                             del_html = ""
                             edit_html = ""
+                            data_view_html = '<a class="tooltips" data-container="body" data-placement="top" title="Data View" href="/'+username+'/forms/case_study/instance/?s_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-info-circle"></i></a>'
                             if(list[idx].can_delete == 1)
-                                del_html = '<a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].instance_id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a>'
+                                del_html = '<a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].instance_id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a>'
                             if(list[idx].can_edit == 1)
-                                edit_html = '<a class="tooltips" data-container="body" data-placement="top" data-original-title="Edit" href="/asf/case_study_form/?instance_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-pencil-square"></i></a>'
-                            tbody += '<tr><td>' + list[idx].organization_name + '</td> <td>' + list[idx].individual_name + '</td><td>' + list[idx].date_submission + '</td> <td>' + list[idx].data_source + '</td> <td>' + list[idx].introduction + '</td> <td>' + list[idx].lesson_learned + '</td><td>' + list[idx].challenge + '</td><td>' + list[idx].challenge_overcome + '</td><td>' + list[idx].promising_practice + '</td><td>' + list[idx].conclusion + '</td><td class="td-center">'+edit_html+del_html+'</td></tr>';
+                                edit_html = '<a class="tooltips" data-container="body" data-placement="top" title="Edit" href="/asf/case_study_form/?instance_id=' + list[idx].instance_id + '"><i class="fa fa-2x fa-pencil-square"></i></a>'
+                            tbody += '<tr><td>' + list[idx].organization_name + '</td> <td>' + list[idx].individual_name + '</td><td>' + list[idx].date_submission + '</td> <td>' + list[idx].data_source + '</td> <td>' + list[idx].introduction + '</td> <td>' + list[idx].lesson_learned + '</td><td>' + list[idx].challenge + '</td><td>' + list[idx].challenge_overcome + '</td><td>' + list[idx].promising_practice + '</td><td>' + list[idx].conclusion + '</td><td class="td-center">'+data_view_html+edit_html+del_html+'</td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
@@ -203,21 +234,25 @@ $('.delete-item').on('click', function (e) {
         $('#generate_report').trigger('click');
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,"iDisplayLength": 50,
+                "scrollX": true, "ordering": true,
                 deferRender: true,
-                "scrollY": "500px",
+                paging:false,
+                scrollY:"300px",
                 "scrollCollapse": true,
-                "paging": false
-{#                dom: 'Bfrtip'#}
-{#                ,#}
-{#                buttons: [#}
-{#                    {#}
-{#                        filename: "CSA Report",#}
-{#                        title: "",#}
-{#                        text: "<strong>Export</strong>",#}
-{#                        extend: 'excelHtml5'#}
-{#                    }#}
-{#                ]#}
+                fixedColumns:   {
+                       leftColumns:0,
+                    rightColumns: 1
+                },
+                dom: 'Bfrtip'
+                ,
+                buttons: [
+                    {
+                        filename: "Case Study",
+                        title: "",
+                        text: "<strong>Export</strong>",
+                        extend: 'excelHtml5'
+                    }
+                ]
 
             });
         }

@@ -311,6 +311,8 @@
                             console.log(temp_id)
                             $('#' + keys[i]).append(multiple_select_html);
                             $('#' + keys[i]).multiselect('rebuild');
+                            if(keys[i]=='district' || keys[i]=='upazila')
+                                continue
                             $('#' + keys[i]).val(temp_id);
                             $('#' + keys[i]).multiselect("refresh");
 
