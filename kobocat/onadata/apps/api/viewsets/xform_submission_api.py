@@ -236,6 +236,8 @@ Here is some example JSON, it would replace `[the JSON]` above:
             preset_data['victim_tbl_id'] = data['victim_tbl_id']
         if 'event_id' in data:
             preset_data['event_id'] = data['event_id']
+        if 'username' in data:
+            preset_data['username'] = data['username']
         # get returnee id
         if 'instance_id' in data:
             instance_id = data['instance_id']
@@ -291,7 +293,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
         df = pandas.read_sql(qry,connection)
         form_list_for_beneficiary = df.form_id.tolist()
 
-        qry = "select form_id from forms_categories_relation where category_id = any('{100,101,102,200,201,202,300,301,302,400,401,402,500,501,502,600,601,602}')"
+        qry = "select form_id from forms_categories_relation where category_id = any('{100,101,102,200,201,202,300,301,302,400,401,402,500,501,502,600,601,602,700,702}')"
         df = pandas.read_sql(qry, connection)
         form_list_for_event = df.form_id.tolist()
 
@@ -312,7 +314,7 @@ Here is some example JSON, it would replace `[the JSON]` above:
         if int(form_id) in form_list_for_event:
             json['event_id'] = str(preset_data['event_id'])
 
-        print(json)
+        json['username'] = str(preset_data['username'])
         return json
 
     def get_all_csv(self, request, *args, **kwargs):

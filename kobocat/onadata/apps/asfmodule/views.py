@@ -1355,6 +1355,208 @@ def event_form(request):
     return render(request, 'asfmodule/event_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server' : form_builder_server,'instance_id':instance_id})
 
 
+#Event Workshop List
+@login_required
+def event_workshop_list(request):
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_workshop'")
+    return render(request, 'asfmodule/event_workshop_list.html', {'form_id': form_id})
+
+@csrf_exempt
+def get_event_workshop_list(request):
+    user_id = request.user.id
+    try:
+        __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
+        query = """ SELECT   COALESCE( 
+                    ( 
+                    SELECT can_edit 
+                    FROM   vwrolewiseformpermission 
+                    WHERE  user_id = """ +str(user_id)+ """ 
+                    AND    xform_id = 
+                           ( 
+                                  SELECT id 
+                                  FROM   logger_xform 
+                                  WHERE  id_string='event_workshop') limit 1),0) can_edit, 
+         COALESCE( 
+                    ( 
+                    SELECT can_delete 
+                    FROM   vwrolewiseformpermission 
+                    WHERE  user_id = """ +str(user_id)+ """ 
+                    AND    xform_id = 
+                           ( 
+                                  SELECT id 
+                                  FROM   logger_xform 
+                                  WHERE  id_string='event_workshop') limit 1),0)    can_delete, 
+         row_number() OVER (ORDER BY id)                                         AS serial_no, 
+         event_name,
+         id, 
+         to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+         to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date, 
+         username, 
+         district_label district , 
+         upazila_label  upazila , 
+         union_label    union_name , 
+         para_bazar_school , 
+         CASE 
+                  WHEN id::text = 
+                           ( 
+                                  SELECT event_id::text 
+                                  FROM   vw_event_workshop_observation_checklist 
+                                  WHERE  event_id::int = vw_merged_event_workshop.id limit 1) THEN 1
+                  ELSE 0 
+         END observation , 
+         0   review 
+            FROM     vw_merged_event_workshop 
+            WHERE    upazila =ANY ( 
+         ( 
+                SELECT 
+                       ( 
+                              SELECT geocode 
+                              FROM   geo_data 
+                              WHERE  id = geoid limit 1) 
+                FROM   usermodule_catchment_area 
+                WHERE  user_id = """+str(user_id)+""") 
+        UNION 
+        ( 
+               SELECT geocode 
+               FROM   geo_data 
+               WHERE  field_parent_id = ANY 
+                      ( 
+                             SELECT geoid 
+                             FROM   usermodule_catchment_area 
+                             WHERE  user_id = """+str(user_id)+""") 
+               AND    field_type_id = 88)) """
+    except Exception:
+        query = """ select  COALESCE( 
+                             ( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """ +str(user_id)+ """
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_workshop') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """ +str(user_id)+ """
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_workshop') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          event_name,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_workshop_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_workshop.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  0 review  from vw_merged_event_workshop """
+    data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
+    return HttpResponse(data)
+
+@login_required
+def event_workshop_form(request):
+    username = request.user
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    form_id = __db_fetch_single_value("select id from logger_xform where id_string='event_workshop'")
+    redirected_url = '/asf/event_workshop_list/'
+    if request.GET:
+        instance_id = request.GET.get('instance_id')
+    else:
+        instance_id = -1
+    return render(request, 'asfmodule/formbuilder_form.html',{'username':username,'server_address':server_address,'form_id':form_id,'form_builder_server' : form_builder_server,'redirected_url':redirected_url,'instance_id':instance_id})
+
+
+@login_required
+def event_workshop_profile(request,event_id):
+    qry = """
+        select id event_id,
+        to_char(event_start_time::date,'DD/MM/YYYY') date_created, 
+        username,
+        district_label district,
+        upazila_label upazila,
+        union_label union_name,
+        para_bazar_school,
+        village,
+        male_greater_equal_18,
+        male_less_18,
+        female_greater_equal_18,
+        female_less_18,
+        total_participant,participant_category_text participant_category, 
+                  remarks 
+      from vw_merged_event_workshop where id = """+str(event_id)+"""
+    """
+    df = pandas.read_sql(qry,connection)
+    event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
+    date_created = df.date_created.tolist()[0] if len(df.date_created.tolist()) and df.date_created.tolist()[0] is not None  else ''
+    submitted_by = df.username.tolist()[0] if len(df.username.tolist()) and df.username.tolist()[0] is not None  else ''
+    district = df.district.tolist()[0] if len(df.district.tolist()) and df.district.tolist()[0] is not None  else ''
+    upazila = df.upazila.tolist()[0] if len(df.upazila.tolist()) and df.upazila.tolist()[0] is not None  else ''
+    union = df.union_name.tolist()[0] if len(df.union_name.tolist()) and df.union_name.tolist()[0] is not None  else ''
+    village = df.village.tolist()[0] if len(df.village.tolist()) and df.village.tolist()[0] is not None else ''
+    para_bazar_school = df.para_bazar_school.tolist()[0] if len(df.para_bazar_school.tolist()) and df.para_bazar_school.tolist()[0] is not None  else ''
+    male_greater_equal_18 = df.male_greater_equal_18.tolist()[0] if len(df.male_greater_equal_18.tolist()) and df.male_greater_equal_18.tolist()[0] is not None else ''
+    male_less_18 = df.male_less_18.tolist()[0] if len(df.male_less_18.tolist()) and df.male_less_18.tolist()[0] is not None  else ''
+    female_greater_equal_18 = df.female_greater_equal_18.tolist()[0] if len(df.female_greater_equal_18.tolist()) and df.female_greater_equal_18.tolist()[0] is not None  else ''
+    female_less_18 = df.female_less_18.tolist()[0] if len(df.female_less_18.tolist()) and df.female_less_18.tolist()[0] is not None  else ''
+    total_participant = df.total_participant.tolist()[0] if len(df.total_participant.tolist()) and df.total_participant.tolist()[0] is not None  else ''
+    participant_category = df.participant_category.tolist()[0] if len(df.participant_category.tolist()) and df.participant_category.tolist()[0] is not None  else ''
+
+
+    user_id = request.user.id
+    query = """ SELECT distinct category_id,'<div class="row"> <div class="col-lg-12"> <div class="panel-group"  role="tablist" aria-multiselectable="true"><div class="panel panel-default" style="margin-bottom: 10px;"><div style="height: 48px;" class="panel-heading" role="tab" id="heading'||category_id||'"><h4 class="panel-title"><a style="font-weight: bold;" class="collapsed"  onclick="load_forms('|| category_id ||',''internal_accordian'|| category_id ||''')" role="button" data-toggle="collapse"  href="#collapse'|| category_id ||'" aria-expanded="false" aria-controls="collapse'|| category_id ||'"> ' ||(SELECT category_name FROM forms_categories WHERE id = fc.category_id :: INT) || ' </a>'|| case when first_value(can_submit)over(PARTITION by category_id ORDER by can_submit desc) = 1 then '<a onclick="load_forms_list('|| category_id ||')"  class="btn btn-success btn-sm pull-right"   id="form'|| category_id ||'"  data-toggle="modal" data-target="#myModal"  ><i class="fa fa-4x fa fa-plus"></i></a>' else '' end  ||' </h4></div><div id="collapse'|| category_id ||'" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading'|| category_id ||'"><div class="panel-body"><div class="panel-group" id="internal_accordian'|| category_id ||'" role="tablist" aria-multiselectable="true"></div></div></div></div></div></div></div>' as form_str FROM vwrolewiseformpermission rf, forms_categories_relation fc WHERE ( rf.can_view = 1 OR rf.can_submit = 1) AND fc.form_id = rf.xform_id and fc.category_id = any('{70,702}') AND user_id = """ + str(user_id) + """ order by category_id asc """
+    df = pandas.DataFrame()
+    df = pandas.read_sql(query, connection)
+    main_str = ""
+    for each in df['form_str']:
+        main_str += str(each)
+    main_str = json.dumps(main_str)
+    username = request.user
+    # if in local environment, you should use your ip instead of localhost
+    # server_address = request.META.get('ip')+':'+request.META.get('HTTP_HOST').split(':', 1)[1]
+    # when in developement/live/client server
+    server_address = request.META.get('HTTP_HOST')
+    print(server_address)
+
+    form_builder_server = __db_fetch_single_value("select form_builder_server from form_builder_configuration")
+    module = 'event_workshop_profile'
+    return render(request, "asfmodule/formbuilder_profile.html",{
+        'main_str': main_str,
+        'username':username,
+        'submitted_by':submitted_by,
+        'event_id':event_id,
+        'date_created':date_created,
+        'district':district,
+        'upazila':upazila,
+        'union':union,
+        'village':village,
+        'para_bazar_school':para_bazar_school,
+        'male_greater_equal_18':male_greater_equal_18,
+        'female_greater_equal_18':female_greater_equal_18,
+        'male_less_18':male_less_18,
+        'female_less_18':female_less_18,
+        'total_participant':total_participant,
+        'participant_category':participant_category,
+        'server_address':server_address,'form_builder_server':form_builder_server,'module':module
+
+    })
+
 #IPT show List
 @login_required
 def ipt_show_list(request):

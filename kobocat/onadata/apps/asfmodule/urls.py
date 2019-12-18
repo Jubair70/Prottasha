@@ -47,6 +47,11 @@ urlpatterns = patterns('',
     url(r'^get_event_list/$', views.get_event_list,name='get_event_list'),
     url(r'^event_form/$', views.event_form,name='event_form'),
 
+    url(r'^event_workshop_list/$', views.event_workshop_list,name='event_workshop_list'),
+    url(r'^get_event_workshop_list/$', views.get_event_workshop_list,name='get_event_workshop_list'),
+    url(r'^event_workshop_form/$', views.event_workshop_form,name='event_workshop_form'),
+    url(r'^event_workshop_profile/(?P<event_id>\d+)/$', views.event_workshop_profile, name='event_workshop_profile'),
+
     url(r'^ipt_show_list/$', views.ipt_show_list,name='ipt_show_list'),
     url(r'^get_ipt_show_list/$', views.get_ipt_show_list,name='get_ipt_show_list'),
     url(r'^ipt_show_form/$', views.ipt_show_form,name='ipt_show_form'),
