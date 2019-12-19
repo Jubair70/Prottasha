@@ -3,6 +3,16 @@
 {% block additional-headers %}
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
     <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
+       <style>
+      .DTFC_RightHeadWrapper, .DTFC_RightHeadBlocker,.DTFC_LeftHeadWrapper, .DTFC_LeftHeadBlocker
+        {
+                background-color: white !important;
+        }
+    .DTFC_RightBodyLiner
+    {
+        overflow-y: hidden !important;
+    }
+    </style>
 {% endblock %}
 
 
@@ -66,7 +76,7 @@
                         <th>Currency</th>
                             <th>Final delivery date</th>
                            <th>Status</th>
-                    <th>Action</th>
+                    <th></th>
 
                 </tr>
                 </thead>
@@ -163,7 +173,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
-
+    <script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.3.0/js/dataTables.fixedColumns.min.js"></script>
 
     <script>
 console.log("***************************************************")
@@ -172,18 +182,21 @@ var form_id = {{ form_id | safe }};
     var redirect_url = window.location.pathname;
 
             var table = $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,
-                deferRender: true,
-                {#            dom: 'Bfrtip'#}
-                {#            ,#}
-                {#            buttons: [#}
-                {#                {#}
-                {#                    filename: "Fo",#}
-                {#                    title: "",#}
-                {#                    text: "<strong>Export</strong>",#}
-                {#                    extend: 'excel'#}
-                {#                }#}
-                {#            ]#}
+                 "scrollX": true, "ordering": false,
+                 fixedColumns:   {
+                        leftColumns:0,
+                        rightColumns: 1
+                },
+                            dom: 'Bfrtip'
+                            ,
+                            buttons: [
+                                {
+                                    filename: "Consultancy Matrix",
+                                    title: "",
+                                    text: "<strong>Export</strong>",
+                                    extend: 'excel'
+                                }
+                            ]
 
             });
 
@@ -228,9 +241,16 @@ var form_id = {{ form_id | safe }};
                             var tbody = '';
                             var detail = ''
                         for (var idx in list) {
-                                sts_update = "<button style=\"margin-right: 8px;\" class=\"btn btn-primary green\" data-placement=\"top\" onclick=\"update_status('"+list[idx].id+"','"+list[idx].status+"')\">Update Status</button>"
-                            detail = "<a class=\"btn red\" href=\"/asf/get_consultation_matrix_profile/"+list[idx].id+ "\" role=\"button\">Details</a>"
-                            tbody += '<tr><td>' + list[idx].contract_number + '</td> <td>' + list[idx].assigment_title + '</td> <td>' + list[idx].consultant_name + '</td> <td>' + list[idx].amount_grant +'</td> <td>' + list[idx].currency +'</td> <td>' + list[idx].date_commissioned+ '</td> <td>' + list[idx].status+ '</td> <td>'+ detail+sts_update+'<a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Edit" href="/asf/consultancy_matrix_form/?instance_id=' + list[idx].id + '"><i class="fa fa-2x fa-pencil"></i>Edit</a><a class="btn btn-danger delete-item tooltips" style="margin-left:10px" data-placement="top" data-toggle="modal"  data-target="#confirm-delete" data-original-title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i>Delete</a></td> </tr>';
+                                del_html = ''
+                                edit_html = ''
+                            detail_html = '<a class="tooltips" data-placement="top" data-container="body" title="Details" href="/asf/get_consultation_matrix_profile/' + list[idx].id + '/"><i class="fa fa-2x fa-envelope-open"></i></a>'
+                                if(list[idx].can_delete == 1)
+                                del_html = '<a class="delete-item tooltips" data-placement="top" data-toggle="modal" data-target="#confirm-delete" title="Delete" href="#" data-href="/asf/delete_data/?form_id='+ form_id +'&log_ins_id=' + list[idx].id + '&redirect_url=' + redirect_url + '"><i class="fa fa-2x fa-trash"></i></a>'
+                                if(list[idx].can_edit == 1)
+                                edit_html = '<a class="tooltips" data-container="body" data-placement="top" title="Edit" href="/asf/consultancy_matrix_form/?instance_id=' + list[idx].id + '"><i class="fa fa-2x fa-pencil-square"></i></a>'
+{#                                sts_update = "<button style=\"margin-left: 8px;\" class=\"btn btn-primary green\" data-placement=\"top\" onclick=\"update_status('"+list[idx].id+"','"+list[idx].status+"')\">Update Status</button>"#}
+                                sts_update = '<a class="tooltips" data-placement="top" data-container="body" title="Update Status" style="cursor:pointer" onclick="update_status('+list[idx].id+',\''+list[idx].status+'\')" ><i class="fa fa-2x fa fa-wrench"></i></a>'
+                            tbody += '<tr><td>' + list[idx].contract_number + '</td> <td>' + list[idx].assigment_title + '</td> <td>' + list[idx].consultant_name + '</td> <td>' + list[idx].amount_grant +'</td> <td>' + list[idx].currency +'</td> <td>' + list[idx].date_commissioned+ '</td> <td>' + list[idx].status+ '</td> <td>'+ detail_html+sts_update+edit_html+del_html+'</td> </tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
@@ -252,18 +272,24 @@ var form_id = {{ form_id | safe }};
         //$('#generate_report').trigger('click');
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,"iDisplayLength": 50,
+              "scrollX": true, "ordering": false,"iDisplayLength": 50,
                 deferRender: true,
-{#                dom: 'Bfrtip'#}
-{#                ,#}
-{#                buttons: [#}
-{#                    {#}
-{#                        filename: "CSA Report",#}
-{#                        title: "",#}
-{#                        text: "<strong>Export</strong>",#}
-{#                        extend: 'excelHtml5'#}
-{#                    }#}
-{#                ]#}
+                "scrollY": "340px",
+                "scrollCollapse": true,
+                "paging": false, fixedColumns:   {
+                       leftColumns:0,
+                    rightColumns: 1
+                },
+dom: 'Bfrtip'
+                            ,
+                            buttons: [
+                                {
+                                    filename: "Consultancy Matrix",
+                                    title: "",
+                                    text: "<strong>Export</strong>",
+                                    extend: 'excel'
+                                }
+                            ]
 
             });
         }

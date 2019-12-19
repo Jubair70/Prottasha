@@ -2687,7 +2687,8 @@ def consultancy_matrix(request):
 @csrf_exempt
 def get_consultancy_matrix(request):
 
-    q = "select id ,contract_number,assigment_title,consultant_name,amount_grant,date(date_commissioned) date_commissioned,COALESCE (status,'Ongoing')status from vw_consultancy_matrix"
+    user_id = request.user.id
+    q = "select COALESCE(( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = " +str(user_id)+ " AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='consultation_matrix') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = " +str(user_id)+ " AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='consultation_matrix') limit 1),0) can_delete, id ,contract_number,assigment_title,consultant_name,amount_grant,date(date_commissioned) date_commissioned,COALESCE (status,'Ongoing')status from vw_consultancy_matrix"
     main_df = pd.read_sql(q, connection)
 
     currency_q = "select  id,get_form_option_label(677,'currency',currency) currency from vw_consultancy_matrix"

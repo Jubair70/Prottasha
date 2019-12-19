@@ -904,7 +904,7 @@ function mPowerChartGeneration(obj) {
     }
 
     else {
-        tooltip_text = '<span style="color:{series.color}">{point.name}</span>: <b>{point.y}</b> ';
+        tooltip_text = '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ';
     }
 
     var tooltip = {

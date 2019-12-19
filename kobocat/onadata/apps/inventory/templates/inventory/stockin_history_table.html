@@ -6,6 +6,7 @@
             <th>RSC Name</th>
             <th>Item Name</th>
             <th>Quanity In</th>
+            <th>Office Name</th>
         </tr>
     </thead>
     <tbody>
@@ -16,7 +17,7 @@
             <td>{{data.rsc_name |default_if_none:"--"}}</td>
             <td>{{data.item |default_if_none:"--"}}</td>
             <td>{{data.qty |default_if_none:"--"}}</td>
-
+            <td>{{data.office_name |default_if_none:"--"}}</td>
 
         </tr>
         {% endfor %}

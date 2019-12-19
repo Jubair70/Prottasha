@@ -825,12 +825,14 @@ def custom_data_view(request, username, id_string):
         ACTIVATE_CUSTOM_VIEW_QUERY = True
 
     else :
-        db_test_column_query = "vwlogger_instance.id ID, vwlogger_instance.user_id ,  to_char(vwlogger_instance.date_created,'DD Mon YYYY') Received, app_inst.status ApprovalStatus"
+        # db_test_column_query = "vwlogger_instance.id ID, vwlogger_instance.user_id ,  to_char(vwlogger_instance.date_created,'DD Mon YYYY') Received, app_inst.status ApprovalStatus"
+        db_test_column_query = "vwlogger_instance.id ID, vwlogger_instance.user_id ,  to_char(vwlogger_instance.date_created,'DD Mon YYYY') Received"
         column_query = db_test_column_query
         ACTIVATE_CUSTOM_VIEW_QUERY = True
 
-    submission_instance_query = "SELECT " + column_query + " FROM vwlogger_instance LEFT JOIN approval_instanceapproval app_inst ON app_inst.instance_id = vwlogger_instance.id WHERE xform_id = " + str(xform.id) + str(sub_query_user) + str(sub_query_date_range) + str(sub_query_status)
-
+    # submission_instance_query = "SELECT " + column_query + " FROM vwlogger_instance LEFT JOIN approval_instanceapproval app_inst ON app_inst.instance_id = vwlogger_instance.id WHERE xform_id = " + str(xform.id) + str(sub_query_user) + str(sub_query_date_range) + str(sub_query_status)
+    submission_instance_query = "SELECT " + column_query + " FROM vwlogger_instance  WHERE xform_id = " + str(
+        xform.id) + str(sub_query_user) + str(sub_query_date_range) + str(sub_query_status)
     '''
     if state_list=="":
         submission_instance_query = submission_instance_query + " and app_inst.status =''"

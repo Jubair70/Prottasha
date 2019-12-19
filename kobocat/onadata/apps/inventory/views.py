@@ -156,7 +156,8 @@ def stockin_product(request):
         p_id = request.POST.get("p_id")
         p_qty = request.POST.get("p_qty")
         p_date = request.POST.get("p_date")
-        insert_q = "INSERT INTO public.product_stock_in(product_id, in_date, qty, stockin_by, created_at)VALUES ("+str(p_id)+", '"+str(p_date)+"', "+str(p_qty)+", "+str(request.user.id)+",NOW());"
+        office_name = request.POST.get("office_name")
+        insert_q = "INSERT INTO public.product_stock_in(product_id, in_date, qty, stockin_by, created_at,office_name)VALUES ("+str(p_id)+", '"+str(p_date)+"', "+str(p_qty)+", "+str(request.user.id)+",NOW(),'"+str(office_name)+"');"
 
         current_qty = __db_fetch_single_value("select balance from product where id = "+str(p_id))
         total_balance = current_qty+int(p_qty)
@@ -195,6 +196,7 @@ def stockout_product(request):
         pout_purpose = request.POST.get("pout_purpose")
         pout_receipient = request.POST.get("pout_receipient")
         created_at = datetime.datetime.now()
+        office_name = request.POST.get("office_name")
         #insert_q = "INSERT INTO public.product_stock_out(product_id, out_date, qty, request_by, officer_name, purpose, recepient, created_at, created_by)VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
 
         #q= """INSERT INTO public.product_stock_out(product_id, out_date, qty, request_by, officer_name, purpose, recepient, created_at, created_by)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",(pout_id, pout_date, pout_qty,pout_req_by, pout_offi_name,pout_purpose,pout_receipient,created_at,request.user.id)
@@ -206,7 +208,7 @@ def stockout_product(request):
             update_q = "update product set balance = "+str(balance_rest)+" where id =   "+str(pout_id)
             cursor = connection.cursor()
 
-            cursor.execute("""INSERT INTO public.product_stock_out(product_id, out_date, qty, request_by, officer_name, purpose, recepient, created_at, created_by)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",(pout_id, pout_date, pout_qty,pout_req_by, pout_offi_name,pout_purpose,pout_receipient,created_at,request.user.id))
+            cursor.execute("""INSERT INTO public.product_stock_out(product_id, out_date, qty, request_by, officer_name, purpose, recepient, created_at, created_by,office_name)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",(pout_id, pout_date, pout_qty,pout_req_by, pout_offi_name,pout_purpose,pout_receipient,created_at,request.user.id,office_name))
             #__db_commit_query(q)
             __db_commit_query(update_q)
 

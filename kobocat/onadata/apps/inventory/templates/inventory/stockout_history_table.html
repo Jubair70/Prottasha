@@ -7,6 +7,7 @@
                     <th>Item Name</th>
                     <th>Quantity Out</th>
                     <th>Receipient</th>
+                    <th>Office Name</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -18,6 +19,7 @@
                     <td>{{data.item |default_if_none:"--"}}</td>
                     <td>{{data.qty |default_if_none:"--"}}</td>
                 <td>{{data.recepient |default_if_none:"--"}}</td>
+                 <td>{{data.office_name |default_if_none:"--"}}</td>
 
                 </tr>
                 {% endfor %}
