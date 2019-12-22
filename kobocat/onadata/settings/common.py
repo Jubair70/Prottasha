@@ -539,6 +539,7 @@ if isinstance(TEMPLATE_OVERRIDE_ROOT_DIR, basestring):
     STATICFILES_DIRS += (
         os.path.join(PROJECT_ROOT, TEMPLATE_OVERRIDE_ROOT_DIR, 'static'),
     )
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 EMAIL_HOST = 'smtp.gmail.com'
 

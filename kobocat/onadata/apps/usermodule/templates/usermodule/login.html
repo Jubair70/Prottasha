@@ -59,7 +59,7 @@
                             <div class="form-group">
                                 <label >Enter email address you are registered with. </label>
                                 <input type="text" class="form-control" name="email" id="email" required onblur="check_valid_user_email(this)">
-                                <input type="hidden" id="user_name" name="user_name" value = "">
+{#                                <input type="hidden" id="user_name" name="user_name" value = "">#}
                                 <input type="hidden" name="baseurl" value="" id="baseurl">
                             </div>
                         </div>
@@ -130,7 +130,7 @@
     <script>
         function get_forget_pass_modal() {
             $('#forget_password').appendTo("body").modal('show');
-            $('#user_name').val($('#username').val());
+{#            $('#user_name').val($('#username').val());#}
             $('#email').val('');
             $('#baseurl').val(window.location.origin);
         }

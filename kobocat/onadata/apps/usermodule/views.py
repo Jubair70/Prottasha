@@ -53,6 +53,7 @@ import smtplib
 import string
 import random
 import decimal
+from django.conf import settings
 
 
 def __db_commit_query(query):
@@ -935,6 +936,8 @@ def user_login(request):
         # Use Django's machinery to attempt to see if the username/password
         # combination is valid - a User object is returned if it is.
         user = authenticate(username=username, password=password)
+        if user is None:
+            return error_page(request, "Invalid login details supplied")
 
         # If we have a User object, the details are correct.
         # If None (Python's way of representing the absence of a value), no user
@@ -956,6 +959,13 @@ def user_login(request):
                         return HttpResponseRedirect('/usermodule/change-password')
                 login(request, user)
                 UserFailedLogin.objects.filter(user_id=user.id).delete()
+                profile = user.usermoduleprofile
+                otp = profile.otp
+                if otp == password:
+                    profile.otp = None
+                    user.password = ''
+                    user.save()
+                    profile.save()
                 return HttpResponseRedirect(request.POST['redirect_url'])
             else:
                 # An inactive account was used - no logging in!
@@ -2636,8 +2646,9 @@ def update_token(data):
 '''
 @csrf_exempt
 def check_valid_user_email(request):
-    user_name = request.POST.get("user_name")
+    # user_name = request.POST.get("user_name")
     email = request.POST.get("email")
+    user_name = __db_fetch_single_value("select username from auth_user where email = '"+str(email)+"'")
     msg = ""
     status_code = 200
     try:
@@ -2658,10 +2669,11 @@ def check_valid_user_email(request):
 
 @csrf_exempt
 def send_otp(request):
-    user_name = request.POST.get("user_name")
+    # user_name = request.POST.get("user_name")
     baseurl = request.POST.get("baseurl")
 
     email = request.POST.get("email")
+    user_name = __db_fetch_single_value("select username from auth_user where email = '" + str(email) + "'")
     msg = ""
     status_code = 200
     try:
@@ -2673,7 +2685,7 @@ def send_otp(request):
             send_mail(
                 'OTP for login',
                 'Hello,\n\nTemporary Password of user '+user_name+' is ' + str(otp) + '. \nUse this otp first login and then reset your password.\n\n Please use the following url for login\n'+baseurl+'/usermodule/login/?next=/usermodule/reset-password/'+str(userid)+'/',
-                'mpowersocial2018@gmail.com',
+                settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False,
             )
