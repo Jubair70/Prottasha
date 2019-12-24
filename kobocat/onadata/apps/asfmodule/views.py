@@ -2739,6 +2739,71 @@ def get_consultation_matrix_profile(request,id):
 
     return render(request, 'asfmodule/consultation_matrix_profile.html',{'assignment_title' : assignment_title,'profile' : data,'deliverable_data' : deliverable_data})
 
+@login_required
+def xls_export_consultancy_matrix(request):
+    query = """
+            with t as (
+        select id,date_created,lead_consultant_name,
+        posting_reference_number,
+        commissioner,
+        date_commissioned,
+        amount_grant,
+        consultant_name,
+        case when currency = '1' then 'BDT' when currency = '2' then 'USD' end currency,
+        contract_number,
+        assigment_title,
+        coalesce(status,'Ongoing') status,
+        json_array_elements(deliverable::json) deliverable from vw_consultancy_matrix vcm  
+        ), t1 as (select id,lead_consultant_name,date_created,
+        posting_reference_number,
+        commissioner,
+        date_commissioned,
+        amount_grant,
+        consultant_name,
+        currency,
+        contract_number,
+        assigment_title,status,
+        deliverable->>'deliverable/r_position' r_position,
+        to_char((deliverable->>'deliverable/date_submitted_by_consultant')::date,'DD-MON-YYYY') date_submitted_by_consultant,
+        deliverable->>'deliverable/deliverable' deliverable,
+        to_char((deliverable->>'deliverable/due_date')::date,'DD-MON-YY') due_date from t)
+        select 
+        t1.contract_number "Contract Number",
+        t1.posting_reference_number "Posting Ref #",
+        t1.assigment_title "Assignment Title",
+        t1.amount_grant "Amount of grant/procurement contract",
+        t1.currency "Currency",
+        t1.consultant_name "Consultant (s) Name(s)",
+        t1.lead_consultant_name "Name of the Lead consultant",
+        t1.commissioner "Commissioner",
+        coalesce(to_char((t1.date_commissioned)::date,'DD-MON-YY'),'') "Date Commissioned",
+        t1.deliverable "Deliverables (as in Contract)",
+        t1.due_date "Due Date",
+        coalesce(to_char((t1.date_submitted_by_consultant)::date,'DD-MON-YY'),'') "Date Submitted by Consultant",
+        coalesce(cmd.policy_team_approval,'') "Policy Team",
+        coalesce(cmd.reintegration_team_approval,'') "Reintegration Team",
+        coalesce(cmd.m_e_team_approval,'') "M&E",
+        coalesce(cmd.pm_approval,'') "PM",
+        coalesce(to_char((cmd.returned_to_consultant)::date,'DD-MON-YY'),'') "Returned  to Consultant",
+        coalesce(cmd.revised_report_received,'') "Revised Report received",
+        case when cmd.checked_by_commissioner is null then 'No' else 'Yes' end  "Checked by Commisioner",
+        coalesce(to_char((cmd.checked_by_commissioner)::date,'DD-MON-YY'),'') "Checked Date", 
+        coalesce(cmd.signed_off_by_pm,'') "Signed off by PM",
+        coalesce(cmd.stakeholder_approval,'') "Stakeholder Approval (if required)",
+        coalesce(cmd.final_document_submitted::text,'') "Final Document Submitted",
+        coalesce(to_char((t1.date_created)::date,'DD-MON-YY'),'') "Date",
+        coalesce(cmd.release_final_payment,'') "Release Final Payment",
+        coalesce(cmd.performance_rating,'') "Performance Rating" 
+        from t1 left join  con_matrix_deliverable cmd on t1.id = cmd.data_id and t1.r_position::int = cmd.serial_no
+    """
+    df = pandas.read_sql(query,connection,index_col=['Contract Number' ,'Posting Ref #' ,'Assignment Title' ,'Amount of grant/procurement contract' ,'Currency' ,'Consultant (s) Name(s)' ,'Name of the Lead consultant' ,'Commissioner' ,'Date Commissioned','Deliverables (as in Contract)'])
+    writer = pandas.ExcelWriter("onadata/media/uploaded_files/output.xlsx")
+    df.to_excel(writer, sheet_name='Sheet1')
+    writer.save()
+    f = open('onadata/media/uploaded_files/output.xlsx', 'r')
+    response = HttpResponse(f, mimetype='application/vnd.ms-excel')
+    response['Content-Disposition'] = 'attachment; filename=Consultancy Matrix_'+str(date.today())+'.xls'
+    return response
 
 @csrf_exempt
 def get_deliverable(request):

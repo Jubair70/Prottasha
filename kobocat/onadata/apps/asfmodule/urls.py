@@ -155,6 +155,7 @@ urlpatterns = patterns('',
     url(r'^get_consultation_matrix_profile/(?P<id>\d+)/$', views.get_consultation_matrix_profile,name='get_consultation_matrix_profile'),
     url(r'^get_deliverable/$', views.get_deliverable,name='get_deliverable'),
     url(r'^update_deliverable/$', views.update_deliverable,name='update_deliverable'),
+    url(r'^xls_export_consultancy_matrix/$', views.xls_export_consultancy_matrix,name='xls_export_consultancy_matrix'),
 
     url(r'^get-form/(?P<id_string>[^/]+)/$', views.get_form,name='get_form'),
     url(r'^get_form_access/(?P<id_string>[^/]+)/$', views.get_form_access,name='get_form_access'),

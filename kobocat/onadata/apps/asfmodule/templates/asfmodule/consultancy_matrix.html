@@ -63,8 +63,19 @@
                         </button>
                     </a>
                 </div>
+
             <br><br><br>
         <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
+             <div class="col-md-12">
+
+                    <a href="/asf/xls_export_consultancy_matrix/" class="pull-right">
+
+                        <button type="submit" class="btn btn-info pull-left" id="add_new" data-original-title=""
+                                title=""><i class="fa fa-2x fa-flask"></i>Export
+                        </button>
+                    </a>
+                </div>
+            <br><br><br>
             <table id="all_info_table" class="table table-bordered table-striped table-condensed flip-content nowrap">
                 <thead class="flip-content">
                 <tr>
@@ -187,16 +198,16 @@ var form_id = {{ form_id | safe }};
                         leftColumns:0,
                         rightColumns: 1
                 },
-                            dom: 'Bfrtip'
-                            ,
-                            buttons: [
-                                {
-                                    filename: "Consultancy Matrix",
-                                    title: "",
-                                    text: "<strong>Export</strong>",
-                                    extend: 'excel'
-                                }
-                            ]
+{#                            dom: 'Bfrtip'#}
+{#                            ,#}
+{#                            buttons: [#}
+{#                                {#}
+{#                                    filename: "Consultancy Matrix",#}
+{#                                    title: "",#}
+{#                                    text: "<strong>Export</strong>",#}
+{#                                    extend: 'excel'#}
+{#                                }#}
+{#                            ]#}
 
             });
 
@@ -280,16 +291,16 @@ var form_id = {{ form_id | safe }};
                        leftColumns:0,
                     rightColumns: 1
                 },
-dom: 'Bfrtip'
-                            ,
-                            buttons: [
-                                {
-                                    filename: "Consultancy Matrix",
-                                    title: "",
-                                    text: "<strong>Export</strong>",
-                                    extend: 'excel'
-                                }
-                            ]
+{#dom: 'Bfrtip'#}
+{#                            ,#}
+{#                            buttons: [#}
+{#                                {#}
+{#                                    filename: "Consultancy Matrix",#}
+{#                                    title: "",#}
+{#                                    text: "<strong>Export</strong>",#}
+{#                                    extend: 'excel'#}
+{#                                }#}
+{#                            ]#}
 
             });
         }
