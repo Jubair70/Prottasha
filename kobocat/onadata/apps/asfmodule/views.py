@@ -1210,9 +1210,9 @@ def get_capacity_building_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Aspirant Migrants' when training_name::int = 2 then 'Returnee' when training_name::int = 3 then 'Community Members' when training_name::int = 4 then 'Local Governments' when training_name::int = 5 then 'National Government' when training_name::int = 6 then 'Service Provider' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND upazila IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Counsellor Training' when training_name::int = 2 then 'Forum Training' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY') AND upazila IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))"
     except Exception:
-        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Aspirant Migrants' when training_name::int = 2 then 'Returnee' when training_name::int = 3 then 'Community Members' when training_name::int = 4 then 'Local Governments' when training_name::int = 5 then 'National Government' when training_name::int = 6 then 'Service Provider' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
+        query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Counsellor Training' when training_name::int = 2 then 'Forum Training' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('"+str(from_date)+"','DD/MM/YYYY') AND to_date('"+str(to_date)+"','DD/MM/YYYY')"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1569,10 +1569,115 @@ def get_ipt_show_list(request):
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
         # query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null and (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)) )select * from t"
-        query = "with t as( select coalesce((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id =(select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_edit, coalesce((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_delete, row_number() over ( order by id) as serial_no, id, to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( select username from auth_user where id = user_id limit 1) username , ( select field_name from geo_data where geocode = district) district , ( select field_name from geo_data where geocode = upazila) upazila , coalesce((select field_name from geo_data where geocode = union_name), '') union_name , para_bazar_school ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end observation ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from vw_event_ipt_show st where upazila IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = 461) AND field_type_id = 88)) )select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_ipt_show') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_ipt_show') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_ipt_show_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_ipt_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_ipt_show_review 
+                                           WHERE  event_id::int = vw_merged_event_ipt_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_ipt_show
+                  WHERE    upazila =ANY ( 
+         ( 
+                SELECT 
+                       ( 
+                              SELECT geocode 
+                              FROM   geo_data 
+                              WHERE  id = geoid limit 1) 
+                FROM   usermodule_catchment_area 
+                WHERE  user_id = """+str(user_id)+""") 
+        UNION 
+        ( 
+               SELECT geocode 
+               FROM   geo_data 
+               WHERE  field_parent_id = ANY 
+                      ( 
+                             SELECT geoid 
+                             FROM   usermodule_catchment_area 
+                             WHERE  user_id = """+str(user_id)+""") 
+               AND    field_type_id = 88))
+        """
     except Exception:
         # query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null)select * from t"
-        query = "with t as( select coalesce((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id =(select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_edit, coalesce((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string = 'event_ipt_show') limit 1), 0) can_delete, row_number() over ( order by id) as serial_no, id, to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( select username from auth_user where id = user_id limit 1) username , ( select field_name from geo_data where geocode = district) district , ( select field_name from geo_data where geocode = upazila) upazila , coalesce((select field_name from geo_data where geocode = union_name), '') union_name , para_bazar_school ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end observation ,case when id::text = ( select (json->>'event_id')::text from logger_instance where xform_id = ( select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from vw_event_ipt_show st )select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_ipt_show') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_ipt_show') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_ipt_show_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_ipt_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_ipt_show_review 
+                                           WHERE  event_id::int = vw_merged_event_ipt_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_ipt_show
+        """
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1675,9 +1780,115 @@ def get_video_show_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'video_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_video_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_video_show') and deleted_at is null and (json ->> 'geo/upazila') IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)))select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_video_show') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_video_show') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_video_show_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_video_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_video_show_review 
+                                           WHERE  event_id::int = vw_merged_event_video_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_video_show
+                 WHERE    upazila =ANY ( 
+         ( 
+                SELECT 
+                       ( 
+                              SELECT geocode 
+                              FROM   geo_data 
+                              WHERE  id = geoid limit 1) 
+                FROM   usermodule_catchment_area 
+                WHERE  user_id = """+str(user_id)+""") 
+        UNION 
+        ( 
+               SELECT geocode 
+               FROM   geo_data 
+               WHERE  field_parent_id = ANY 
+                      ( 
+                             SELECT geoid 
+                             FROM   usermodule_catchment_area 
+                             WHERE  user_id = """+str(user_id)+""") 
+               AND    field_type_id = 88))
+        """
     except Exception:
-        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_video_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'video_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_video_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_video_show') and deleted_at is null)select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_video_show') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_video_show') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_video_show_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_video_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_video_show_review 
+                                           WHERE  event_id::int = vw_merged_event_video_show.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_video_show
+        """
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1766,9 +1977,114 @@ def get_school_quiz_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'school_quiz_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_school_quiz_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_school_quiz') and deleted_at is null and  (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)) )select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_school_quiz') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_school_quiz') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_quiz_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_school_quiz.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_quiz_review 
+                                           WHERE  event_id::int = vw_merged_event_school_quiz.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_school_quiz
+                  WHERE    upazila =ANY ( 
+         ( 
+                SELECT 
+                       ( 
+                              SELECT geocode 
+                              FROM   geo_data 
+                              WHERE  id = geoid limit 1) 
+                FROM   usermodule_catchment_area 
+                WHERE  user_id = """+str(user_id)+""") 
+        UNION 
+        ( 
+               SELECT geocode 
+               FROM   geo_data 
+               WHERE  field_parent_id = ANY 
+                      ( 
+                             SELECT geoid 
+                             FROM   usermodule_catchment_area 
+                             WHERE  user_id = """+str(user_id)+""") 
+               AND    field_type_id = 88))
+        """
     except Exception:
-        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_school_quiz') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'school_quiz_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_school_quiz_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_school_quiz') and deleted_at is null)select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_school_quiz') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_school_quiz') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_quiz_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_school_quiz.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_quiz_review 
+                                           WHERE  event_id::int = vw_merged_event_school_quiz.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_school_quiz
+        """
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1856,9 +2172,114 @@ def get_tea_stall_meeting_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting') and deleted_at is null and (json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88)))select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_tea_stall_meeting') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_tea_stall_meeting') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_tea_stall_meeting_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_tea_stall_meeting.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_tea_stall_meeting_review 
+                                           WHERE  event_id::int = vw_merged_event_tea_stall_meeting.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_tea_stall_meeting
+                  WHERE    upazila =ANY ( 
+                 ( 
+                        SELECT 
+                               ( 
+                                      SELECT geocode 
+                                      FROM   geo_data 
+                                      WHERE  id = geoid limit 1) 
+                        FROM   usermodule_catchment_area 
+                        WHERE  user_id = """+str(user_id)+""") 
+                UNION 
+                ( 
+                       SELECT geocode 
+                       FROM   geo_data 
+                       WHERE  field_parent_id = ANY 
+                              ( 
+                                     SELECT geoid 
+                                     FROM   usermodule_catchment_area 
+                                     WHERE  user_id = """+str(user_id)+""") 
+                       AND    field_type_id = 88))
+        """
     except Exception:
-        query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_tea_stall_meeting') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_tea_stall_meeting') and deleted_at is null)select * from t"
+        query = """
+        select  COALESCE(( 
+                             SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_tea_stall_meeting') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_tea_stall_meeting') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_tea_stall_meeting_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_tea_stall_meeting.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_tea_stall_meeting_review 
+                                           WHERE  event_id::int = vw_merged_event_tea_stall_meeting.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_tea_stall_meeting
+        """
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -3290,9 +3711,112 @@ def get_pot_song_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song') AND deleted_at IS NULL AND ( json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))) SELECT * FROM t"
+        query = """
+        select  COALESCE((SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_pot_song') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_pot_song') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_pot_song_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_pot_song.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_pot_song_review 
+                                           WHERE  event_id::int = vw_merged_event_pot_song.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_pot_song
+                  WHERE    upazila =ANY ( 
+         ( 
+                SELECT 
+                       ( 
+                              SELECT geocode 
+                              FROM   geo_data 
+                              WHERE  id = geoid limit 1) 
+                FROM   usermodule_catchment_area 
+                WHERE  user_id = """+str(user_id)+""") 
+        UNION 
+        ( 
+               SELECT geocode 
+               FROM   geo_data 
+               WHERE  field_parent_id = ANY 
+                      ( 
+                             SELECT geoid 
+                             FROM   usermodule_catchment_area 
+                             WHERE  user_id = """+str(user_id)+""") 
+               AND    field_type_id = 88))
+        """
     except Exception:
-        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_pot_song') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song') AND deleted_at IS NULL) SELECT * FROM t"
+        query = """
+        select  COALESCE((SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_pot_song') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_pot_song') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_pot_song_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_pot_song.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_pot_song_review 
+                                           WHERE  event_id::int = vw_merged_event_pot_song.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_pot_song
+        """
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -3382,9 +3906,112 @@ def get_school_program_list(request):
     user_id = request.user.id
     try:
         __db_fetch_single_value("select geoid from usermodule_catchment_area where user_id = " + str(user_id))
-        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program') AND deleted_at IS NULL AND ( json ->> 'geo/upazila') IN ( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = "+str(user_id)+") AND field_type_id = 88))) SELECT * FROM t"
+        query = """
+        select  COALESCE((SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_school_program') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_school_program') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_program_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_school_program.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_program_review 
+                                           WHERE  event_id::int = vw_merged_event_school_program.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_school_program
+                  WHERE    upazila =ANY ( 
+         ( 
+                SELECT 
+                       ( 
+                              SELECT geocode 
+                              FROM   geo_data 
+                              WHERE  id = geoid limit 1) 
+                FROM   usermodule_catchment_area 
+                WHERE  user_id = """+str(user_id)+""") 
+        UNION 
+        ( 
+               SELECT geocode 
+               FROM   geo_data 
+               WHERE  field_parent_id = ANY 
+                      ( 
+                             SELECT geoid 
+                             FROM   usermodule_catchment_area 
+                             WHERE  user_id = """+str(user_id)+""") 
+               AND    field_type_id = 88))
+        """
     except Exception:
-        query = "WITH t AS( SELECT COALESCE( ( SELECT can_edit FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_edit, COALESCE( ( SELECT can_delete FROM vwrolewiseformpermission WHERE user_id = "+str(user_id)+" AND xform_id = ( SELECT id FROM logger_xform WHERE id_string='event_school_program') limit 1),0) can_delete, row_number() OVER (ORDER BY id) AS serial_no, id, to_char((json->>'event/event_start_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, to_char((json->>'event/event_end_time')::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_end_date, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_checklist') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END observation , CASE WHEN id::text = ( SELECT (json->>'event_id')::text FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program_review') AND deleted_at IS NULL AND ( json->>'event_id') IS NOT NULL AND ( json->>'event_id')::int = st.id limit 1) THEN 1 ELSE 0 END review FROM logger_instance st WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program') AND deleted_at IS NULL) SELECT * FROM t"
+        query = """
+        select COALESCE((SELECT can_edit 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    (SELECT id  FROM   logger_xform 
+                                           WHERE  id_string='event_school_program') limit 1),0) can_edit,
+                  COALESCE( 
+                             ( 
+                             SELECT can_delete 
+                             FROM   vwrolewiseformpermission 
+                             WHERE  user_id = """+str(user_id)+"""
+                             AND    xform_id = 
+                                    ( 
+                                           SELECT id 
+                                           FROM   logger_xform 
+                                           WHERE  id_string='event_school_program') limit 1),0)    can_delete,
+                                          row_number() OVER (ORDER BY id) AS serial_no,
+                  id, 
+                  to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date, 
+                  to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
+                  username,
+                  district_label district , 
+                  upazila_label upazila , 
+                  union_label union_name , 
+                  para_bazar_school , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_program_observation_checklist 
+                                           WHERE  event_id::int = vw_merged_event_school_program.id limit 1) THEN 1 
+                           ELSE 0 
+                  END observation , 
+                  CASE 
+                           WHEN id::text = 
+                                    ( 
+                                           SELECT event_id::text 
+                                           FROM   vw_event_school_program_review 
+                                           WHERE  event_id::int = vw_merged_event_school_program.id limit 1) THEN 1 
+                           ELSE 0 
+                  END review   from vw_merged_event_school_program
+        """
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
