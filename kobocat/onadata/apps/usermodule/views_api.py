@@ -191,7 +191,8 @@ def get_returnee_list(request):
                           division, 
                           district, 
                           upazila, 
-                          union_id 
+                          union_id,
+                          sex_other 
                    FROM   asf_case, 
                           asf_victim 
                    WHERE  asf_case.id = asf_victim.case_id::int 
@@ -225,6 +226,7 @@ def get_returnee_list(request):
                    CASE 
                           WHEN sex = '1' THEN 'Male' 
                           WHEN sex = '2' THEN 'Female' 
+                          when sex = '99' then sex_other
                    END                                             gender, 
                    (date_part('year',age(date(birth_date)))::text) returnee_age, 
                    victim_id::text                                 beneficiary_id, 
@@ -261,7 +263,8 @@ def get_returnee_list(request):
                               division, 
                               district, 
                               upazila, 
-                              union_id 
+                              union_id,
+                              sex_other 
                        FROM   asf_case, 
                               asf_victim 
                        WHERE  asf_case.id = asf_victim.case_id::int and asf_case.deleted_at is null and asf_victim.deleted_at is null) 
@@ -275,6 +278,7 @@ def get_returnee_list(request):
                        CASE 
                               WHEN sex = '1' THEN 'Male' 
                               WHEN sex = '2' THEN 'Female' 
+                              when sex = '99' then sex_other
                        END                                             gender, 
                        (Date_part('year',Age(Date(birth_date)))::text) returnee_age, 
                        victim_id::text                                 beneficiary_id, 
@@ -310,7 +314,8 @@ def get_returnee_list(request):
                                       division, 
                                       district, 
                                       upazila, 
-                                      union_id 
+                                      union_id,
+                                      sex_other 
                                FROM   asf_case, 
                                       asf_victim 
                                WHERE  asf_case.id = asf_victim.case_id::int and asf_case.deleted_at is null and asf_victim.deleted_at is null) 
@@ -324,6 +329,7 @@ def get_returnee_list(request):
                                CASE 
                                       WHEN sex = '1' THEN 'Male' 
                                       WHEN sex = '2' THEN 'Female' 
+                                      when sex = '99' then sex_other
                                END                                             gender, 
                                (Date_part('year',Age(Date(birth_date)))::text) returnee_age, 
                                victim_id::text                                 beneficiary_id, 
@@ -387,7 +393,7 @@ def get_returnee_info(request):
 @csrf_exempt
 def get_returnee_info(request):
     returnee_id = request.GET.get('returneeid')
-    q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, victim_id::text beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id, (asf_victim.created_at)::text case_initiation_date from asf_victim where id ='"+returnee_id+"' limit 1"
+    q = "select COALESCE((select incident_id from asf_case where id = case_id::int limit 1),'') iom_case_id,(select label_text from vw_country where value_text = (select return_from from asf_case where id = case_id::int limit 1)) return_country, COALESCE (victim_name,'') victim_name,coalesce(contact_self,'') mobile_no,case when sex = '1' then 'Male' when sex = '2' then 'Female' when sex = '99' then sex_other end gender, (date_part('year',age(date(birth_date)))::text) returnee_age, coalesce(victim_id::text,'') beneficiary_id,(select case when status = '1' then 'New Case' when status = '2' then 'Assigned Profiling' when status = '3' then 'Support Ongoing' when status = '4' then 'Support Completed' when status = '5' then 'Graduated' when status = '6' then 'Cancelled' when status = '7' then 'Dropout' end status from asf_case where id = case_id::int limit 1) status,id as victim_tbl_id, (asf_victim.created_at)::text case_initiation_date from asf_victim where id ='"+returnee_id+"' limit 1"
     tmp_db_value = __db_fetch_values_dict(q)
     if tmp_db_value is not None:
         for temp in tmp_db_value:
@@ -416,7 +422,7 @@ def get_user_schedule(request):
         hh_list = "['']"
     '''
 
-    q = "SELECT (select victim_id  from asf_victim where id=schedule.beneficiary_id limit 1) beneficiary_id,beneficiary_id as victim_tbl_id, (select COALESCE (victim_name,'') victim_name from asf_victim where id=schedule.beneficiary_id limit 1) member_name,to_char(schedule_date,'yyyy-mm-dd') schedule_date,(SELECT id_string FROM logger_xform where id=schedule.scheduled_form_id) form_id,(SELECT title FROM logger_xform where id=schedule.scheduled_form_id) form_name,id schedule_id  , schedule_user_id,submitted_instance_id,priority FROM schedule where status='ACTIVE' and date(schedule_date) <= current_date  order by id"
+    q = "SELECT (select COALESCE(victim_id,'')  from asf_victim where id=schedule.beneficiary_id limit 1) beneficiary_id,beneficiary_id as victim_tbl_id, (select COALESCE (victim_name,'') victim_name from asf_victim where id=schedule.beneficiary_id limit 1) member_name,to_char(schedule_date,'yyyy-mm-dd') schedule_date,(SELECT id_string FROM logger_xform where id=schedule.scheduled_form_id) form_id,(SELECT title FROM logger_xform where id=schedule.scheduled_form_id) form_name,id schedule_id  , schedule_user_id,submitted_instance_id,priority FROM schedule where status='ACTIVE' and date(schedule_date) <= current_date and (SELECT victim_id FROM   asf_victim WHERE  id = schedule.beneficiary_id LIMIT  1) is not null  order by id"
     print q
 
     main_df = pandas.read_sql(q, connection)

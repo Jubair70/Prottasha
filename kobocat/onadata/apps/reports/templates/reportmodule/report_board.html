@@ -702,6 +702,9 @@
                     bAutoWidth:false
                 });
                 $('.dataTables_scrollHeadInner').css('width', 'auto');
+                var data_table = $('#' + tableID).DataTable();
+                data_table.columns.adjust().draw(); // Redraw the DataTable
+                console.log("table")
 {#                $('#' + tableID).columns.adjust().draw();#}
                 ;
             }
