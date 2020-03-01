@@ -4,19 +4,17 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
     <link href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
     <style>
-        .DTFC_RightHeadWrapper, .DTFC_RightHeadBlocker,.DTFC_LeftHeadWrapper, .DTFC_LeftHeadBlocker
-        {
-                background-color: white !important;
+        .DTFC_RightHeadWrapper, .DTFC_RightHeadBlocker, .DTFC_LeftHeadWrapper, .DTFC_LeftHeadBlocker {
+            background-color: white !important;
         }
-    .DTFC_RightBodyLiner
-    {
-        overflow-y: hidden !important;
-    }
 
-    .filter_cls, .dataTables_wrapper
-    {
-        zoom: 0.899 !important;
-    }
+        .DTFC_RightBodyLiner {
+            overflow-y: hidden !important;
+        }
+
+        .filter_cls, .dataTables_wrapper {
+            zoom: 0.899 !important;
+        }
     </style>
 {% endblock %}
 
@@ -30,7 +28,7 @@
         </div>
         <div class="portlet-body">
             <div class="row filter_cls">
-            <div class="col-md-3">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>From Date: </label>
                         <input type="text" class="datepicker form-control" name="from_date" id="from_date" readonly>
@@ -59,13 +57,14 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>District: </label>
-                        <select class="form-control" name="district" id="district" onclick="load_upazila(this)" required>
+                        <select class="form-control" name="district" id="district" onclick="load_upazila(this)"
+                                required>
                             <option value="%">Select One</option>
 
                         </select>
                     </div>
                 </div>
-            <div class="col-md-3">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Upazila: </label>
                         <select class="form-control" name="upazila" id="upazila" onclick="" required>
@@ -74,7 +73,7 @@
                         </select>
                     </div>
                 </div>
-            <div class="col-md-3">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Status: </label>
                         <select class="form-control" name="status" id="status" onclick="" required>
@@ -87,7 +86,7 @@
                         </select>
                     </div>
                 </div>
-            <div class="col-md-3">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Gender: </label>
                         <select class="form-control" name="gender" id="gender" onclick="" required>
@@ -97,23 +96,37 @@
                         </select>
                     </div>
                 </div>
-            <button type="submit" class="btn btn-primary pull-left" id="generate_report" style="margin-left: 15px;margin-top: 24px;" id="generate_report"
-                            title="">Search
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>RSC: </label>
+                        <select class="form-control" name="rsc_id" id="rsc_id" onclick="" required>
+                            <option value="%">Select One</option>
+                            {% for item in rsc_list %}
+                                <option value="{{ item.id }}">{{ item.rsc_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary pull-left" id="generate_report"
+                        style="margin-left: 15px;margin-top: 24px;" id="generate_report"
+                        title="">Search
+                </button>
+                <a href="/asf/add_case_form/">
+                    <button type="submit" class="btn btn-success pull-left" id="add_new" data-original-title=""
+                            style="margin-top: 24px;margin-left: 30px;"
+                            title="">New Case Initiation
                     </button>
-                    <a href="/asf/add_case_form/">
-                        <button type="submit" class="btn btn-success pull-left" id="add_new" data-original-title="" style="margin-top: 24px;margin-left: 30px;"
-                                title="">New Case Initiation
-                        </button>
-                    </a>
+                </a>
             </div>
 
-{#            <div class="row">#}
-{#                <div class="col-md-12">#}
-{#                    #}
-{#                </div>#}
-{#            </div>#}
+            {#            <div class="row">#}
+            {#                <div class="col-md-12">#}
+            {#                    #}
+            {#                </div>#}
+            {#            </div>#}
             <br>
-        <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
+            <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;"
+                                                           src="/static/images/Spinner.gif"></div>
             <table id="all_info_table" class="table table-bordered table-striped table-condensed flip-content nowrap">
                 <thead class="flip-content">
                 <tr>
@@ -123,7 +136,7 @@
                     <th>Contact (emergency)</th>
                     <th>Sex</th>
                     <th>Age</th>
-                     <th>Beneficiary Id</th>
+                    <th>Beneficiary Id</th>
                     <th>Status</th>
                     <th>Case Initiation date</th>
                     <th>Assigned To</th>
@@ -173,11 +186,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.html5.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.4.2/js/buttons.print.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.3.0/js/dataTables.fixedColumns.min.js"></script>
+    <script type="text/javascript"
+            src="https://cdn.datatables.net/fixedcolumns/3.3.0/js/dataTables.fixedColumns.min.js"></script>
 
     <script>
-    $(function () {
-         $('[data-toggle="tooltip"]').tooltip()
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
             $('#from_date').datepicker({
                 endDate: '0d',
                 format: 'dd/mm/yyyy',
@@ -201,32 +215,27 @@
         $('#to_date').val(dateObj.format('DD/MM/YYYY'));
 
 
+        var table = $('#all_info_table').DataTable({
+            "scrollX": true, "ordering": false,
+            deferRender: true,
+            pagination: false,
+            scrollCollapse: true,
+            fixedColumns: {
+                leftColumns: 1,
+                rightColumns: 1
+            }
+            {#            dom: 'Bfrtip'#}
+            {#            ,#}
+            {#            buttons: [#}
+            {#                {#}
+            {#                    filename: "Fo",#}
+            {#                    title: "",#}
+            {#                    text: "<strong>Export</strong>",#}
+            {#                    extend: 'excel'#}
+            {#                }#}
+            {#            ]#}
 
-
-            var table = $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,
-                deferRender: true,
-                pagination:false,
-                scrollCollapse: true,
-                fixedColumns:   {
-                    leftColumns: 1,
-                    rightColumns: 1
-                }
-                {#            dom: 'Bfrtip'#}
-                {#            ,#}
-                {#            buttons: [#}
-                {#                {#}
-                {#                    filename: "Fo",#}
-                {#                    title: "",#}
-                {#                    text: "<strong>Export</strong>",#}
-                {#                    extend: 'excel'#}
-                {#                }#}
-                {#            ]#}
-
-            });
-
-
-
+        });
 
 
         $('.delete-item').on('click', function (e) {
@@ -243,89 +252,91 @@
         }
 
 
-            $('#generate_report').on('click', function (e) {
+        $('#generate_report').on('click', function (e) {
 
-                table.destroy();
-
-
-{#                var from_date   = $('#from_date').val();#}
-{#                var to_date     = $('#to_date').val();#}
-{#                from_date = from_date.split('/')#}
-{#                from_date = from_date[2]+"-"+from_date[1]+"-"+from_date[0]#}
-{#                to_date = to_date.split('/')#}
-{#                to_date = to_date[2]+"-"+to_date[1]+"-"+to_date[0]#}
-
-                var division    = $('#division').val();
-                var district    = $('#district').val();
-                var upazila     = $('#upazila').val();
-                var gender     = $('#gender').val();
-                var status     = $('#status').val();
-                var from_date   = $('#from_date').val();
-                var to_date     = $('#to_date').val();
+            table.destroy();
 
 
-                $.ajax({
-                    url: '/asf/get_case_list/',
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
+            {#                var from_date   = $('#from_date').val();#}
+            {#                var to_date     = $('#to_date').val();#}
+            {#                from_date = from_date.split('/')#}
+            {#                from_date = from_date[2]+"-"+from_date[1]+"-"+from_date[0]#}
+            {#                to_date = to_date.split('/')#}
+            {#                to_date = to_date[2]+"-"+to_date[1]+"-"+to_date[0]#}
 
-                        'division'            : division
-                        , 'district'            : district
-                        ,'upazila':upazila
-                        ,'status':status,'gender':gender
-                        ,'from_date':from_date
-                        ,'to_date':to_date
-
-                    },
-                    beforeSend: function () {
-                        $('#container').show();
-
-                    },
+            var division = $('#division').val();
+            var district = $('#district').val();
+            var upazila = $('#upazila').val();
+            var gender = $('#gender').val();
+            var status = $('#status').val();
+            var from_date = $('#from_date').val();
+            var to_date = $('#to_date').val();
+            var rsc_id = $('#rsc_id').val();
 
 
-{#<a class="btn btn-info" data-container="body"  data-placement="top" data-original-title="Detail" href="/asf/edit_victim/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-bars"></i>Update</a>#}
-                    success: function (case_list) {
-                        $('#container').hide();
-                            var tbody = '';
-                        for (var idx in case_list) {
-                            tbody += '<tr><td>' + case_list[idx].iom_case_no + '</td><td>' + case_list[idx].victim_name +'</td><td>' + case_list[idx].contact_self +'</td><td>' + case_list[idx].contact_emergency +'</td><td>' + case_list[idx].sex +'</td><td>' + case_list[idx].victim_age +'</td><td>' +  case_list[idx].returnee_id + '</td><td>' + case_list[idx].status + '</td><td>' + case_list[idx].case_initation_date + '</td><td>' + case_list[idx].assaign_to + '</td><td>' + case_list[idx].case_initiator + '</td><td class="td-center"><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Profile" href="/asf/victim_profile/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-user-circle-o"></i></a><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Assign" '+ ( (case_list[idx].role_name !='RSC Manager' && case_list[idx].role_name !='Admin') ? 'disabled':'enabled')   +' href="/asf/victim_status/' + case_list[idx].id + '"><i class="fa fa-2x fa fa-check-circle-o"></i></a><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Refer" '+ (case_list[idx].returnee_id.length == 0  ? 'disabled':'enabled')   +' href="/asf/refer_victim/' + case_list[idx].returnee_id + '/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-external-link"></i></a><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Status"  href="/asf/victim_status_from_web/' + case_list[idx].id + '/"><i class="fa fa-2x fa-certificate"></i></a><a class="delete-item tooltips"  style="margin-left:10px" data-placement="top" data-toggle="modal"  data-target="#confirm-delete" title="Delete" href="#" data-href="/asf/delete_case/' + case_list[idx].id + '/" '+ (case_list[idx].can_delete == 0  ? 'disabled':'enabled')   +'><i class="fa fa-2x fa-trash"></i></a></td></tr>';
-                        }
-                        $("#all_info_table").find('tbody').html(tbody);
-                        table = datatable_reinitialize();
-                         $('.delete-item').on('click', function (e) {
+            $.ajax({
+                url: '/asf/get_case_list/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+
+                    'division': division
+                    , 'district': district
+                    , 'upazila': upazila
+                    , 'status': status, 'gender': gender
+                    , 'from_date': from_date
+                    , 'to_date': to_date
+                    , 'rsc_id': rsc_id
+
+                },
+                beforeSend: function () {
+                    $('#container').show();
+
+                },
+
+
+                {#<a class="btn btn-info" data-container="body"  data-placement="top" data-original-title="Detail" href="/asf/edit_victim/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-bars"></i>Update</a>#}
+                success: function (case_list) {
+                    $('#container').hide();
+                    var tbody = '';
+                    for (var idx in case_list) {
+                        tbody += '<tr><td>' + case_list[idx].iom_case_no + '</td><td>' + case_list[idx].victim_name + '</td><td>' + case_list[idx].contact_self + '</td><td>' + case_list[idx].contact_emergency + '</td><td>' + case_list[idx].sex + '</td><td>' + case_list[idx].victim_age + '</td><td>' + case_list[idx].returnee_id + '</td><td>' + case_list[idx].status + '</td><td>' + case_list[idx].case_initation_date + '</td><td>' + case_list[idx].assaign_to + '</td><td>' + case_list[idx].case_initiator + '</td><td class="td-center"><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Profile" href="/asf/victim_profile/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-user-circle-o"></i></a><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Assign" ' + ( (case_list[idx].role_name != 'RSC Manager' && case_list[idx].role_name != 'Admin') ? 'disabled' : 'enabled') + ' href="/asf/victim_status/' + case_list[idx].id + '"><i class="fa fa-2x fa fa-check-circle-o"></i></a><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Refer" ' + (case_list[idx].returnee_id.length == 0 ? 'disabled' : 'enabled') + ' href="/asf/refer_victim/' + case_list[idx].returnee_id + '/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-external-link"></i></a><a class="tooltips" style="margin-left:10px" data-container="body"  data-placement="top" title="Status"  href="/asf/victim_status_from_web/' + case_list[idx].id + '/"><i class="fa fa-2x fa-certificate"></i></a><a class="delete-item tooltips"  style="margin-left:10px" data-placement="top" data-toggle="modal"  data-target="#confirm-delete" title="Delete" href="#" data-href="/asf/delete_case/' + case_list[idx].id + '/" ' + (case_list[idx].can_delete == 0 ? 'disabled' : 'enabled') + '><i class="fa fa-2x fa-trash"></i></a></td></tr>';
+                    }
+                    $("#all_info_table").find('tbody').html(tbody);
+                    table = datatable_reinitialize();
+                    $('.delete-item').on('click', function (e) {
                         var criteria_id = $(this).attr("data-href");
                         $('.btn-ok').attr("href", criteria_id);
-                        });
+                    });
 
 
-                    }
-                });
-
-
+                }
             });
+
+
+        });
         $('#generate_report').trigger('click');
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": true,
                 deferRender: true,
-                paging:false,
-                scrollY:"300px",
+                paging: false,
+                scrollY: "300px",
                 "scrollCollapse": true,
-                    fixedColumns:   {
+                fixedColumns: {
                     leftColumns: 1,
-                        rightColumns: 1
-                    }
-{#                dom: 'Bfrtip'#}
-{#                ,#}
-{#                buttons: [#}
-{#                    {#}
-{#                        filename: "CSA Report",#}
-{#                        title: "",#}
-{#                        text: "<strong>Export</strong>",#}
-{#                        extend: 'excelHtml5'#}
-{#                    }#}
-{#                ]#}
+                    rightColumns: 1
+                }
+                {#                dom: 'Bfrtip'#}
+                {#                ,#}
+                {#                buttons: [#}
+                {#                    {#}
+                {#                        filename: "CSA Report",#}
+                {#                        title: "",#}
+                {#                        text: "<strong>Export</strong>",#}
+                {#                        extend: 'excelHtml5'#}
+                {#                    }#}
+                {#                ]#}
 
             });
         }
@@ -366,9 +377,9 @@
         }
 
         function load_upazila(dist_object) {
-{#            $('#union').html("<option value=\"\">Select One</option>");#}
-{#                $('#ward').html("<option value=\"\">Select One</option>");#}
-{#            ajaxcall();#}
+            {#            $('#union').html("<option value=\"\">Select One</option>");#}
+            {#                $('#ward').html("<option value=\"\">Select One</option>");#}
+            {#            ajaxcall();#}
             dist = parseInt(dist_object.value)
             // console.log(dist);
             if (isNaN(parseFloat(dist))) {

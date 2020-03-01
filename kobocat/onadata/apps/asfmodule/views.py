@@ -407,7 +407,9 @@ def case_list(request):
     query = "select id,status from iom_status"
     df = pandas.read_sql(query, connection)
     status_list = zip(df.id.tolist(), df.status.tolist())
-    return render(request, 'asfmodule/case_list.html', {'divisions': divisions, 'status_list': status_list})
+    rsc_list = __db_fetch_values_dict("select * from usermodule_rsc")
+    return render(request, 'asfmodule/case_list.html',
+                  {'divisions': divisions, 'status_list': status_list, 'rsc_list': rsc_list})
 
 
 @login_required
@@ -421,6 +423,7 @@ def delete_case(request, victim_tbl_id):
 
 @csrf_exempt
 def get_case_list(request):
+    rsc_id = request.POST.get('rsc_id')
     division = request.POST.get('division')
     district = request.POST.get('district')
     upazila = request.POST.get('upazila')
@@ -436,10 +439,11 @@ def get_case_list(request):
             user_id) + ")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency,(select (select username from auth_user where id = created_by) from asf_case where id = asf_victim.case_id::int) case_initiator FROM asf_victim WHERE created_at:: date  BETWEEN to_date('" + str(
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') AND deleted_at is null and sex LIKE '" + str(
-            gender) + "' AND case_id::int = ANY ( SELECT id FROM asf_case WHERE division LIKE '" + str(
+            gender) + "' AND case_id::int = ANY ( SELECT id FROM (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id) case_final WHERE division LIKE '" + str(
             division) + "' AND district LIKE '" + str(district) + "' AND upazila LIKE '" + str(
             upazila) + "' AND status LIKE '" + str(
-            status) + "' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = " + str(
+            status) + "' and rsc_id like '" + str(
+            rsc_id) + "' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = " + str(
             user_id) + ") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = " + str(
             user_id) + ") and field_type_id = 88)))"
     except Exception:
@@ -448,9 +452,9 @@ def get_case_list(request):
             user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency,(select (select username from auth_user where id = created_by) from asf_case where id = asf_victim.case_id::int) case_initiator from asf_victim where created_at:: date  BETWEEN to_date('" + str(
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') AND  deleted_at is null and  sex like '" + str(
-            gender) + "' and case_id::int = any(select id from asf_case where division like '" + str(
+            gender) + "' and case_id::int = any(select id from (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id) case_final where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
-            upazila) + "' and status like '" + str(status) + "')"
+            upazila) + "' and status like '" + str(status) + "'  and rsc_id like '" + str(rsc_id) + "')"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
