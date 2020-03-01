@@ -119,7 +119,7 @@
 
 
             var table = $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,
+                "scrollX": true, "ordering": true,
                 deferRender: true,
                 {#            dom: 'Bfrtip'#}
                 {#            ,#}
@@ -201,7 +201,7 @@ function start (e) {
             start()
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,"iDisplayLength": 50,
+                "scrollX": true, "ordering": true,"iDisplayLength": 50,
                 deferRender: true,
                  "scrollY": "500px",
                 "scrollCollapse": true,
