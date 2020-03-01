@@ -11,7 +11,7 @@
 
     <div class="portlet box red">
         <div class="portlet-title">
-            <div class="caption"><i class="fa fa-adn"></i>RSC</div>
+            <div class="caption"><i class="fa fa-adn"></i>Events</div>
         </div>
         <div class="portlet-body">
 
@@ -25,13 +25,14 @@
                 </div>
             </div>
             <br>
-        <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;" src="/static/images/Spinner.gif"></div>
+            <div style="display:none;" id="container"><img style=" width: 86px; margin-left: 434px;"
+                                                           src="/static/images/Spinner.gif"></div>
             <table id="all_info_table" class="table table-bordered table-striped table-condensed flip-content nowrap">
                 <thead class="flip-content">
                 <tr>
                     <th>SL</th>
 
-                            <th>Event</th>
+                    <th>Event</th>
                     <th class="td-center">Action</th>
                 </tr>
                 </thead>
@@ -40,7 +41,7 @@
                 </tbody>
             </table>
 
-    </div>
+        </div>
     </div>
 
 
@@ -81,52 +82,38 @@
 
 
     <script>
-{#        $(function () {#}
-{#            $('#from_date').datepicker({#}
-{#                endDate: '0d',#}
-{#                format: 'dd/mm/yyyy',#}
-{#                todayHighlight: true#}
-{#            }).on('changeDate', function () {#}
-{#                $(this).datepicker('hide');#}
-{#            });#}
-{##}
-{#            $('#to_date').datepicker({#}
-{#                endDate: '0d',#}
-{#                format: 'dd/mm/yyyy',#}
-{#                todayHighlight: true#}
-{#            }).on('changeDate', function () {#}
-{#                $(this).datepicker('hide');#}
-{#            });#}
-{#        });#}
+        {#        $(function () {#}
+        {#            $('#from_date').datepicker({#}
+        {#                endDate: '0d',#}
+        {#                format: 'dd/mm/yyyy',#}
+        {#                todayHighlight: true#}
+        {#            }).on('changeDate', function () {#}
+        {#                $(this).datepicker('hide');#}
+        {#            });#}
+        {##}
+        {#            $('#to_date').datepicker({#}
+        {#                endDate: '0d',#}
+        {#                format: 'dd/mm/yyyy',#}
+        {#                todayHighlight: true#}
+        {#            }).on('changeDate', function () {#}
+        {#                $(this).datepicker('hide');#}
+        {#            });#}
+        {#        });#}
 
         var dateObj = moment();
         var prevDateObj = moment().subtract(30, 'd');
-{#        $('#from_date').val(prevDateObj.format('DD/MM/YYYY'));#}
-{#        $('#to_date').val(dateObj.format('DD/MM/YYYY'));#}
+        {#        $('#from_date').val(prevDateObj.format('DD/MM/YYYY'));#}
+        {#        $('#to_date').val(dateObj.format('DD/MM/YYYY'));#}
 
 
-
-
-            var table = $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,
-                deferRender: true,
-                {#            dom: 'Bfrtip'#}
-                {#            ,#}
-                {#            buttons: [#}
-                {#                {#}
-                {#                    filename: "Fo",#}
-                {#                    title: "",#}
-                {#                    text: "<strong>Export</strong>",#}
-                {#                    extend: 'excel'#}
-                {#                }#}
-                {#            ]#}
-
-            });
-
-
-
-
-
+        var table = $('#all_info_table').DataTable({
+            "scrollX": true,
+            deferRender: true,
+            "columnDefs": [{
+                "targets": 2,
+                "orderable": false
+            }]
+        });
 
 
         if ($('.alert-block').is(':visible')) {
@@ -138,67 +125,67 @@
         }
 
 
-function start (e) {
+        function start(e) {
 
-                table.destroy();
-
-
-{#                var from_date   = $('#from_date').val();#}
-{#                var to_date     = $('#to_date').val();#}
-{#                from_date = from_date.split('/')#}
-{#                from_date = from_date[2]+"-"+from_date[1]+"-"+from_date[0]#}
-{#                to_date = to_date.split('/')#}
-{#                to_date = to_date[2]+"-"+to_date[1]+"-"+to_date[0]#}
+            table.destroy();
 
 
+            {#                var from_date   = $('#from_date').val();#}
+            {#                var to_date     = $('#to_date').val();#}
+            {#                from_date = from_date.split('/')#}
+            {#                from_date = from_date[2]+"-"+from_date[1]+"-"+from_date[0]#}
+            {#                to_date = to_date.split('/')#}
+            {#                to_date = to_date[2]+"-"+to_date[1]+"-"+to_date[0]#}
 
 
-                $.ajax({
-                    url: '/asf/get_events_from_csv_list/',
-                    dataType: 'json',
-                    beforeSend: function () {
-                        $('#container').show();
+            $.ajax({
+                url: '/asf/get_events_from_csv_list/',
+                dataType: 'json',
+                beforeSend: function () {
+                    $('#container').show();
 
-                    },
-                    success: function (case_list) {
-                        $('#container').hide();
-                            var tbody = '';
-                        for (var idx in case_list) {
-                            tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].event_name +'</td><td class="td-center "> <a class="tooltips" data-placement="top" data-original-title="Edit" href="/asf/edit_events_from_csv/'+case_list[idx].id+'"><i class="fa fa-2x fa-pencil-square-o"></i></a> <a class="delete-item tooltips" data-placement="top" data-original-title="Delete" href="#" data-href="/asf/delete_events_from_csv/'+case_list[idx].id+'/" data-toggle="modal" data-target="#confirm-delete"><i class="fa fa-2x fa-trash-o"></i></a> </td></tr>';
-                        }
-                        $("#all_info_table").find('tbody').html(tbody);
-                        table = datatable_reinitialize();
-
-$('.delete-item').on('click', function (e) {
-            var criteria_id = $(this).attr("data-href");
-            console.log(criteria_id)
-            $('.btn-ok').attr("href", criteria_id);
-        });
-
+                },
+                success: function (case_list) {
+                    $('#container').hide();
+                    var tbody = '';
+                    for (var idx in case_list) {
+                        tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].event_name + '</td><td class="td-center "> <a class="tooltips" data-placement="top" data-original-title="Edit" href="/asf/edit_events_from_csv/' + case_list[idx].id + '"><i class="fa fa-2x fa-pencil-square-o"></i></a> <a class="delete-item tooltips" data-placement="top" data-original-title="Delete" href="#" data-href="/asf/delete_events_from_csv/' + case_list[idx].id + '/" data-toggle="modal" data-target="#confirm-delete"><i class="fa fa-2x fa-trash-o"></i></a> </td></tr>';
                     }
-                });
+                    $("#all_info_table").find('tbody').html(tbody);
+                    table = datatable_reinitialize();
+
+                    $('.delete-item').on('click', function (e) {
+                        var criteria_id = $(this).attr("data-href");
+                        console.log(criteria_id)
+                        $('.btn-ok').attr("href", criteria_id);
+                    });
+
+                }
+            });
 
 
-            }
-             start()
-
-
+        }
+        start()
 
 
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
-                "scrollX": true, "ordering": false,"iDisplayLength": 50,
+                "scrollX": true, "iDisplayLength": 50,
                 deferRender: true,
-{#                dom: 'Bfrtip'#}
-{#                ,#}
-{#                buttons: [#}
-{#                    {#}
-{#                        filename: "CSA Report",#}
-{#                        title: "",#}
-{#                        text: "<strong>Export</strong>",#}
-{#                        extend: 'excelHtml5'#}
-{#                    }#}
-{#                ]#}
+                "columnDefs": [{
+                    "targets": 2,
+                    "orderable": false
+                }]
+                {#                dom: 'Bfrtip'#}
+                {#                ,#}
+                {#                buttons: [#}
+                {#                    {#}
+                {#                        filename: "CSA Report",#}
+                {#                        title: "",#}
+                {#                        text: "<strong>Export</strong>",#}
+                {#                        extend: 'excelHtml5'#}
+                {#                    }#}
+                {#                ]#}
 
             });
         }
@@ -238,9 +225,9 @@ $('.delete-item').on('click', function (e) {
         }
 
         function load_upazila(dist_object) {
-{#            $('#union').html("<option value=\"\">Select One</option>");#}
-{#                $('#ward').html("<option value=\"\">Select One</option>");#}
-{#            ajaxcall();#}
+            {#            $('#union').html("<option value=\"\">Select One</option>");#}
+            {#                $('#ward').html("<option value=\"\">Select One</option>");#}
+            {#            ajaxcall();#}
             dist = parseInt(dist_object.value)
             // console.log(dist);
             if (isNaN(parseFloat(dist))) {
