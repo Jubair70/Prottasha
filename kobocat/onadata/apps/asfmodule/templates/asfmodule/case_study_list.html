@@ -150,6 +150,7 @@
 
         var table = $('#all_info_table').DataTable({
                  "scrollX": true, "ordering": true,
+            "order":[],
                 deferRender: true,
                 paging:false,
                 scrollY:"300px",
@@ -235,6 +236,7 @@ $('.delete-item').on('click', function (e) {
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": true,
+                "order":[],
                 deferRender: true,
                 paging:false,
                 scrollY:"300px",

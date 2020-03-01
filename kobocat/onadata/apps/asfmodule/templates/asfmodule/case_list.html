@@ -217,6 +217,7 @@
 
         var table = $('#all_info_table').DataTable({
             "scrollX": true, "ordering": false,
+            "order": [],
             deferRender: true,
             pagination: false,
             scrollCollapse: true,
@@ -319,6 +320,7 @@
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": true,
+                "order": [],
                 deferRender: true,
                 paging: false,
                 scrollY: "300px",

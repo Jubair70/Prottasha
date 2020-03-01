@@ -445,7 +445,7 @@ def get_case_list(request):
             status) + "' and rsc_id like '" + str(
             rsc_id) + "' and upazila in ((select (SELECT geocode FROM geo_data WHERE id = geoid limit 1) from usermodule_catchment_area where user_id = " + str(
             user_id) + ") union (select geocode from geo_data where field_parent_id = any (select geoid from usermodule_catchment_area where user_id = " + str(
-            user_id) + ") and field_type_id = 88)))"
+            user_id) + ") and field_type_id = 88))) order by id desc"
     except Exception:
         query = "select COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = 703 limit 1),0) can_delete, (select (SELECT role FROM public.usermodule_organizationrole WHERE id = role_id limit 1)role_name  from usermodule_userrolemap where user_id = (select id from usermodule_usermoduleprofile where user_id= " + str(
@@ -454,7 +454,7 @@ def get_case_list(request):
             to_date) + "','DD/MM/YYYY') AND  deleted_at is null and  sex like '" + str(
             gender) + "' and case_id::int = any(select id from (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id) case_final where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
-            upazila) + "' and status like '" + str(status) + "'  and rsc_id like '" + str(rsc_id) + "')"
+            upazila) + "' and status like '" + str(status) + "'  and rsc_id like '" + str(rsc_id) + "') order by id desc"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1411,12 +1411,12 @@ def get_capacity_building_list(request):
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') AND upazila IN( ( SELECT ( SELECT geocode FROM geo_data WHERE id = geoid limit 1) FROM usermodule_catchment_area WHERE user_id = " + str(
             user_id) + ") UNION ( SELECT geocode FROM geo_data WHERE field_parent_id = ANY ( SELECT geoid FROM usermodule_catchment_area WHERE user_id = " + str(
-            user_id) + ") AND field_type_id = 88))"
+            user_id) + ") AND field_type_id = 88)) order by instance_id desc"
     except Exception:
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='capacity_building') limit 1),0) can_delete,instance_id,case when training_name::int = 1 then 'Counsellor Training' when training_name::int = 2 then 'Forum Training' when training_name::int = 99 then training_name_other end training_name, to_char(training_start_time::date,'DD/MM/YYYY') date_created,(select field_name from geo_data where geocode = division) division , (select field_name from geo_data where geocode = district) district , (select field_name from geo_data where geocode = upazila) upazila from vw_capacity_building WHERE training_start_time:: date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY')"
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') order by instance_id desc"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1462,19 +1462,19 @@ def get_case_study_list(request):
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(user_id)
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(user_id) +" order by instance_id desc"
     elif role == 'Admin':
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY')"
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') order by instance_id desc"
     else:
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('" + str(
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id =" + str(
-            user_id) + "))"
+            user_id) + ")) order by instance_id desc"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1518,19 +1518,19 @@ def get_msc_story_list(request):
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(user_id)
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(user_id) + " order by instance_id desc"
     elif role == 'Admin':
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY')"
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') order by instance_id desc"
     else:
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('" + str(
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') and user_id=any(select user_id from usermodule_usermoduleprofile where rsc_name_id = any(select rsc_name_id from usermodule_usermoduleprofile where user_id =" + str(
-            user_id) + "))"
+            user_id) + "))  order by instance_id desc"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1639,7 +1639,7 @@ def get_event_workshop_list(request):
                                   SELECT id
                                   FROM   logger_xform
                                   WHERE  id_string='event_workshop') limit 1),0)    can_delete,
-         row_number() OVER (ORDER BY id)                                         AS serial_no,
+         row_number() OVER (ORDER BY id desc)                                         AS serial_no,
          event_name,
          id,
          to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
@@ -1699,7 +1699,7 @@ def get_event_workshop_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_workshop') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                                           event_name,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
@@ -1718,6 +1718,7 @@ def get_event_workshop_list(request):
                            ELSE 0
                   END observation ,
                   0 review  from vw_merged_event_workshop """
+    print query
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -1857,7 +1858,7 @@ def get_ipt_show_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_ipt_show') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -1922,7 +1923,7 @@ def get_ipt_show_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_ipt_show') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -2091,7 +2092,7 @@ def get_video_show_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_video_show') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -2156,7 +2157,7 @@ def get_video_show_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_video_show') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -2306,7 +2307,7 @@ def get_school_quiz_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_school_quiz') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -2370,7 +2371,7 @@ def get_school_quiz_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_school_quiz') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -2517,7 +2518,7 @@ def get_tea_stall_meeting_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_tea_stall_meeting') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -2581,7 +2582,7 @@ def get_tea_stall_meeting_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_tea_stall_meeting') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -3538,6 +3539,7 @@ def get_referral_list(request):
             status) + "' and case_id::int = any( select id from asf_case where division LIKE '" + str(
             division) + "' AND district LIKE '" + str(district) + "' AND upazila LIKE '" + str(
             upazila) + "') )select instance_id::int id, victim_tbl_id, referral_organization_name referral_organization, beneficiary_id, coalesce (( select case when sex = '1' then 'Male' when sex = '2' then 'Female' end from asf_victim where id::text = victim_tbl_id limit 1),'') sex, coalesce (( select victim_name from asf_victim where id::text =victim_tbl_id limit 1), '') victim_name, coalesce (( select victim_age from asf_victim where id::text =victim_tbl_id limit 1), '') victim_age, coalesce (( select incident_id from asf_case where id = ( select case_id::int from asf_victim where id::text =victim_tbl_id ) limit 1), '') iom_case_no, date(referral_date) referral_date, referral_services from vw_iom_referral where victim_tbl_id = any(select id::text from t)"
+    print query
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
 
@@ -3561,7 +3563,7 @@ def get_call_center_report(request):
     q = "select ROW_NUMBER() OVER(ORDER BY id) AS serial_no,id,json->>'call_center/caller_id' caller_id, json->>'call_center/caller_name' caller_name,date((json->>'call_center/date_call_received')::TIMESTAMP ) date_call_received,json->>'call_center/caller_mobile' caller_mobile, json->>'call_center/caller_age' caller_age,json->>'call_center/calling_reason' calling_reason from vw_call_center_support where date(json->>'call_center/date_call_received') between '" + from_date + "' and '" + to_date + "'"
     main_df = pd.read_sql(q, connection)
 
-    other_q = "select id, get_form_option_label(676,'call_center/call_from',json->>'call_center/call_from') call_from, get_form_option_label(676,'call_center/district',json->>'call_center/district') district, get_form_option_label(676,'call_center/reffered',json->>'call_center/reffered') reffered, get_form_option_label(676,'call_center/caller_gender',json->>'call_center/caller_gender') gender from vw_call_center_support where date(json->>'call_center/date_call_received') between '" + from_date + "' and '" + to_date + "'"
+    other_q = "select id, get_form_option_label(676,'call_center/call_from',json->>'call_center/call_from') call_from, get_form_option_label(676,'call_center/district',json->>'call_center/district') district, get_form_option_label(676,'call_center/reffered',json->>'call_center/reffered') reffered, get_form_option_label(676,'call_center/caller_gender',json->>'call_center/caller_gender') gender from vw_call_center_support where date(json->>'call_center/date_call_received') between '" + from_date + "' and '" + to_date + "'  order by id desc"
     other_df = pd.read_sql(other_q, connection)
 
     main_df = main_df.merge(other_df, on=['id'], how='left', )
@@ -4311,7 +4313,7 @@ def get_pot_song_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_pot_song') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -4374,7 +4376,7 @@ def get_pot_song_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_pot_song') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -4523,7 +4525,7 @@ def get_school_program_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_school_program') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
@@ -4586,7 +4588,7 @@ def get_school_program_list(request):
                                            SELECT id
                                            FROM   logger_xform
                                            WHERE  id_string='event_school_program') limit 1),0)    can_delete,
-                                          row_number() OVER (ORDER BY id) AS serial_no,
+                                          row_number() OVER (ORDER BY id desc) AS serial_no,
                   id,
                   to_char(event_start_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS') event_start_date,
                   to_char(event_end_time::timestamptz, 'DD/MM/YYYY HH24:MI:SS')   event_end_date,
