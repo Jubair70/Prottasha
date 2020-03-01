@@ -167,7 +167,7 @@ function start (e) {
                         $('#container').hide();
                             var tbody = '';
                         for (var idx in case_list) {
-                            tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].rsc_name +'</td><td class="td-center"><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Area" href="/asf/catchment_tree/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-check"></i>Area</a></td></tr>';
+                            tbody += '<tr><td>' + case_list[idx].serial_no + '</td><td>' + case_list[idx].rsc_name +'</td><td class="td-center"><a class="btn btn-info" href="/asf/edit_rsc_form/'+case_list[idx].id+'"><i class="fa fa-2x fa-pencil-square-o"></i> Edit</a><a class="btn btn-info" style="margin-left:10px" data-container="body"  data-placement="top" data-original-title="Area" href="/asf/catchment_tree/' + case_list[idx].id + '/"><i class="fa fa-2x fa fa-check"></i>Area</a></td></tr>';
                         }
                         $("#all_info_table").find('tbody').html(tbody);
                         table = datatable_reinitialize();
