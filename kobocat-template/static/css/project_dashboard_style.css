@@ -16,11 +16,13 @@
 }
 .dashboard-stat.tile-red .details .number {
     color: #FFFFFF;
+    font-size: 25px;
 }
 .dashboard-stat.tile-red .details .desc {
     color: #FFFFFF;
     opacity: 1;
     filter: alpha(opacity=100);
+    font-size: 12px;
 }
 .dashboard-stat.tile-red .more {
     color: #FFFFFF;
