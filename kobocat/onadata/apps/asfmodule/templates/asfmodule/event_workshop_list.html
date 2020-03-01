@@ -130,6 +130,7 @@
 
             var table = $('#all_info_table').DataTable({
                 "scrollX": true,
+                "order":[],
                 deferRender: true,
                 fixedColumns:   {
                        leftColumns:0,
@@ -218,6 +219,7 @@ function start (e) {
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": true,"iDisplayLength": 50,
+                "order":[],
                 deferRender: true,
                 "scrollY": "340px",
                 "scrollCollapse": true,

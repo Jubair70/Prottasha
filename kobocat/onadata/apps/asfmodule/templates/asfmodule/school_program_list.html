@@ -11,7 +11,7 @@
 
     <div class="portlet box red">
         <div class="portlet-title">
-            <div class="caption"><i class="fa fa-adn"></i>Pot Song</div>
+            <div class="caption"><i class="fa fa-adn"></i>School Program</div>
         </div>
         <div class="portlet-body">
 
@@ -120,6 +120,7 @@
 
             var table = $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": true,
+                "order":[],
                 deferRender: true,
                 {#            dom: 'Bfrtip'#}
                 {#            ,#}
@@ -203,6 +204,7 @@ function start (e) {
         function datatable_reinitialize() {
             return $('#all_info_table').DataTable({
                 "scrollX": true, "ordering": true,"iDisplayLength": 50,
+                "order":[],
                 deferRender: true,
                 "scrollY": "500px",
                 "scrollCollapse": true,
