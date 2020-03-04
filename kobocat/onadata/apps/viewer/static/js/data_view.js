@@ -477,7 +477,7 @@ function getQuery() {
         query += partial_query + ',' ;
     }
 
-    var selected_user = document.getElementById("userlist").value  ;
+    var selected_user = document.getElementById("userlist").value;
     if ( selected_user !== 'custom') {
         partial_query = '{"_submitted_by":"'+selected_user+'"}'
         query += partial_query + ',' ;
@@ -490,6 +490,32 @@ function getQuery() {
     var lastCommaIndex = query.lastIndexOf(",");
     query = query.replaceAt(lastCommaIndex, " ");
     return query;
+}
+
+
+function getPGQuery() {
+    var id_string = document.getElementById("idstring").value;
+    var query = "select jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null ";
+    var from = document.getElementById("start_date").value;
+    var to  = document.getElementById("end_date").value;
+    if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {
+        query += " and date_created between symmetric '"+from+"' and '"+to+"'";
+    }
+
+    if(id_string){
+        query += " and xform_id = (select id from logger_xform where id_string = '"+id_string+"')"
+    }
+
+    var selected_user = document.getElementById("userlist").value;
+
+    if ( selected_user !== 'custom') {
+        query += " and user_id = (select id from auth_user where username = '"+selected_user+"')";
+    }
+
+    query += " order by id asc"
+
+    return query;
+
 }
 
 // function getQuery(){

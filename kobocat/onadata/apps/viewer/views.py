@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 from time import strftime, strptime
 
@@ -784,6 +784,9 @@ def custom_data_view(request, username, id_string):
     status = '%'
     submitter_id = 0
 
+    default_end_date = datetime.now().strftime("%Y-%m-%d")
+    default_start_date = (datetime.now() - timedelta(30)).strftime("%Y-%m-%d")
+
     if 'filter' in  request.GET:
         filter_required = int( request.GET.get('filter') )
         # print ('incoming filter data:: ', filter_required)
@@ -807,6 +810,10 @@ def custom_data_view(request, username, id_string):
         sub_query_user += " AND vwlogger_instance.user_id = " + str(submitter_id)
     if submission_start and submission_end is not '%':
         sub_query_date_range += " AND vwlogger_instance.date_created BETWEEN '"+str(submission_start) + "' AND '" + str(submission_end) + "'"
+    else:
+        sub_query_date_range += " AND vwlogger_instance.date_created BETWEEN symmetric '" + str(
+            default_start_date) + "' AND '" + str(default_end_date) + "'"
+
     if status is not '%' and status!= 'custom':
         sub_query_status += " AND app_inst.status = '" + str(status) + "'"    
 

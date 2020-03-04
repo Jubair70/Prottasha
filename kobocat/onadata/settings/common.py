@@ -418,19 +418,7 @@ LOGGING = {
 BROKER_BACKEND = "librabbitmq"
 BROKER_URL = 'amqp://guest:guest@localhost:5672/'
 CELERY_RESULT_BACKEND = "amqp"  # telling Celery to report results to RabbitMQ
-CELERY_ALWAYS_EAGER = True
-
-CELERY_IMPORTS = (
-    'onadata.apps.tupmodule.tasks'
-)
-
-CELERYBEAT_SCHEDULE = {
-    'schedule-name': {  # example: 'file-backup'
-        'task': 'onadata.apps.tupmodule.tasks.populate_table_queue',
-        'schedule': timedelta(seconds=10)
-    }
-}
-
+CELERY_ALWAYS_EAGER = False
 
 
 def configure_logging(logger, **kwargs):
