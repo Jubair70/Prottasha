@@ -708,7 +708,7 @@ class ExportBuilder(object):
         indices = {}
         survey_name = self.survey.name
         for d in data:
-            joined_export = dict_to_joined_export(d, index, indices,
+            joined_export = dict_to_joined_export(d[0], index, indices,
                                                   survey_name)
             output = ExportBuilder.decode_mongo_encoded_section_names(
                 joined_export)
@@ -799,6 +799,7 @@ class ExportBuilder(object):
                                                   survey_name)
             output = ExportBuilder.decode_mongo_encoded_section_names(
                 joined_export)
+            print output
             # attach meta fields (index, parent_index, parent_table)
             # output has keys for every section
             if survey_name not in output:
@@ -867,7 +868,8 @@ def generate_export(export_type, extension, username, id_string,
         user__username__iexact=username, id_string__exact=id_string)
 
     # query mongo for the cursor
-    records = query_mongo(username, id_string, filter_query)
+    # records = query_mongo(username, id_string, filter_query)
+    records = query_postgres(username, id_string, filter_query)
 
     export_builder = ExportBuilder()
     export_builder.GROUP_DELIMITER = group_delimiter
@@ -875,8 +877,8 @@ def generate_export(export_type, extension, username, id_string,
     export_builder.BINARY_SELECT_MULTIPLES = binary_select_multiples
     export_builder.SHOW_LABEL = show_label
     export_builder.set_survey(xform.data_dictionary().survey)
-    print "xform.data_dictionary().survey"
-    print xform.data_dictionary().survey
+    #print "xform.data_dictionary().survey"
+    #print xform.data_dictionary().survey
     export_builder.FORM_OWNER = xform.user.username
 
     temp_file = NamedTemporaryFile(suffix=("." + extension))
@@ -941,6 +943,14 @@ def query_mongo(username, id_string, query=None, hide_deleted=True):
         # join existing query with deleted_at_query on an $and
         query = {"$and": [query, {"_deleted_at": None}]}
     return xform_instances.find(query)
+
+
+def query_postgres(username, id_string, query=None, hide_deleted=True):
+    cursor = connection.cursor()
+    cursor.execute(query)
+    fetchVal = cursor.fetchall()
+    cursor.close()
+    return fetchVal
 
 
 def should_create_new_export(xform, export_type):
