@@ -6,7 +6,7 @@ import re
 import six
 from urlparse import urlparse
 from zipfile import ZipFile
-
+import pandas
 from bson import json_util
 from django.conf import settings
 from django.core.files.base import File
@@ -25,10 +25,10 @@ from json2xlsclient.client import Client
 from onadata.apps.logger.models import Attachment, Instance, XForm
 from onadata.apps.main.models.meta_data import MetaData
 from onadata.apps.viewer.models.export import Export
-from onadata.apps.viewer.models.parsed_instance import\
-    _is_invalid_for_mongo, _encode_for_mongo, dict_for_mongo,\
+from onadata.apps.viewer.models.parsed_instance import \
+    _is_invalid_for_mongo, _encode_for_mongo, dict_for_mongo, \
     _decode_from_mongo
-from onadata.libs.utils.viewer_tools import create_attachments_zipfile,\
+from onadata.libs.utils.viewer_tools import create_attachments_zipfile, \
     image_urls
 from onadata.libs.utils.common_tags import (
     ID, XFORM_ID_STRING, STATUS, ATTACHMENTS, GEOLOCATION, BAMBOO_DATASET_ID,
@@ -69,7 +69,6 @@ def question_types_to_exclude(_type):
 
 
 class DictOrganizer(object):
-
     def set_dict_iterator(self, dict_iterator):
         self._dict_iterator = dict_iterator
 
@@ -215,19 +214,19 @@ class ExportBuilder(object):
 
     def set_survey(self, survey):
         # TODO resolve circular import
-        from onadata.apps.viewer.models.data_dictionary import\
+        from onadata.apps.viewer.models.data_dictionary import \
             DataDictionary
 
         def build_sections(
                 current_section, survey_element, sections, select_multiples,
                 gps_fields, encoded_fields, select_one, select_label_map, field_delimiter='/'):
-            #print "survey_element.children"
-            #print survey_element.children
-            #print "current_section"
-            #print current_section
+            # print "survey_element.children"
+            # print survey_element.children
+            # print "current_section"
+            # print current_section
             for child in survey_element.children:
-                #print "survey_element.child"
-                #print child
+                # print "survey_element.child"
+                # print child
                 current_section_name = current_section['name']
                 # if a section, recurs
                 if isinstance(child, Section):
@@ -246,7 +245,7 @@ class ExportBuilder(object):
                         build_sections(
                             current_section, child, sections, select_multiples,
                             gps_fields, encoded_fields, select_one, select_label_map, field_delimiter)
-                elif isinstance(child, Question) and child.bind.get(u"type")\
+                elif isinstance(child, Question) and child.bind.get(u"type") \
                         not in QUESTION_TYPES_TO_EXCLUDE:
                     # add to survey_sections
                     if isinstance(child, Question):
@@ -257,14 +256,14 @@ class ExportBuilder(object):
                                 _xpath = c.get_abbreviated_xpath()
                                 if not self.SHOW_LABEL:
                                     _title = ExportBuilder.format_field_title(
-                                _xpath, field_delimiter)
+                                        _xpath, field_delimiter)
                                 else:
                                     _title = c.label
 
                                 _title_custom = c.label
                                 select_label_map[_xpath] = _title_custom
                                 # _xpath = c.get_abbreviated_xpath()
-                                
+
                                 choice = {
                                     'title': _title,
                                     'xpath': _xpath,
@@ -276,14 +275,14 @@ class ExportBuilder(object):
                                     current_section_name, select_one,
                                     child.get_abbreviated_xpath(),
                                     [c.get_abbreviated_xpath()
-                                    for c in child.children])
+                                     for c in child.children])
 
                         child_xpath = child.get_abbreviated_xpath()
                         current_section['elements'].append({
-                            'title': ExportBuilder.format_field_title(child.get_abbreviated_xpath(),field_delimiter),
+                            'title': ExportBuilder.format_field_title(child.get_abbreviated_xpath(), field_delimiter),
                             'xpath': child_xpath,
                             'type': child.bind.get(u"type"),
-                            'label':child.label
+                            'label': child.label
                         })
 
                         if _is_invalid_for_mongo(child_xpath):
@@ -293,7 +292,7 @@ class ExportBuilder(object):
                                 {child_xpath: _encode_for_mongo(child_xpath)})
 
                     # if its a select multiple, make columns out of its choices
-                    if child.bind.get(u"type") == MULTIPLE_SELECT_BIND_TYPE\
+                    if child.bind.get(u"type") == MULTIPLE_SELECT_BIND_TYPE \
                             and self.SPLIT_SELECT_MULTIPLES:
                         for c in child.children:
                             _xpath = c.get_abbreviated_xpath()
@@ -332,7 +331,7 @@ class ExportBuilder(object):
                                     'type': 'decimal'
                                 }
                                 for xpath in xpaths
-                            ])
+                                ])
                         _append_xpaths_to_section(
                             current_section_name, gps_fields,
                             child.get_abbreviated_xpath(), xpaths)
@@ -359,29 +358,29 @@ class ExportBuilder(object):
 
     def section_by_name(self, name):
         matches = filter(lambda s: s['name'] == name, self.sections)
-        assert(len(matches) == 1)
+        assert (len(matches) == 1)
         return matches[0]
 
     @classmethod
-    def show_select_label(cls,row,select_one,label_map):
+    def show_select_label(cls, row, select_one, label_map):
         for xpath, choices in select_one.iteritems():
-            
+
             data = row.get(xpath)
-            #print ('Data::::', data,xpath,choices)
+            # print ('Data::::', data,xpath,choices)
             selections = []
             if data:
                 selections = [
                     u'{0}/{1}'.format(
                         xpath, selection) for selection in data.split()]
-                #print ('selections::::', selections)
+                # print ('selections::::', selections)
                 for select in selections:
                     try:
                         choice_label = label_map[select]
-                        test_dict = dict([(xpath,choice_label)])
+                        test_dict = dict([(xpath, choice_label)])
                         row.update(test_dict)
                     except KeyError:
                         continue
-                # print('selections::: then label::',selections,choice_label)
+                        # print('selections::: then label::',selections,choice_label)
         return row
 
     @classmethod
@@ -400,22 +399,22 @@ class ExportBuilder(object):
                     for select in selections:
                         try:
                             choice_label = label_map[select]
-                            test_dict = dict([(select,choice_label)])
+                            test_dict = dict([(select, choice_label)])
                             # print ('selections on false::: then label::',select,choice_label,test_dict)
                             row.update(test_dict)
-                        except Exception,e:
-                            print ('No label present for this::',select)
+                        except Exception, e:
+                            print ('No label present for this::', select)
                             continue
                 else:
                     row.update(dict(
                         [(choice, choice in selections if selections else None)
-                        for choice in choices]))
-                
+                         for choice in choices]))
+
             else:
                 if show_label:
                     for select in selections:
                         choice_label = label_map[select]
-                        test_dict = dict([(xpath,choice_label)])
+                        test_dict = dict([(xpath, choice_label)])
                         row.update(test_dict)
                         # print('selections on else clause::: then label::',selections,choice_label)
                 else:
@@ -423,7 +422,7 @@ class ExportBuilder(object):
                     NO = 0
                     row.update(dict(
                         [(choice, YES if choice in selections else NO)
-                        for choice in choices]))
+                         for choice in choices]))
         return row
 
     @classmethod
@@ -478,8 +477,8 @@ class ExportBuilder(object):
         if section_name in self.select_one and self.SHOW_LABEL:
             row = ExportBuilder.show_select_label(row, self.select_one[section_name], self.select_label_map)
 
-        if self.SPLIT_SELECT_MULTIPLES and\
-                section_name in self.select_multiples:
+        if self.SPLIT_SELECT_MULTIPLES and \
+                        section_name in self.select_multiples:
             row = ExportBuilder.split_select_multiples(
                 row, self.select_multiples[section_name], self.select_label_map, self.SHOW_LABEL)
 
@@ -492,7 +491,7 @@ class ExportBuilder(object):
             # only convert if its in our list and its not empty, just to
             # optimize
             value = row.get(elm['xpath'])
-            if elm['type'] in ExportBuilder.TYPES_TO_CONVERT\
+            if elm['type'] in ExportBuilder.TYPES_TO_CONVERT \
                     and value is not None and value != '':
                 row[elm['xpath']] = ExportBuilder.convert_type(
                     value, elm['type'])
@@ -513,8 +512,8 @@ class ExportBuilder(object):
 
         # write headers
         for section in self.sections:
-            fields = [element['title'] for element in section['elements']]\
-                + self.EXTRA_FIELDS
+            fields = [element['title'] for element in section['elements']] \
+                     + self.EXTRA_FIELDS
             csv_defs[section['name']]['csv_writer'].writerow(
                 [f.encode('utf-8') for f in fields])
 
@@ -538,8 +537,8 @@ class ExportBuilder(object):
                 section_name = section['name']
                 csv_def = csv_defs[section_name]
                 fields = [
-                    element['xpath'] for element in
-                    section['elements']] + self.EXTRA_FIELDS
+                             element['xpath'] for element in
+                             section['elements']] + self.EXTRA_FIELDS
                 csv_writer = csv_def['csv_writer']
                 # section name might not exist within the output, e.g. data was
                 # not provided for said repeat - write test to check this
@@ -581,7 +580,7 @@ class ExportBuilder(object):
         while generated_name in existing_names:
             digit_length = len(str(i))
             allowed_name_len = cls.XLS_SHEET_NAME_MAX_CHARS - \
-                digit_length
+                               digit_length
             # make name the required len
             if len(generated_name) > allowed_name_len:
                 generated_name = generated_name[:allowed_name_len]
@@ -590,21 +589,19 @@ class ExportBuilder(object):
         return generated_name
 
     def to_postgres_sav(self, path, data, *args):
-        def write_row(data, fields, survey_name,db_instance):
+        def write_row(data, fields, survey_name, db_instance):
             # update parent_table with the generated sheet's title
             data[PARENT_TABLE_NAME] = work_table_name.get(
                 data.get(PARENT_TABLE_NAME))
             # print data
             # print work_sheet_titles
-            db_instance.insert_from_db_table_row_data(survey_name,data,fields)
-            
-            
+            db_instance.insert_from_db_table_row_data(survey_name, data, fields)
 
         work_table_name = {}
         # map of section_names to generated_names
         work_sheet_titles = {}
         instance_db = DbInstance()
-        section_count = 1        
+        section_count = 1
         for section in self.sections:
             # print section
 
@@ -625,25 +622,25 @@ class ExportBuilder(object):
         for section in self.sections:
             section_name = section['name']
             headers = [
-                element['title'] for element in
-                section['elements']] + self.EXTRA_FIELDS
+                          element['title'] for element in
+                          section['elements']] + self.EXTRA_FIELDS
             # get the table Name
             ws = work_table_name[section_name]
             # print('self.survey.name:::: ', str(ws))
             # print('headers:::: ', headers)
-            instance_db.create_form_db_table_column_name(str(ws),headers)
+            instance_db.create_form_db_table_column_name(str(ws), headers)
 
         index = 1
         indices = {}
         survey_name = self.survey.name
         for d in data:
-            index = d['_id']            
+            index = d['_id']
             joined_export = dict_to_joined_export(d, index, indices,
                                                   survey_name)
-            
+
             output = ExportBuilder.decode_mongo_encoded_section_names(
                 joined_export)
-            
+
             # attach meta fields (index, parent_index, parent_table)
             # output has keys for every section
             if survey_name not in output:
@@ -655,8 +652,8 @@ class ExportBuilder(object):
                 # get data for this section and write to xls
                 section_name = section['name']
                 fields = [
-                    element['xpath'] for element in
-                    section['elements']] + self.EXTRA_FIELDS
+                             element['xpath'] for element in
+                             section['elements']] + self.EXTRA_FIELDS
 
                 ws = work_table_name[section_name]
                 # section might not exist within the output, e.g. data was
@@ -666,14 +663,13 @@ class ExportBuilder(object):
                 if type(row) == dict:
                     write_row(
                         self.pre_process_row(row, section),
-                         fields, str(ws), instance_db)
+                        fields, str(ws), instance_db)
                 elif type(row) == list:
                     for child_row in row:
                         write_row(
                             self.pre_process_row(child_row, section),
                             fields, str(ws), instance_db)
-            #index += 1
-        
+                        # index += 1
 
     def to_xls_export(self, path, data, *args):
         def write_row(data, work_sheet, fields, work_sheet_titles):
@@ -698,8 +694,8 @@ class ExportBuilder(object):
         for section in self.sections:
             section_name = section['name']
             headers = [
-                element['title'] for element in
-                section['elements']] + self.EXTRA_FIELDS
+                          element['title'] for element in
+                          section['elements']] + self.EXTRA_FIELDS
             # get the worksheet
             ws = work_sheets[section_name]
             ws.append(headers)
@@ -722,8 +718,8 @@ class ExportBuilder(object):
                 # get data for this section and write to xls
                 section_name = section['name']
                 fields = [
-                    element['xpath'] for element in
-                    section['elements']] + self.EXTRA_FIELDS
+                             element['xpath'] for element in
+                             section['elements']] + self.EXTRA_FIELDS
 
                 ws = work_sheets[section_name]
                 # section might not exist within the output, e.g. data was
@@ -745,7 +741,7 @@ class ExportBuilder(object):
     def to_flat_csv_export(
             self, path, data, username, id_string, filter_query):
         # TODO resolve circular import
-        from onadata.apps.viewer.pandas_mongo_bridge import\
+        from onadata.apps.viewer.pandas_mongo_bridge import \
             CSVDataFrameBuilder
 
         csv_builder = CSVDataFrameBuilder(
@@ -762,8 +758,8 @@ class ExportBuilder(object):
 
         # write headers
         for section in self.sections:
-            fields = [element['title'] for element in section['elements']]\
-                + self.EXTRA_FIELDS
+            fields = [element['title'] for element in section['elements']] \
+                     + self.EXTRA_FIELDS
             c = 0
             var_labels = {}
             var_names = []
@@ -799,7 +795,6 @@ class ExportBuilder(object):
                                                   survey_name)
             output = ExportBuilder.decode_mongo_encoded_section_names(
                 joined_export)
-            print output
             # attach meta fields (index, parent_index, parent_table)
             # output has keys for every section
             if survey_name not in output:
@@ -811,8 +806,8 @@ class ExportBuilder(object):
                 section_name = section['name']
                 sav_def = sav_defs[section_name]
                 fields = [
-                    element['xpath'] for element in
-                    section['elements']] + self.EXTRA_FIELDS
+                             element['xpath'] for element in
+                             section['elements']] + self.EXTRA_FIELDS
                 sav_writer = sav_def['sav_writer']
                 row = output.get(section_name, None)
                 if type(row) == dict:
@@ -850,7 +845,7 @@ def dict_to_flat_export(d, parent_index=0):
 def generate_export(export_type, extension, username, id_string,
                     export_id=None, filter_query=None, group_delimiter='/',
                     split_select_multiples=True,
-                    binary_select_multiples=False,show_label = False):
+                    binary_select_multiples=False, show_label=False):
     """
     Create appropriate export object given the export type
     """
@@ -869,7 +864,7 @@ def generate_export(export_type, extension, username, id_string,
 
     # query mongo for the cursor
     # records = query_mongo(username, id_string, filter_query)
-    records = query_postgres(username, id_string, filter_query)
+    records = query_postgres(id_string, filter_query, show_label)
 
     export_builder = ExportBuilder()
     export_builder.GROUP_DELIMITER = group_delimiter
@@ -877,8 +872,8 @@ def generate_export(export_type, extension, username, id_string,
     export_builder.BINARY_SELECT_MULTIPLES = binary_select_multiples
     export_builder.SHOW_LABEL = show_label
     export_builder.set_survey(xform.data_dictionary().survey)
-    #print "xform.data_dictionary().survey"
-    #print xform.data_dictionary().survey
+    # print "xform.data_dictionary().survey"
+    # print xform.data_dictionary().survey
     export_builder.FORM_OWNER = xform.user.username
 
     temp_file = NamedTemporaryFile(suffix=("." + extension))
@@ -934,7 +929,7 @@ def generate_export(export_type, extension, username, id_string,
 
 
 def query_mongo(username, id_string, query=None, hide_deleted=True):
-    query = json.loads(query, object_hook=json_util.object_hook)\
+    query = json.loads(query, object_hook=json_util.object_hook) \
         if query else {}
     query = dict_for_mongo(query)
     query[USERFORM_ID] = u'{0}_{1}'.format(username, id_string)
@@ -945,19 +940,57 @@ def query_mongo(username, id_string, query=None, hide_deleted=True):
     return xform_instances.find(query)
 
 
-def query_postgres(username, id_string, query=None, hide_deleted=True):
-    cursor = connection.cursor()
-    cursor.execute(query)
-    fetchVal = cursor.fetchall()
-    cursor.close()
-    return fetchVal
+def query_postgres(id_string, query=None, show_label=False):
+    data_df = pandas.read_sql(query, connection)
+    new_data_df = []
+    if show_label:
+        label_df = pandas.read_sql(
+            "select field_type,field_name,value_text,value_label::json->>'English' as english,value_label::json->>'Bangla' as bangla from xform_extracted where xform_id = (select id from logger_xform where id_string = '" + str(
+                id_string) + "') and value_text is not null",
+            connection)
+
+        fdf = pandas.read_sql(
+            "with t as(select field_name,field_type,coalesce(cntrl::json->>'appearance','') as appearance from xform_extracted where xform_id = (select id from logger_xform where id_string = '" + str(
+                id_string) + "') and value_text is not null) select distinct field_name,field_type from t where appearance not like 'search(\''geo%'",
+            connection)
+
+        val_chg_list = fdf['field_name'].tolist()
+
+        for idx, row in data_df.iterrows():
+            datajson = row['datajson']
+            new_json = {}
+            for dj in datajson:
+                if dj in val_chg_list:
+                    ftype = fdf[fdf['field_name'] == dj]['field_type'].tolist()[0]
+                    if ftype == 'select all that apply':
+                        try:
+                            mul_label_lst = label_df[(label_df['field_name'] == dj) & (
+                            label_df['value_text'].isin(datajson[dj].split(' ')))]['english'].tolist()
+                            new_json[dj] = ' '.join(mul_label_lst)
+                        except Exception as ex:
+                            new_json[dj] = datajson[dj]
+                    else:
+                        try:
+                            new_json[dj] = \
+                                label_df[(label_df['field_name'] == dj) & (label_df['value_text'] == datajson[dj])][
+                                    'english'].tolist()[0]
+                        except Exception as ex:
+                            new_json[dj] = datajson[dj]
+                else:
+                    new_json[dj] = datajson[dj]
+            new_data_df.append((new_json,))
+    else:
+        for idx, row in data_df.iterrows():
+            new_data_df.append((row['datajson'],))
+
+    return new_data_df
 
 
 def should_create_new_export(xform, export_type):
     # TODO resolve circular import
     from onadata.apps.viewer.models.export import Export
     if Export.objects.filter(
-            xform=xform, export_type=export_type).count() == 0\
+            xform=xform, export_type=export_type).count() == 0 \
             or Export.exports_outdated(xform, export_type=export_type):
         return True
     return False
@@ -970,7 +1003,7 @@ def newset_export_for(xform, export_type):
     """
     # TODO resolve circular import
     from onadata.apps.viewer.models.export import Export
-    return Export.objects.filter(xform=xform, export_type=export_type)\
+    return Export.objects.filter(xform=xform, export_type=export_type) \
         .latest('created_on')
 
 
@@ -1029,7 +1062,7 @@ def generate_attachments_zip_export(
     dir_name, basename = os.path.split(export_filename)
 
     # get or create export object
-    if(export_id):
+    if (export_id):
         export = Export.objects.get(id=export_id)
     else:
         export = Export.objects.create(xform=xform, export_type=export_type)
@@ -1073,7 +1106,7 @@ def generate_kml_export(
     dir_name, basename = os.path.split(export_filename)
 
     # get or create export object
-    if(export_id):
+    if (export_id):
         export = Export.objects.get(id=export_id)
     else:
         export = Export.objects.create(xform=xform, export_type=export_type)
@@ -1106,8 +1139,7 @@ def kml_export_data(id_string, user):
                 'id': instance.uuid,
                 'lat': point.y,
                 'lng': point.x,
-                })
-
+            })
 
     return data_for_template
 
@@ -1120,7 +1152,7 @@ def _get_records(instances):
         for key in record:
             if '/' in key:
                 # replace with _
-                record[key.replace('/', '_')]\
+                record[key.replace('/', '_')] \
                     = record.pop(key)
         records.append(record)
 
@@ -1156,9 +1188,8 @@ def _get_server_from_metadata(xform, meta, token):
 
 
 def generate_external_export(
-    export_type, username, id_string, export_id=None,  token=None,
+        export_type, username, id_string, export_id=None, token=None,
         filter_query=None, meta=None):
-
     xform = XForm.objects.get(
         user__username__iexact=username, id_string__exact=id_string)
     user = User.objects.get(username=username)
@@ -1218,7 +1249,6 @@ def generate_external_export(
 
 
 def upload_template_for_external_export(server, file_obj):
-
     try:
         client = Client(server)
         response = client.template.create(template_file=file_obj)
