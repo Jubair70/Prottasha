@@ -147,7 +147,7 @@
                             <div class="form-group">
                                 <label >Date : </label>
 
-                                <input type="date" id="p_date" class="form-control" name="p_date" required>
+                                <input type="text" id="p_date" readonly class="form-control datepicker" name="p_date" required>
                             </div>
                         </div>
                     </div>
@@ -224,7 +224,7 @@
                             <div class="form-group">
                                 <label >Date : </label>
 
-                                <input type="date" id="pout_date" class="form-control" name="pout_date" required>
+                                <input type="text" id="pout_date" readonly class="form-control datepicker" name="pout_date" required>
                             </div>
                         </div>
                     </div>
@@ -318,6 +318,14 @@
         var end_date = '';
 
         $(document).ready(function(){
+            $('.datepicker').datepicker({
+                endDate: '0d',
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            }).on('changeDate', function () {
+                $(this).datepicker('hide');
+            });
+
             get_product_table()
             if ($('.alert-block').is(':visible')) {
                 window.setTimeout(function () {
