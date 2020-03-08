@@ -224,18 +224,9 @@
             fixedColumns: {
                 leftColumns: 1,
                 rightColumns: 1
-            }
-            {#            dom: 'Bfrtip'#}
-            {#            ,#}
-            {#            buttons: [#}
-            {#                {#}
-            {#                    filename: "Fo",#}
-            {#                    title: "",#}
-            {#                    text: "<strong>Export</strong>",#}
-            {#                    extend: 'excel'#}
-            {#                }#}
-            {#            ]#}
-
+            },
+            dom: 'Bfrtip',
+            buttons: ['copy', 'csv', 'excel', 'pdf']
         });
 
 
@@ -328,18 +319,13 @@
                 fixedColumns: {
                     leftColumns: 1,
                     rightColumns: 1
-                }
-                {#                dom: 'Bfrtip'#}
-                {#                ,#}
-                {#                buttons: [#}
-                {#                    {#}
-                {#                        filename: "CSA Report",#}
-                {#                        title: "",#}
-                {#                        text: "<strong>Export</strong>",#}
-                {#                        extend: 'excelHtml5'#}
-                {#                    }#}
-                {#                ]#}
-
+                },
+            dom: 'Bfrtip',
+            buttons: ['excel', {
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'TABLOID'
+            }]
             });
         }
 
