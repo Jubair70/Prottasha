@@ -471,7 +471,7 @@ function getQuery() {
 
 function getPGQuery() {
     var id_string = document.getElementById("idstring").value;
-    var query = "select jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null ";
+    var query = "with t1 as (with t as(select id,date_created,xform_id,user_id,json->>'victim_tbl_id' as victim_tbl_id, jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null) select coalesce(jsonb_set(jsonb_set(jsonb_set(datajson,'{_benificiary_id}',to_jsonb(beneficiary_id)),'{_case_number}',to_jsonb(case_number)),'{_rsc_name}',to_jsonb(rsc_name)),datajson) as datajson,xform_id,date_created,user_id,t.id from t left join vw_victim_export_cols on vw_victim_export_cols.id = t.victim_tbl_id::int4) select datajson from t1 where 1 = 1 ";
     var from = document.getElementById("start_date").value;
     var to  = document.getElementById("end_date").value;
     if (!((!from || 0 === from.length) || (!to || 0 === to.length))) {

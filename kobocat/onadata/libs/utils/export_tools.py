@@ -33,7 +33,7 @@ from onadata.libs.utils.viewer_tools import create_attachments_zipfile, \
 from onadata.libs.utils.common_tags import (
     ID, XFORM_ID_STRING, STATUS, ATTACHMENTS, GEOLOCATION, BAMBOO_DATASET_ID,
     DELETEDAT, USERFORM_ID, INDEX, PARENT_INDEX, PARENT_TABLE_NAME,
-    SUBMISSION_TIME, UUID, TAGS, NOTES)
+    SUBMISSION_TIME, UUID, TAGS, NOTES, CASE_NUMBER, RSC_NAME,BENEFICIARY_ID)
 from onadata.libs.exceptions import J2XException
 from onadata.libs.utils.db_utils import DbInstance
 
@@ -175,7 +175,7 @@ class ExportBuilder(object):
                        BAMBOO_DATASET_ID, DELETEDAT]
     # fields we export but are not within the form's structure
     EXTRA_FIELDS = [ID, UUID, SUBMISSION_TIME, INDEX, PARENT_TABLE_NAME,
-                    PARENT_INDEX, TAGS, NOTES]
+                    PARENT_INDEX, TAGS, NOTES, CASE_NUMBER, RSC_NAME,BENEFICIARY_ID]
     SPLIT_SELECT_MULTIPLES = True
     BINARY_SELECT_MULTIPLES = False
     SHOW_LABEL = False

@@ -4161,11 +4161,13 @@ def get_export(request):
     if not has_permission(xform, owner, request):
         return HttpResponseForbidden(u'Not shared.')
     '''
+    from_date = request.POST.get('from_date')
+    to_date = request.POST.get('to_date')
     daterange = request.POST.get('date_range')
     userlist = request.POST.getlist('userlist[]')
     rsclist = request.POST.getlist('rsclist[]')
 
-    query = get_query(daterange, rsclist, userlist)
+    query = get_query(from_date,to_date, rsclist, userlist,id_string)
     # query = '{"$and" : [ {"_submission_time":{"$gte":"2019-01-04T00:00:00","$lte":"2019-09-03T23:59:59"}},{"_submitted_by": { "$in" : ["iom_admin"] } }] }'
     print query
 
@@ -4200,25 +4202,20 @@ def get_export(request):
     return HttpResponse(json.dumps(data), content_type='application/json')
 
 
-def get_query(daterange, rsclist, userlist):
+def get_query(from_date,to_date, rsclist, userlist,id_string):
+    query = "with t1 as (with t as(select id,date_created,xform_id,user_id,json->>'victim_tbl_id' as victim_tbl_id, jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null) select coalesce(jsonb_set(jsonb_set(jsonb_set(datajson,'{_benificiary_id}',to_jsonb(beneficiary_id)),'{_case_number}',to_jsonb(case_number)),'{_rsc_name}',to_jsonb(rsc_name)),datajson) as datajson,xform_id,date_created,user_id,t.id from t left join vw_victim_export_cols on vw_victim_export_cols.id = t.victim_tbl_id::int4) select datajson from t1 where 1 = 1 ";
+
+    if id_string:
+        query = query + " and xform_id = (select id from logger_xform where id_string = '" + str(id_string) + "')"
+
+    if from_date and to_date:
+        query += " and date_created between symmetric '" +str(from_date)+"' and '" + str(to_date) + "'"
+
     total_u_list = get_total_user_list(rsclist, userlist)
-    query = ""
-    if daterange or len(total_u_list) != 0:
-        query = ' {"$and" : [ '
-        daterange_query = daterange
-        if daterange:
-            query += daterange_query
 
-        if not total_u_list:
-            print "No  user query."
-        else:
-            query += '{"_submitted_by": { "$in" : ' + json.dumps(total_u_list) + ' }' + ' },'
-
-        query += "] }";
-        # find the index of last occurance of ','
-        last_idx = query.rfind(',')
-        query = remove_at(last_idx, query)
-        print query
+    if total_u_list:
+        formatted_u_list_str = '\''+'\', \''.join(total_u_list) + '\''
+        query = query + " and user_id in (select id from auth_user where username in (%s))" % formatted_u_list_str
 
     return query
 

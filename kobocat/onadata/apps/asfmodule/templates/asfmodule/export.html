@@ -157,7 +157,7 @@
         $.ajax({
             url: '/asf/get_export/',
             type: 'POST',
-            data :{'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc,'id_string' : id_string},
+            data :{'from_date':from_date,'to_date':to_date,'id_string' : 'event_workshop','date_range' : daterange,'userlist':userlist,'rsclist' : rsc,'id_string' : id_string},
             beforeSend: function () {
                 $('#container').show();
             },
