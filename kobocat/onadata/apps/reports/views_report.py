@@ -551,7 +551,7 @@ def getCardData(query):
     for eachval in fetchVal:
         if eachval[0] is not None:
             jsondata['number'] = eachval[0]
-            jsondata['details'] = eachval[1]
+            jsondata['details'] = eachval[1].upper()
             # if len(eachval)>=3:
             #     jsondata['percentage'] = str(eachval[2])
             # else:
