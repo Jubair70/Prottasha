@@ -4203,7 +4203,11 @@ def get_export(request):
 
 
 def get_query(from_date,to_date, rsclist, userlist,id_string):
-    query = "with t1 as (with t as(select id,date_created,xform_id,user_id,json->>'victim_tbl_id' as victim_tbl_id, jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null) select coalesce(jsonb_set(jsonb_set(jsonb_set(datajson,'{_benificiary_id}',to_jsonb(beneficiary_id)),'{_case_number}',to_jsonb(case_number)),'{_rsc_name}',to_jsonb(rsc_name)),datajson) as datajson,xform_id,date_created,user_id,t.id from t left join vw_victim_export_cols on vw_victim_export_cols.id = t.victim_tbl_id::int4) select datajson from t1 where 1 = 1 ";
+    eli_list = ['beneficiary_event', 'beneficiary_profiling', 'community_enterprise', 'counselor_psychosocial_support', 'direct_inkind_support', 'general_followup', 'income_tracking_matrix', 'intervention_tracking_matrix', 'medical_support', 'migration_forum', 'para_counselor_psychosocial_support', 'preferred_services_reintegration_plan', 'psychosocial_assessment_plan', 'psychosocial_followup', 'referral', 'referral_followup', 'reintegration_monitoring', 'reintegration_satisfaction', 'reintegration_sustainability', 'returnee_case_initiation', 'social_reintegration', 'socio_economic_support', 'support_history', 'training', 'training_followup']
+    if id_string in eli_list:
+        query = "with t1 as (with t as(select id,date_created,xform_id,user_id,json->>'victim_tbl_id' as victim_tbl_id, jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null) select coalesce(jsonb_set(jsonb_set(jsonb_set(datajson,'{_benificiary_id}',to_jsonb(beneficiary_id)),'{_case_number}',to_jsonb(case_number)),'{_rsc_name}',to_jsonb(rsc_name)),datajson) as datajson,xform_id,date_created,user_id,t.id from t left join vw_victim_export_cols on vw_victim_export_cols.id = t.victim_tbl_id::int4) select datajson from t1 where 1 = 1 ";
+    else:
+        query = "select jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null "
 
     if id_string:
         query = query + " and xform_id = (select id from logger_xform where id_string = '" + str(id_string) + "')"
