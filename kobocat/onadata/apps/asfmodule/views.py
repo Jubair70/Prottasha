@@ -438,7 +438,7 @@ def get_case_list(request):
             user_id) + ")  limit 1), id, ( SELECT incident_id FROM asf_case WHERE id = case_id::int limit 1) iom_case_no, victim_name, CASE WHEN sex = '1' THEN 'Male' WHEN sex = '2' THEN 'Female' ELSE 'Other' END sex, COALESCE(victim_age,'') victim_age, COALESCE(victim_id,'') returnee_id, ( SELECT ( SELECT status FROM iom_status WHERE id = asf_case.status::int limit 1) status FROM asf_case WHERE id = case_id::int limit 1) status, to_char( ( SELECT created_at::date FROM asf_case WHERE id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date, iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency,(select (select username from auth_user where id = created_by) from asf_case where id = asf_victim.case_id::int) case_initiator FROM asf_victim WHERE created_at:: date  BETWEEN to_date('" + str(
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') AND deleted_at is null and sex LIKE '" + str(
-            gender) + "' AND case_id::int = ANY ( SELECT id FROM (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id) case_final WHERE division LIKE '" + str(
+            gender) + "' AND case_id::int = ANY ( SELECT id FROM (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id where t.id in (select id from logger_instance where xform_id = 703 and deleted_at is null)) case_final WHERE division LIKE '" + str(
             division) + "' AND district LIKE '" + str(district) + "' AND upazila LIKE '" + str(
             upazila) + "' AND status LIKE '" + str(
             status) + "' and rsc_id like '" + str(
@@ -451,9 +451,10 @@ def get_case_list(request):
             user_id) + ")  limit 1),id,(select incident_id from asf_case where id = case_id::int limit 1) iom_case_no, victim_name,case when sex = '1' then 'Male' when sex = '2' then 'Female' else 'Other' end sex,coalesce(victim_age,'') victim_age, coalesce(victim_id,'') returnee_id,(select (select status from iom_status where id = asf_case.status::int limit 1) status from asf_case where id = case_id::int limit 1) status, to_char((select created_at::date from asf_case where id = case_id::int limit 1),'DD/MM/YYYY') case_initation_date,iom_reference,coalesce((select username from auth_user where id = (select assaign_to::int from asf_case where id = case_id::int limit 1)),'') assaign_to,coalesce(contact_self,'') contact_self,coalesce(contact_emergency,'')contact_emergency,(select (select username from auth_user where id = created_by) from asf_case where id = asf_victim.case_id::int) case_initiator from asf_victim where created_at:: date  BETWEEN to_date('" + str(
             from_date) + "','DD/MM/YYYY') AND to_date('" + str(
             to_date) + "','DD/MM/YYYY') AND  deleted_at is null and  sex like '" + str(
-            gender) + "' and case_id::int = any(select id from (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id) case_final where division like '" + str(
+            gender) + "' and case_id::int = any(select id from (with t as(select district as geo_id,* from asf_case) select t.*,rsc_catchment_area.rsc_id::text from t left join rsc_catchment_area on rsc_catchment_area.geo_id::text = t.geo_id where t.id in (select id from logger_instance where xform_id = 703 and deleted_at is null)) case_final where division like '" + str(
             division) + "' and district like '" + str(district) + "' and upazila like '" + str(
-            upazila) + "' and status like '" + str(status) + "'  and rsc_id like '" + str(rsc_id) + "') order by id desc) select can_delete,role_name,id,iom_case_no,victim_name,sex,victim_age, case when status in ('New Case','Assigned Profiling') then '' else returnee_id end as returnee_id,status,case_initation_date,iom_reference,assaign_to,contact_self,contact_emergency,case_initiator from finaltbl"
+            upazila) + "' and status like '" + str(status) + "'  and rsc_id like '" + str(
+            rsc_id) + "') order by id desc) select can_delete,role_name,id,iom_case_no,victim_name,sex,victim_age, case when status in ('New Case','Assigned Profiling') then '' else returnee_id end as returnee_id,status,case_initation_date,iom_reference,assaign_to,contact_self,contact_emergency,case_initiator from finaltbl"
     print(query)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
     return HttpResponse(data)
@@ -1128,7 +1129,7 @@ def victim_profile(request, victim_tbl_id):
     df = pandas.read_sql(qery, connection)
     instance_id_list = df.id.tolist()
     data = {
-        'returnee_case_id':returnee_case_id,
+        'returnee_case_id': returnee_case_id,
         'instance_id_list': instance_id_list,
         'main_str': main_str,
         'username': username,
@@ -1463,7 +1464,8 @@ def get_case_study_list(request):
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, accomplishment,challenge,challenge_overcome,conclusion,promising_practice,instance_id,lesson_learned  from vw_case_study WHERE date_submission::date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(user_id) +" order by instance_id desc"
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(
+            user_id) + " order by instance_id desc"
     elif role == 'Admin':
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='case_study') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
@@ -1519,7 +1521,8 @@ def get_msc_story_list(request):
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_delete,organization_name,individual_name,data_source,introduction,to_char(date_submission::date,'DD/MM/YYYY') date_submission, changes,story_detail,significant_change,conclusion,future_change_envisaged,instance_id  from vw_msc_story WHERE date_submission::date  BETWEEN to_date('" + str(
-            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(user_id) + " order by instance_id desc"
+            from_date) + "','DD/MM/YYYY') AND to_date('" + str(to_date) + "','DD/MM/YYYY') and user_id=" + str(
+            user_id) + " order by instance_id desc"
     elif role == 'Admin':
         query = "select COALESCE((select can_edit from vwrolewiseformpermission where user_id = " + str(
             user_id) + " and xform_id = (select id from logger_xform where id_string='msc_story') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = " + str(
@@ -1757,7 +1760,8 @@ def event_workshop_profile(request, event_id):
         male_less_18,
         female_greater_equal_18,
         female_less_18,
-        total_participant,participant_category_text participant_category,
+        total_participant,(select participant_category from vw_event_participants where event_id = '""" + str(
+        event_id) + """') as participant_category,
                   remarks
       from vw_merged_event_workshop where id = """ + str(event_id) + """
     """
@@ -1974,9 +1978,10 @@ def ipt_show_form(request):
 
 @login_required
 def ipt_profile(request, event_id):
-    qry = "with t as( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_ipt_show') AND deleted_at IS NULL AND id = " + str(
-        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_ipt_show') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
-        event_id) + " )select t.event_id,t.date_created ,t.username,t.district ,t.upazila,t.union_name ,t.para_bazar_school,t.village ,t1.male_greater_equal_18, t1.male_less_18, t1.female_greater_equal_18, t1.female_less_18, t1.total_participant, t1.participant_category, t1.remarks from t left join t1 on t.event_id = t1.event_id::int"
+    qry = "WITH t AS( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_ipt_show') AND deleted_at IS NULL AND id = " + str(
+        event_id) + "), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , (select participant_category from vw_event_participants where event_id = '" + str(
+        event_id) + "') as participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_ipt_show') AND deleted_at IS NULL AND ( json->>'event_id')::int = " + str(
+        event_id) + ") SELECT t.event_id, t.date_created , t.username, t.district , t.upazila, t.union_name , t.para_bazar_school, t.village , t1.male_greater_equal_18, t1.male_less_18, t1.female_greater_equal_18, t1.female_less_18, t1.total_participant, t1.participant_category, t1.remarks FROM t LEFT JOIN t1 ON t.event_id = t1.event_id::int"
     df = pandas.read_sql(qry, connection)
     event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
     date_created = df.date_created.tolist()[0] if len(df.date_created.tolist()) and df.date_created.tolist()[
@@ -2209,7 +2214,8 @@ def video_show_form(request):
 @login_required
 def video_show_profile(request, event_id):
     qry = "with t as( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_video_show') AND deleted_at IS NULL AND id = " + str(
-        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_video_show') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
+        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , (select participant_category from vw_event_participants where event_id = '" + str(
+        event_id) + "') as participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_video_show') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
         event_id) + " )select t.event_id,t.date_created ,t.username,t.district ,t.upazila,t.union_name ,t.para_bazar_school,t.village ,t1.male_greater_equal_18, t1.male_less_18, t1.female_greater_equal_18, t1.female_less_18, t1.total_participant, t1.participant_category, t1.remarks from t left join t1 on t.event_id = t1.event_id::int"
     df = pandas.read_sql(qry, connection)
     event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
@@ -2423,7 +2429,8 @@ def school_quiz_form(request):
 @login_required
 def school_quiz_profile(request, event_id):
     qry = "with t as( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_quiz') AND deleted_at IS NULL AND id = " + str(
-        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_11_14' male_11_14 , json->>'participant/male_15_16' male_15_16 , json->>'participant/female_11_14' female_11_14 , json->>'participant/female_15_16' female_15_16 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_school_quiz') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
+        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_11_14' male_11_14 , json->>'participant/male_15_16' male_15_16 , json->>'participant/female_11_14' female_11_14 , json->>'participant/female_15_16' female_15_16 , json->>'participant/total_participant' total_participant ,(select participant_category from vw_event_participants where event_id = '" + str(
+        event_id) + "') as participant_category , json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_school_quiz') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
         event_id) + " )select t.event_id,t.date_created ,t.username,t.district ,t.upazila,t.union_name ,t.para_bazar_school,t.village ,t1.male_11_14, t1.male_15_16, t1.female_11_14, t1.female_15_16, t1.total_participant, t1.participant_category, t1.remarks from t left join t1 on t.event_id = t1.event_id::int"
     df = pandas.read_sql(qry, connection)
     event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
@@ -2634,7 +2641,8 @@ def tea_stall_meeting_form(request):
 @login_required
 def tea_stall_meeting_profile(request, event_id):
     qry = "with t as( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_tea_stall_meeting') AND deleted_at IS NULL AND id = " + str(
-        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_tea_stall_meeting') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
+        event_id) + "), t1 as ( select json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant ,(select participant_category from vw_event_participants where event_id = '" + str(
+        event_id) + "') as participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_tea_stall_meeting') AND deleted_at IS NULL and (json->>'event_id')::int = " + str(
         event_id) + " )select t.event_id,t.date_created ,t.username,t.district ,t.upazila,t.union_name ,t.para_bazar_school,t.village ,t1.male_greater_equal_18, t1.male_less_18, t1.female_greater_equal_18, t1.female_less_18, t1.total_participant, t1.participant_category, t1.remarks from t left join t1 on t.event_id = t1.event_id::int"
     df = pandas.read_sql(qry, connection)
     event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
@@ -4167,7 +4175,7 @@ def get_export(request):
     userlist = request.POST.getlist('userlist[]')
     rsclist = request.POST.getlist('rsclist[]')
 
-    query = get_query(from_date,to_date, rsclist, userlist,id_string)
+    query = get_query(from_date, to_date, rsclist, userlist, id_string)
     # query = '{"$and" : [ {"_submission_time":{"$gte":"2019-01-04T00:00:00","$lte":"2019-09-03T23:59:59"}},{"_submitted_by": { "$in" : ["iom_admin"] } }] }'
     print query
 
@@ -4202,8 +4210,14 @@ def get_export(request):
     return HttpResponse(json.dumps(data), content_type='application/json')
 
 
-def get_query(from_date,to_date, rsclist, userlist,id_string):
-    eli_list = ['beneficiary_event', 'beneficiary_profiling', 'community_enterprise', 'counselor_psychosocial_support', 'direct_inkind_support', 'general_followup', 'income_tracking_matrix', 'intervention_tracking_matrix', 'medical_support', 'migration_forum', 'para_counselor_psychosocial_support', 'preferred_services_reintegration_plan', 'psychosocial_assessment_plan', 'psychosocial_followup', 'referral', 'referral_followup', 'reintegration_monitoring', 'reintegration_satisfaction', 'reintegration_sustainability', 'returnee_case_initiation', 'social_reintegration', 'socio_economic_support', 'support_history', 'training', 'training_followup']
+def get_query(from_date, to_date, rsclist, userlist, id_string):
+    eli_list = ['beneficiary_event', 'beneficiary_profiling', 'community_enterprise', 'counselor_psychosocial_support',
+                'direct_inkind_support', 'general_followup', 'income_tracking_matrix', 'intervention_tracking_matrix',
+                'medical_support', 'migration_forum', 'para_counselor_psychosocial_support',
+                'preferred_services_reintegration_plan', 'psychosocial_assessment_plan', 'psychosocial_followup',
+                'referral', 'referral_followup', 'reintegration_monitoring', 'reintegration_satisfaction',
+                'reintegration_sustainability', 'returnee_case_initiation', 'social_reintegration',
+                'socio_economic_support', 'support_history', 'training', 'training_followup']
     if id_string in eli_list:
         query = "with t1 as (with t as(select id,date_created,xform_id,user_id,json->>'victim_tbl_id' as victim_tbl_id, jsonb_set(jsonb_set(json::jsonb,'{_id}',to_jsonb(id)), '{_uuid}',to_jsonb(uuid)) as datajson from logger_instance where deleted_at is null) select coalesce(jsonb_set(jsonb_set(jsonb_set(datajson,'{_benificiary_id}',to_jsonb(beneficiary_id)),'{_case_number}',to_jsonb(case_number)),'{_rsc_name}',to_jsonb(rsc_name)),datajson) as datajson,xform_id,date_created,user_id,t.id from t left join vw_victim_export_cols on vw_victim_export_cols.id = t.victim_tbl_id::int4) select datajson from t1 where 1 = 1 ";
     else:
@@ -4213,12 +4227,12 @@ def get_query(from_date,to_date, rsclist, userlist,id_string):
         query = query + " and xform_id = (select id from logger_xform where id_string = '" + str(id_string) + "')"
 
     if from_date and to_date:
-        query += " and date_created between symmetric '" +str(from_date)+"' and '" + str(to_date) + "'"
+        query += " and date_created between symmetric '" + str(from_date) + "' and '" + str(to_date) + "'"
 
     total_u_list = get_total_user_list(rsclist, userlist)
 
     if total_u_list:
-        formatted_u_list_str = '\''+'\', \''.join(total_u_list) + '\''
+        formatted_u_list_str = '\'' + '\', \''.join(total_u_list) + '\''
         query = query + " and user_id in (select id from auth_user where username in (%s))" % formatted_u_list_str
 
     return query
@@ -4429,7 +4443,7 @@ def pot_song_form(request):
 @login_required
 def pot_song_profile(request, event_id):
     qry = "WITH t AS( SELECT id event_id, To_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_pot_song') AND deleted_at IS NULL AND id = " + str(
-        event_id) + "), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_pot_song') AND deleted_at IS NULL AND ( json->>'event_id')::int = " + str(
+        event_id) + "), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_equal_18' male_greater_equal_18 , json->>'participant/male_less_18' male_less_18 , json->>'participant/female_greater_equal_18' female_greater_equal_18 , json->>'participant/female_less_18' female_less_18 , json->>'participant/total_participant' total_participant , (select participant_category from vw_event_participants where event_id = '"+str(event_id)+"') as participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_pot_song') AND deleted_at IS NULL AND ( json->>'event_id')::int = " + str(
         event_id) + ") SELECT t.event_id, t.date_created , t.username, t.district , t.upazila, t.union_name , t.para_bazar_school, t.village , t1.male_greater_equal_18, t1.male_less_18, t1.female_greater_equal_18, t1.female_less_18, t1.total_participant, t1.participant_category, t1.remarks FROM t LEFT JOIN t1 ON t.event_id = t1.event_id::int"
     df = pandas.read_sql(qry, connection)
     event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
@@ -4641,7 +4655,7 @@ def school_program_form(request):
 @login_required
 def school_program_profile(request, event_id):
     qry = "WITH t AS( SELECT id event_id, to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created, ( SELECT username FROM auth_user WHERE id = user_id limit 1) username , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/district')) district , ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/upazila')) upazila , COALESCE( ( SELECT field_name FROM geo_data WHERE geocode = (json->>'geo/union')),'') union_name , json->>'geo/para_bazar_school' para_bazar_school , json->>'geo/village' village FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_school_program') AND deleted_at IS NULL AND id = " + str(
-        event_id) + "), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_15' male_greater_15 , json->>'participant/female_greater_15' female_greater_15 , json->>'participant/male_11_15' male_11_15 , json->>'participant/female_11_15' female_11_15 , json->>'participant/total_participant' total_participant , CASE WHEN ( json->>'participant/participant_category')::int = 1 THEN 'Aspirant Migrants' WHEN ( json->>'participant/participant_category')::int = 2 THEN 'Returnee' WHEN ( json->>'participant/participant_category')::int = 3 THEN 'Community Members' WHEN ( json->>'participant/participant_category')::int = 4 THEN 'Local Governments' WHEN ( json->>'participant/participant_category')::int = 5 THEN 'National Government' WHEN ( json->>'participant/participant_category')::int = 6 THEN 'Service Provider' WHEN ( json->>'participant/participant_category')::int = 99 THEN (json->>'participant/participant_category_other') END participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_school_program') AND deleted_at IS NULL AND ( json->>'event_id')::int = " + str(
+        event_id) + "), t1 AS ( SELECT json->>'event_id' event_id, json->>'participant/male_greater_15' male_greater_15 , json->>'participant/female_greater_15' female_greater_15 , json->>'participant/male_11_15' male_11_15 , json->>'participant/female_11_15' female_11_15 , json->>'participant/total_participant' total_participant , (select participant_category from vw_event_participants where event_id = '"+str(event_id)+"') as participant_category, json->>'remarks' remarks FROM logger_instance WHERE xform_id = ( SELECT id FROM logger_xform WHERE id_string = 'event_attendance_school_program') AND deleted_at IS NULL AND ( json->>'event_id')::int = " + str(
         event_id) + ") SELECT t.event_id, t.date_created , t.username, t.district , t.upazila, t.union_name , t.para_bazar_school, t.village , t1.male_greater_15, t1.female_greater_15, t1.male_11_15, t1.female_11_15, t1.total_participant, t1.participant_category, t1.remarks FROM t LEFT JOIN t1 ON t.event_id = t1.event_id::int"
     df = pandas.read_sql(qry, connection)
     event_id = df.event_id.tolist()[0] if len(df.event_id.tolist()) and df.event_id.tolist()[0] is not None  else ''
