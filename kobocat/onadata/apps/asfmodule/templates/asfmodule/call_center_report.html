@@ -148,7 +148,7 @@
 
 
             var ipd_table = $('#ipd_table').DataTable({
-                "scrollX": true, "ordering": false,"searching":false,
+                "scrollX": true,"searching":false,
                 "order":[],
                 deferRender: true,
                             dom: 'Bfrtip'
@@ -242,7 +242,7 @@
 
         function datatable_reinitialize(tbl_id) {
             return $('#'+tbl_id).DataTable({
-                "scrollX": true, "ordering": false,"iDisplayLength": 10,"searching":false,
+                "scrollX": true,"iDisplayLength": 10,"searching":false,
                 "order":[],
                 deferRender: true,
                 dom: 'Bfrtip'
