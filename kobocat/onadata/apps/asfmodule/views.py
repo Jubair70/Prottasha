@@ -180,6 +180,29 @@ def delete_data(request):
     redirect_url = request.GET.get('redirect_url')
     query = "update logger_instance set deleted_at = now() where id = " + str(log_ins_id)
     __db_commit_query(query)
+    print type(form_id)
+    if int(form_id) in [684, 704, 714, 715, 747, 748, 751]:
+        ben_id = __db_fetch_single_value(
+            "select json->>'victim_tbl_id' as ben_id from logger_instance where id = " + str(log_ins_id))
+        if ben_id:
+            form_func_data = __db_fetch_values_dict("""
+            with t3 as (with t2 as(with t as(select id,json->>'victim_tbl_id' as victim_tbl_id,xform_id from logger_instance where deleted_at is null)
+         select id,xform_id from t where victim_tbl_id = '""" + str(ben_id) + """'
+         union all
+         select case_id::int, 703 as xform_id from asf_victim where id = """ + str(ben_id) + """)
+         select id,xform_id from t2 where xform_id in (select form_id from form_function))
+         select t3.*,form_function.function_name from t3
+         left join form_function
+         on form_function.form_id = t3.xform_id
+         order by t3.id asc
+            """)
+            if form_func_data:
+                __db_commit_query(
+                    "update asf_victim set social_reintegration_id = null, services_reintegration_plan_id = null, referral_id = null, referral_services_for = null, referral_type = null, referral_organization_type = null, referral_followup_id = null, psychosocial_assessment_id = null, psychosocial_problem_identified = null, psychosocial_followup_id = null, direct_inkind_support_id = null, inkind_support_received = null where id = " + str(
+                        ben_id))
+                for ffd in form_func_data:
+                    __db_commit_query("select " + str(ffd['function_name']) + "(" + str(ffd['id']) + ")")
+
     messages.success(request, '<i class="fa fa-check-circle"></i> Data has been deleted successfully!',
                      extra_tags='alert-success crop-both-side')
     return HttpResponseRedirect(redirect_url)
@@ -463,7 +486,7 @@ def get_case_list(request):
             on rsc_catchment_area.geo_id::text = asf_case.district
             where asf_case.id in (select id from logger_instance where xform_id = 703 and deleted_at is null)
             and DATE(asf_victim.created_at) between symmetric to_date('""" + str(
-            from_date) + """','DD/MM/YYYY') and to_date('""" + str(to_date) + """','DD/MM/YYYY')
+        from_date) + """','DD/MM/YYYY') and to_date('""" + str(to_date) + """','DD/MM/YYYY')
             and asf_case.status like '""" + str(status) + """'
             and asf_victim.sex like '""" + str(gender) + """'
             and asf_case.division like '""" + str(division) + """'
@@ -480,7 +503,7 @@ def get_case_list(request):
             select * from t2
         """)
     data = json.dumps(__db_fetch_values_dict(query), default=decimal_date_default)
-    ret_obj = {'case_data':data, 'case_info':case_info}
+    ret_obj = {'case_data': data, 'case_info': case_info}
     return HttpResponse(json.dumps(ret_obj, default=decimal_date_default))
 
 
