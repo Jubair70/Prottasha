@@ -3,11 +3,10 @@
                 <tr>
                     <th>Serial</th>
                     <th>Date</th>
-                    <th>RSC Name</th>
+                    <th>Office Name</th>
                     <th>Item Name</th>
                     <th>Quantity Out</th>
                     <th>Receipient</th>
-                    <th>Office Name</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -15,12 +14,10 @@
                 <tr>
                     <td>{{data.serial_no |default_if_none:"--"}}</td>
                     <td>{{data.out_date |escape}}</td>
-                    <td>{{data.rsc_name |default_if_none:"--"}}</td>
+                    <td>{{data.office_name |default_if_none:"--"}}</td>
                     <td>{{data.item |default_if_none:"--"}}</td>
                     <td>{{data.qty |default_if_none:"--"}}</td>
-                <td>{{data.recepient |default_if_none:"--"}}</td>
-                 <td>{{data.office_name |default_if_none:"--"}}</td>
-
+                    <td>{{data.recepient |default_if_none:"--"}}</td>
                 </tr>
                 {% endfor %}
                 </tbody>
