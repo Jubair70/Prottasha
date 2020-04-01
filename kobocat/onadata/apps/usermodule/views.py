@@ -953,10 +953,10 @@ def user_login(request):
 
             # Is the account active? It could have been disabled.
             if user.is_active:
-                if hasattr(user, 'usermoduleprofile'):
-                    current_user = user.usermoduleprofile
-                    if date.today() > current_user.expired.date():
-                        return HttpResponseRedirect('/usermodule/change-password')
+                # if hasattr(user, 'usermoduleprofile'):
+                #     current_user = user.usermoduleprofile
+                #     if date.today() > current_user.expired.date():
+                #         return HttpResponseRedirect('/usermodule/change-password')
                 login(request, user)
                 UserFailedLogin.objects.filter(user_id=user.id).delete()
                 profile = user.usermoduleprofile
