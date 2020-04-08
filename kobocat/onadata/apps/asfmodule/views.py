@@ -1710,25 +1710,7 @@ def get_event_workshop_list(request):
          END observation ,
          0   review
             FROM     vw_merged_event_workshop
-            WHERE    upazila =ANY (
-         (
-                SELECT
-                       (
-                              SELECT geocode
-                              FROM   geo_data
-                              WHERE  id = geoid limit 1)
-                FROM   usermodule_catchment_area
-                WHERE  user_id = """ + str(user_id) + """)
-        UNION
-        (
-               SELECT geocode
-               FROM   geo_data
-               WHERE  field_parent_id = ANY
-                      (
-                             SELECT geoid
-                             FROM   usermodule_catchment_area
-                             WHERE  user_id = """ + str(user_id) + """)
-               AND    field_type_id = 88)) """
+            WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))"""
     except Exception:
         query = """ select  COALESCE(
                              (
@@ -1935,26 +1917,7 @@ def get_ipt_show_list(request):
                                            WHERE  event_id::int = vw_merged_event_ipt_show.id limit 1) THEN 1
                            ELSE 0
                   END review   from vw_merged_event_ipt_show
-                  WHERE    upazila =ANY (
-         (
-                SELECT
-                       (
-                              SELECT geocode
-                              FROM   geo_data
-                              WHERE  id = geoid limit 1)
-                FROM   usermodule_catchment_area
-                WHERE  user_id = """ + str(user_id) + """)
-        UNION
-        (
-               SELECT geocode
-               FROM   geo_data
-               WHERE  field_parent_id = ANY
-                      (
-                             SELECT geoid
-                             FROM   usermodule_catchment_area
-                             WHERE  user_id = """ + str(user_id) + """)
-               AND    field_type_id = 88))
-        """
+                  WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))"""
     except Exception:
         # query = "with t as( select COALESCE((select can_edit from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_edit,COALESCE((select can_delete from vwrolewiseformpermission where user_id = "+str(user_id)+" and xform_id = (select id from logger_xform where id_string='event_ipt_show') limit 1),0) can_delete,ROW_NUMBER() OVER (ORDER BY id) AS serial_no,id,to_char((json->>'event/event_start_time')::date,'DD/MM/YYYY') date_created,(select username from auth_user where id = user_id limit 1) username , (select field_name from geo_data where geocode = (json->>'geo/district')) district ,(select field_name from geo_data where geocode = (json->>'geo/upazila')) upazila , coalesce((select field_name from geo_data where geocode = (json->>'geo/union')),'') union_name ,json->>'geo/para_bazar_school' para_bazar_school ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'ipt_show_checklist') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1 ) then 1 else 0 end observation ,case when id::text = (select (json->>'event_id')::text from logger_instance where xform_id = (select id from logger_xform where id_string = 'event_ipt_show_review') and deleted_at is null and (json->>'event_id') is not null and (json->>'event_id')::int = st.id limit 1) then 1 else 0 end review from logger_instance st where xform_id = (select id from logger_xform where id_string = 'event_ipt_show') and deleted_at is null)select * from t"
         query = """
@@ -2170,25 +2133,7 @@ def get_video_show_list(request):
                                            WHERE  event_id::int = vw_merged_event_video_show.id limit 1) THEN 1
                            ELSE 0
                   END review   from vw_merged_event_video_show
-                 WHERE    upazila =ANY (
-         (
-                SELECT
-                       (
-                              SELECT geocode
-                              FROM   geo_data
-                              WHERE  id = geoid limit 1)
-                FROM   usermodule_catchment_area
-                WHERE  user_id = """ + str(user_id) + """)
-        UNION
-        (
-               SELECT geocode
-               FROM   geo_data
-               WHERE  field_parent_id = ANY
-                      (
-                             SELECT geoid
-                             FROM   usermodule_catchment_area
-                             WHERE  user_id = """ + str(user_id) + """)
-               AND    field_type_id = 88))
+                 WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))
         """
     except Exception:
         query = """
@@ -2386,25 +2331,7 @@ def get_school_quiz_list(request):
                                            WHERE  event_id::int = vw_merged_event_school_quiz.id limit 1) THEN 1
                            ELSE 0
                   END review   from vw_merged_event_school_quiz
-                  WHERE    upazila =ANY (
-         (
-                SELECT
-                       (
-                              SELECT geocode
-                              FROM   geo_data
-                              WHERE  id = geoid limit 1)
-                FROM   usermodule_catchment_area
-                WHERE  user_id = """ + str(user_id) + """)
-        UNION
-        (
-               SELECT geocode
-               FROM   geo_data
-               WHERE  field_parent_id = ANY
-                      (
-                             SELECT geoid
-                             FROM   usermodule_catchment_area
-                             WHERE  user_id = """ + str(user_id) + """)
-               AND    field_type_id = 88))
+                  WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))
         """
     except Exception:
         query = """
@@ -2598,25 +2525,7 @@ def get_tea_stall_meeting_list(request):
                                            WHERE  event_id::int = vw_merged_event_tea_stall_meeting.id limit 1) THEN 1
                            ELSE 0
                   END review   from vw_merged_event_tea_stall_meeting
-                  WHERE    upazila =ANY (
-                 (
-                        SELECT
-                               (
-                                      SELECT geocode
-                                      FROM   geo_data
-                                      WHERE  id = geoid limit 1)
-                        FROM   usermodule_catchment_area
-                        WHERE  user_id = """ + str(user_id) + """)
-                UNION
-                (
-                       SELECT geocode
-                       FROM   geo_data
-                       WHERE  field_parent_id = ANY
-                              (
-                                     SELECT geoid
-                                     FROM   usermodule_catchment_area
-                                     WHERE  user_id = """ + str(user_id) + """)
-                       AND    field_type_id = 88))
+                  WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))
         """
     except Exception:
         query = """
@@ -4403,25 +4312,7 @@ def get_pot_song_list(request):
                                            WHERE  event_id::int = vw_merged_event_pot_song.id limit 1) THEN 1
                            ELSE 0
                   END review   from vw_merged_event_pot_song
-                  WHERE    upazila =ANY (
-         (
-                SELECT
-                       (
-                              SELECT geocode
-                              FROM   geo_data
-                              WHERE  id = geoid limit 1)
-                FROM   usermodule_catchment_area
-                WHERE  user_id = """ + str(user_id) + """)
-        UNION
-        (
-               SELECT geocode
-               FROM   geo_data
-               WHERE  field_parent_id = ANY
-                      (
-                             SELECT geoid
-                             FROM   usermodule_catchment_area
-                             WHERE  user_id = """ + str(user_id) + """)
-               AND    field_type_id = 88))
+                  WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))
         """
     except Exception:
         query = """
@@ -4616,25 +4507,7 @@ def get_school_program_list(request):
                                            WHERE  event_id::int = vw_merged_event_school_program.id limit 1) THEN 1
                            ELSE 0
                   END review   from vw_merged_event_school_program
-                  WHERE    upazila =ANY (
-         (
-                SELECT
-                       (
-                              SELECT geocode
-                              FROM   geo_data
-                              WHERE  id = geoid limit 1)
-                FROM   usermodule_catchment_area
-                WHERE  user_id = """ + str(user_id) + """)
-        UNION
-        (
-               SELECT geocode
-               FROM   geo_data
-               WHERE  field_parent_id = ANY
-                      (
-                             SELECT geoid
-                             FROM   usermodule_catchment_area
-                             WHERE  user_id = """ + str(user_id) + """)
-               AND    field_type_id = 88))
+                  WHERE    coalesce(unions,upazila, district, division) = any(select geocode from get_catchment_area_by_user(""" + str(user_id) + """))
         """
     except Exception:
         query = """
